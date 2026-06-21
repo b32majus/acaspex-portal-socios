@@ -1,6 +1,6 @@
 export type ResourceType = 'pdf' | 'video' | 'template' | 'link' | 'presentation';
 
-export type ResourceCategory = 'formacion' | 'herramientas' | 'jornadas' | 'guias' | 'plantillas';
+export type ResourceCategory = 'formacion' | 'herramientas' | 'jornadas' | 'guias' | 'plantillas' | 'lean' | 'actas' | 'videos' | 'corporativo' | 'alianzas';
 
 export type ResourceStatus = 'draft' | 'published' | 'archived';
 
@@ -16,6 +16,10 @@ export type Resource = {
   estimatedReadMinutes: number | null;
   externalUrl: string | null;
   fileLabel: string | null;
+  coverImageUrl?: string | null;
+  coverAlt?: string | null;
+  visualTone: 'formacion' | 'lean' | 'herramientas' | 'actas' | 'videos' | 'corporativo' | 'alianzas';
+  featured?: boolean;
 };
 
 export const mockResources: Resource[] = [
@@ -31,6 +35,10 @@ export const mockResources: Resource[] = [
     estimatedReadMinutes: 8,
     externalUrl: null,
     fileLabel: 'PDF descargable',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'lean',
+    featured: true,
   },
   {
     id: 'res-002',
@@ -44,6 +52,10 @@ export const mockResources: Resource[] = [
     estimatedReadMinutes: null,
     externalUrl: null,
     fileLabel: 'Plantilla editable',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'herramientas',
+    featured: false,
   },
   {
     id: 'res-003',
@@ -57,6 +69,10 @@ export const mockResources: Resource[] = [
     estimatedReadMinutes: null,
     externalUrl: 'https://example.test/video-seguridad-paciente',
     fileLabel: 'Video externo',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'formacion',
+    featured: true,
   },
   {
     id: 'res-004',
@@ -70,6 +86,10 @@ export const mockResources: Resource[] = [
     estimatedReadMinutes: null,
     externalUrl: null,
     fileLabel: 'Pendiente de publicacion',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'corporativo',
+    featured: false,
   },
   {
     id: 'res-005',
@@ -83,5 +103,94 @@ export const mockResources: Resource[] = [
     estimatedReadMinutes: 5,
     externalUrl: null,
     fileLabel: 'PDF descargable',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'herramientas',
+    featured: true,
+  },
+  {
+    id: 'res-006',
+    title: 'Logos ACASPEX',
+    subtitle: 'Versiones principales y alternativas del logo institucional.',
+    description: 'Colección de archivos de marca con las versiones principales, alternativas y variantes monocromáticas del logo de ACASPEX para uso en materiales de socios.',
+    category: 'corporativo',
+    type: 'link',
+    status: 'published',
+    publishedAt: '2026-06-10',
+    estimatedReadMinutes: null,
+    externalUrl: 'https://example.test/acaspex-logos',
+    fileLabel: 'Enlace de descarga',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'corporativo',
+    featured: false,
+  },
+  {
+    id: 'res-007',
+    title: 'Fondos para videollamadas',
+    subtitle: 'Fondos oficiales para reuniones virtuales de ACASPEX.',
+    description: 'Paquete de fondos institucionales para usar en videollamadas y reuniones virtuales con la identidad visual de ACASPEX.',
+    category: 'corporativo',
+    type: 'presentation',
+    status: 'published',
+    publishedAt: '2026-06-11',
+    estimatedReadMinutes: null,
+    externalUrl: null,
+    fileLabel: 'Paquete de fondos',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'corporativo',
+    featured: false,
+  },
+  {
+    id: 'res-008',
+    title: 'Plantillas de presentación',
+    subtitle: 'Plantillas PowerPoint oficiales para ponencias y reuniones.',
+    description: 'Conjunto de plantillas PowerPoint con el estilo corporativo de ACASPEX, listas para usar en ponencias, reuniones y presentaciones institucionales.',
+    category: 'corporativo',
+    type: 'presentation',
+    status: 'published',
+    publishedAt: '2026-06-12',
+    estimatedReadMinutes: null,
+    externalUrl: null,
+    fileLabel: 'Plantillas PPT',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'corporativo',
+    featured: false,
+  },
+  {
+    id: 'res-009',
+    title: 'Plantillas de documento y carta',
+    subtitle: 'Modelos de documentos y cartas con membrete institucional.',
+    description: 'Documentos y cartas editables con el membrete y estilo oficial de ACASPEX para comunicaciones formales de los socios.',
+    category: 'corporativo',
+    type: 'template',
+    status: 'published',
+    publishedAt: '2026-06-13',
+    estimatedReadMinutes: null,
+    externalUrl: null,
+    fileLabel: 'Plantillas editables',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'corporativo',
+    featured: false,
+  },
+  {
+    id: 'res-010',
+    title: 'Manual breve de uso de marca',
+    subtitle: 'Guía rápida de aplicación correcta de la marca ACASPEX.',
+    description: 'Manual conciso con las reglas básicas de aplicación de la identidad visual de ACASPEX: colores, tipografías, uso del logo y ejemplos de aplicación correcta.',
+    category: 'corporativo',
+    type: 'pdf',
+    status: 'published',
+    publishedAt: '2026-06-14',
+    estimatedReadMinutes: 5,
+    externalUrl: null,
+    fileLabel: 'PDF descargable',
+    coverImageUrl: null,
+    coverAlt: null,
+    visualTone: 'corporativo',
+    featured: false,
   },
 ];
