@@ -48,10 +48,10 @@ export function LoginPage() {
       <div className="relative hidden flex-col justify-between bg-teal-900 p-10 lg:p-16 text-white overflow-hidden lg:flex">
         {/* Fondo sutil: Puente de Alcántara */}
         <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.4]"
+          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.55]"
           style={{ backgroundImage: `url(${assetBase}assets/acaspex/puente-alcantara.jpg)` }}
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-teal-900/40 via-teal-900/55 to-teal-900/75" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-teal-900/30 via-teal-900/40 to-teal-900/65" />
 
         <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-teal-800/30 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-teal-800/30 to-transparent" />
