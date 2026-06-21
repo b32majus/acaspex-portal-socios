@@ -3288,9 +3288,9 @@ const signupMembershipTypeLabel: Record<SignupMembershipType, string> = {
 };
 
 const signupReducedFeeReasonLabel: Record<NonNullable<SignupReducedFeeReason>, string> = {
-  resident: 'Residente',
-  student: 'Estudiante',
-  retired: 'Jubilado/a',
+  resident: 'Residente en formación sanitaria especializada',
+  student: 'Estudiante de rama sanitaria',
+  retired: 'Profesional jubilado',
 };
 
 const documentTypeLabel: Record<SignupDocumentType, string> = {
@@ -3298,6 +3298,45 @@ const documentTypeLabel: Record<SignupDocumentType, string> = {
   nie: 'NIE',
   passport: 'Pasaporte',
 };
+
+const professionalCategoryOptions = [
+  { value: '', label: 'Selecciona una categoría' },
+  { value: 'Enfermero/a', label: 'Enfermero/a' },
+  { value: 'Enfermero/a Especialista', label: 'Enfermero/a Especialista' },
+  { value: 'Farmacéutico/a', label: 'Farmacéutico/a' },
+  { value: 'Fisioterapeuta', label: 'Fisioterapeuta' },
+  { value: 'Logopeda', label: 'Logopeda' },
+  { value: 'Médico/a', label: 'Médico/a' },
+  { value: 'Odontólogo/a', label: 'Odontólogo/a' },
+  { value: 'Personal Administrativo', label: 'Personal Administrativo' },
+  { value: 'Psicólogo/a', label: 'Psicólogo/a' },
+  { value: 'Residente Formación Sanitaria Especializada', label: 'Residente Formación Sanitaria Especializada' },
+  { value: 'Técnico en Cuidados Auxiliares de Enfermería', label: 'Técnico en Cuidados Auxiliares de Enfermería' },
+  { value: 'Técnico Especialista', label: 'Técnico Especialista' },
+  { value: 'Terapeuta Ocupacional', label: 'Terapeuta Ocupacional' },
+  { value: 'Trabajador/a Social', label: 'Trabajador/a Social' },
+  { value: 'Veterinario/a', label: 'Veterinario/a' },
+  { value: 'Otras', label: 'Otras' },
+];
+
+const organizationOptions = [
+  { value: '', label: 'Selecciona una organización' },
+  { value: 'Área de Salud de Badajoz', label: 'Área de Salud de Badajoz' },
+  { value: 'Área de Salud de Cáceres', label: 'Área de Salud de Cáceres' },
+  { value: 'Área de Salud de Coria', label: 'Área de Salud de Coria' },
+  { value: 'Área de Salud de Don Benito-Villanueva de la Serena', label: 'Área de Salud de Don Benito-Villanueva de la Serena' },
+  { value: 'Área de Salud de Llerena-Zafra', label: 'Área de Salud de Llerena-Zafra' },
+  { value: 'Área de Salud de Mérida', label: 'Área de Salud de Mérida' },
+  { value: 'Área de Salud de Navalmoral de la Mata', label: 'Área de Salud de Navalmoral de la Mata' },
+  { value: 'Área de Salud de Plasencia', label: 'Área de Salud de Plasencia' },
+  { value: 'Mutuas Colaboradoras con la Seguridad Social', label: 'Mutuas Colaboradoras con la Seguridad Social' },
+  { value: 'Organización de Pacientes', label: 'Organización de Pacientes' },
+  { value: 'Sector Privado', label: 'Sector Privado' },
+  { value: 'SEPAD', label: 'SEPAD' },
+  { value: 'Servicios Centrales SES', label: 'Servicios Centrales SES' },
+  { value: 'Universidad de Extremadura', label: 'Universidad de Extremadura' },
+  { value: 'Otras', label: 'Otras' },
+];
 
 type SignupFormState = {
   firstName: string;
@@ -3316,6 +3355,10 @@ type SignupFormState = {
   qualitySafetyLink: string;
   membershipType: SignupMembershipType;
   reducedFeeReason: SignupReducedFeeReason;
+  transferReceiptUploaded: boolean;
+  transferReceiptFileName: string | null;
+  accreditationUploaded: boolean;
+  accreditationFileName: string | null;
   communicationConsent: boolean;
   dataProcessingConsent: boolean;
 };
@@ -3337,6 +3380,10 @@ const signupInitialState: SignupFormState = {
   qualitySafetyLink: '',
   membershipType: 'general',
   reducedFeeReason: null,
+  transferReceiptUploaded: false,
+  transferReceiptFileName: null,
+  accreditationUploaded: false,
+  accreditationFileName: null,
   communicationConsent: false,
   dataProcessingConsent: false,
 };
@@ -3344,6 +3391,7 @@ const signupInitialState: SignupFormState = {
 export function SignupPage() {
   const [form, setForm] = useState<SignupFormState>(signupInitialState);
   const [submitted, setSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const updateField = <K extends keyof SignupFormState>(field: K, value: SignupFormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -3351,6 +3399,11 @@ export function SignupPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.email !== form.emailConfirmation) {
+      setEmailError('Los correos electrónicos no coinciden.');
+      return;
+    }
+    setEmailError('');
     setSubmitted(true);
   };
 
@@ -3364,11 +3417,14 @@ export function SignupPage() {
             </div>
             <h1 className="mt-5 font-serif text-2xl font-light text-slate-900">Solicitud recibida</h1>
             <p className="mt-2 text-sm text-slate-600">
-              Hemos registrado tu solicitud de alta. Queda en estado <strong>pending_review</strong> y será revisada por el equipo de ACASPEX.
+              Pendiente de revisión por el equipo de ACASPEX.
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              El equipo revisará datos, justificante y acreditación si aplica.
             </p>
             <div className="mt-6 rounded-lg border border-amber-100 bg-amber-50/60 p-4">
               <p className="text-sm leading-relaxed text-amber-800/80">
-                Mientras validamos este formulario, también puedes usar el formulario anterior de Microsoft Forms.
+                Microsoft Forms sigue disponible como vía alternativa mientras se valida el nuevo formulario.
               </p>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -3404,7 +3460,7 @@ export function SignupPage() {
         <div className="mb-8 text-center">
           <h1 className="font-serif text-3xl font-light text-slate-900 sm:text-4xl">Hazte socio de ACASPEX</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Completa el formulario para iniciar tu solicitud de alta. Sin pago real en esta versión mock.
+            Formulario en fase de validación.
           </p>
         </div>
 
@@ -3453,6 +3509,7 @@ export function SignupPage() {
                   type="text"
                   value={form.lastName2}
                   onChange={(e) => updateField('lastName2', e.target.value)}
+                  required
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
                 />
               </div>
@@ -3464,6 +3521,7 @@ export function SignupPage() {
                   id="signup-documentType"
                   value={form.documentType}
                   onChange={(e) => updateField('documentType', e.target.value as SignupDocumentType)}
+                  required
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
                 >
                   <option value="dni">{documentTypeLabel.dni}</option>
@@ -3493,6 +3551,7 @@ export function SignupPage() {
                   type="text"
                   value={form.address}
                   onChange={(e) => updateField('address', e.target.value)}
+                  required
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
                 />
               </div>
@@ -3505,6 +3564,7 @@ export function SignupPage() {
                   type="text"
                   value={form.postalCode}
                   onChange={(e) => updateField('postalCode', e.target.value)}
+                  required
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
                 />
               </div>
@@ -3546,6 +3606,11 @@ export function SignupPage() {
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
                 />
               </div>
+              {emailError && (
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-red-600">{emailError}</p>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <label htmlFor="signup-phone" className="block text-sm font-medium text-slate-700">
                   Teléfono móvil
@@ -3575,14 +3640,19 @@ export function SignupPage() {
                 <label htmlFor="signup-professionalCategory" className="block text-sm font-medium text-slate-700">
                   Categoría profesional
                 </label>
-                <input
+                <select
                   id="signup-professionalCategory"
-                  type="text"
                   value={form.professionalCategory}
                   onChange={(e) => updateField('professionalCategory', e.target.value)}
                   required
-                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-                />
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {professionalCategoryOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value} disabled={opt.value === ''}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label htmlFor="signup-jobTitle" className="block text-sm font-medium text-slate-700">
@@ -3601,14 +3671,19 @@ export function SignupPage() {
                 <label htmlFor="signup-organization" className="block text-sm font-medium text-slate-700">
                   Organización
                 </label>
-                <input
+                <select
                   id="signup-organization"
-                  type="text"
                   value={form.organization}
                   onChange={(e) => updateField('organization', e.target.value)}
                   required
-                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-                />
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  {organizationOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value} disabled={opt.value === ''}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="signup-qualitySafetyLink" className="block text-sm font-medium text-slate-700">
@@ -3619,83 +3694,67 @@ export function SignupPage() {
                   rows={3}
                   value={form.qualitySafetyLink}
                   onChange={(e) => updateField('qualitySafetyLink', e.target.value)}
+                  required
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
                 />
               </div>
             </div>
           </section>
 
-          {/* Cuota */}
+          {/* Tipo de socio */}
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
                 <CreditCard size={18} />
               </div>
-              <h2 className="font-serif text-xl text-slate-900">Cuota</h2>
+              <h2 className="font-serif text-xl text-slate-900">Tipo de socio</h2>
             </div>
             <div className="mt-6 space-y-5">
               <div>
                 <label htmlFor="signup-membershipType" className="block text-sm font-medium text-slate-700">
-                  Tipo de cuota
+                  Perfil de socio
                 </label>
                 <select
                   id="signup-membershipType"
-                  value={form.membershipType}
+                  value={`${form.membershipType}__${form.reducedFeeReason ?? 'none'}`}
                   onChange={(e) => {
-                    const value = e.target.value as SignupMembershipType;
+                    const [type, reason] = e.target.value.split('__');
                     setForm((prev) => ({
                       ...prev,
-                      membershipType: value,
-                      reducedFeeReason: value === 'general' ? null : prev.reducedFeeReason,
+                      membershipType: type as SignupMembershipType,
+                      reducedFeeReason: type === 'general' ? null : (reason as SignupReducedFeeReason),
                     }));
                   }}
+                  required
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 sm:w-1/2"
                 >
-                  <option value="general">{signupMembershipTypeLabel.general}</option>
-                  <option value="reduced">{signupMembershipTypeLabel.reduced}</option>
+                  <option value="general__none">General</option>
+                  <option value="reduced__resident">Residente en formación sanitaria especializada</option>
+                  <option value="reduced__student">Estudiante de rama sanitaria</option>
+                  <option value="reduced__retired">Profesional jubilado</option>
                 </select>
               </div>
 
-              {isReduced && (
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                  <div>
-                    <label htmlFor="signup-reducedFeeReason" className="block text-sm font-medium text-slate-700">
-                      Motivo de la cuota reducida
-                    </label>
-                    <select
-                      id="signup-reducedFeeReason"
-                      value={form.reducedFeeReason ?? ''}
-                      onChange={(e) =>
-                        updateField('reducedFeeReason', (e.target.value as SignupReducedFeeReason) || null)
-                      }
-                      required={isReduced}
-                      className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 sm:w-1/2"
-                    >
-                      <option value="">Selecciona un motivo</option>
-                      <option value="resident">{signupReducedFeeReasonLabel.resident}</option>
-                      <option value="student">{signupReducedFeeReasonLabel.student}</option>
-                      <option value="retired">{signupReducedFeeReasonLabel.retired}</option>
-                    </select>
-                  </div>
-                  <div className="mt-5">
-                    <label htmlFor="signup-accreditation" className="block text-sm font-medium text-slate-700">
-                      Acreditación de cuota reducida
-                    </label>
-                    <div className="mt-1.5 flex items-center gap-3">
-                      <input
-                        id="signup-accreditation"
-                        type="file"
-                        disabled
-                        className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-100 file:px-4 file:py-2 file:font-medium file:text-teal-700 hover:file:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                      />
-                    </div>
-                    <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
-                      <Info size={13} className="mt-0.5 shrink-0" />
-                      Subida de documentos deshabilitada en esta versión mock.
-                    </p>
-                  </div>
-                </div>
-              )}
+              <div className="rounded-lg bg-teal-50/60 border border-teal-100 p-3">
+                <p className="text-sm text-teal-800">
+                  {form.membershipType === 'general'
+                    ? 'Cuota aplicable: 50 €/año'
+                    : 'Cuota aplicable: 30 €/año — requiere acreditación'}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-5 space-y-3">
+                <p className="text-sm font-medium text-slate-800">Información de pago</p>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  <li>Cuota general: 50 €</li>
+                  <li>Cuota reducida: 30 €</li>
+                  <li>Pago por transferencia bancaria</li>
+                  <li>Concepto recomendado: cuota, nombre y apellidos, documento identificativo</li>
+                </ul>
+                <p className="text-xs text-slate-500">
+                  Realiza la transferencia siguiendo las instrucciones facilitadas por ACASPEX en el formulario oficial.
+                </p>
+              </div>
 
               <div>
                 <label htmlFor="signup-transferReceipt" className="block text-sm font-medium text-slate-700">
@@ -3705,15 +3764,61 @@ export function SignupPage() {
                   <input
                     id="signup-transferReceipt"
                     type="file"
-                    disabled
-                    className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-100 file:px-4 file:py-2 file:font-medium file:text-teal-700 hover:file:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setForm((prev) => ({
+                        ...prev,
+                        transferReceiptUploaded: file !== null,
+                        transferReceiptFileName: file?.name ?? null,
+                      }));
+                    }}
+                    required
+                    className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-100 file:px-4 file:py-2 file:font-medium file:text-teal-700 hover:file:bg-teal-200 sm:w-auto"
                   />
                 </div>
+                {form.transferReceiptFileName && (
+                  <p className="mt-1 text-xs text-teal-700">
+                    Archivo seleccionado: {form.transferReceiptFileName}
+                  </p>
+                )}
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
                   <Info size={13} className="mt-0.5 shrink-0" />
-                  No se realiza ningún pago real. Esta versión solo simula el adjunto.
+                  En esta versión de validación no se realiza subida real al servidor.
                 </p>
               </div>
+
+              {isReduced && (
+                <div>
+                  <label htmlFor="signup-accreditation" className="block text-sm font-medium text-slate-700">
+                    Acreditación de cuota reducida
+                  </label>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <input
+                      id="signup-accreditation"
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        setForm((prev) => ({
+                          ...prev,
+                          accreditationUploaded: file !== null,
+                          accreditationFileName: file?.name ?? null,
+                        }));
+                      }}
+                      required
+                      className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-100 file:px-4 file:py-2 file:font-medium file:text-teal-700 hover:file:bg-teal-200 sm:w-auto"
+                    />
+                  </div>
+                  {form.accreditationFileName && (
+                    <p className="mt-1 text-xs text-teal-700">
+                      Archivo seleccionado: {form.accreditationFileName}
+                    </p>
+                  )}
+                  <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
+                    <Info size={13} className="mt-0.5 shrink-0" />
+                    En esta versión de validación no se realiza subida real al servidor.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -3731,6 +3836,7 @@ export function SignupPage() {
                   type="checkbox"
                   checked={form.communicationConsent}
                   onChange={(e) => updateField('communicationConsent', e.target.checked)}
+                  required
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-600"
                 />
                 <span className="text-sm text-slate-700">
@@ -3751,7 +3857,7 @@ export function SignupPage() {
               </label>
             </div>
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              Texto legal provisional. En la versión definitiva se incluirá la información completa de protección de datos y condiciones de alta.
+              La información completa sobre protección de datos será validada por ACASPEX antes de la puesta en producción del formulario.
             </p>
           </section>
 
