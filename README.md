@@ -20,9 +20,11 @@ Build validado correctamente tras scaffold y rutas placeholder el 2026-06-20.
 
 ## Dirección visual activa
 
-La referencia visual principal para las siguientes WOs es Propuesta 2, documentada en docs/visual-direction-propuesta-2-20260621.md.
+La referencia visual principal es Propuesta 3, documentada en docs/visual-pivot-propuesta-3-20260621.md.
 
-Propuesta 1 queda como referencia secundaria solo para mantener luminosidad, claridad y algunos patrones de biblioteca.
+Propuesta 2 queda como referencia estructural secundaria (portal privado, centro de conocimiento, navegación de recursos, comunidad, material corporativo).
+
+El portal debe reducir el patrón card-heavy hacia una estética más institucional, editorial y premium. Biblioteca evoluciona a Centro de conocimiento. Se incorpora Banco de proyectos como nueva sección.
 
 ## Documentos vivos
 

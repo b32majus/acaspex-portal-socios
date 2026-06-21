@@ -6,13 +6,17 @@ import {
   CalendarCheck,
   ChevronRight,
   ClipboardList,
+  CreditCard,
   FileText,
+  FolderKanban,
   Globe,
   GraduationCap,
   Handshake,
+  Lightbulb,
   Mail,
   MessageCircle,
   Settings,
+  ShieldCheck,
   TrendingUp,
   User,
   Users,
@@ -20,6 +24,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { mockMembers } from '../data/mockMembers';
+import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel } from '../data/mockProjects';
 import { mockResources } from '../data/mockResources';
 import { cn } from '../lib/utils';
 
@@ -322,6 +327,68 @@ export function MemberHomePage() {
         <div className="pointer-events-none absolute -bottom-10 right-20 h-40 w-40 rounded-full bg-teal-600/15" />
       </section>
 
+      {/* Dashboard de socio — banda compacta */}
+      <section className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 sm:gap-x-10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50">
+              <ShieldCheck size={18} className="text-emerald-700" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Estado</p>
+              <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass}`}>
+                {statusLabel}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50">
+              <User size={18} className="text-teal-700" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Cuota</p>
+              <p className="text-sm font-medium text-slate-900">
+                {member.membershipType === 'general' ? 'General' : 'Reducida'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50">
+              <CalendarCheck size={18} className="text-teal-700" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Válido hasta</p>
+              <p className="text-sm font-medium text-slate-900">
+                {member.paidUntil ? member.paidUntil.split('-').reverse().join('/') : '—'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50">
+              <CreditCard size={18} className="text-teal-700" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Último pago</p>
+              <p className="text-sm font-medium text-slate-900">
+                {member.lastPaymentAmount !== null && member.lastPaymentDate !== null
+                  ? `${member.lastPaymentAmount} € · ${member.lastPaymentDate.split('-').reverse().join('/')}`
+                  : '—'}
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/socios/mi-cuenta"
+            className="ml-auto flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-700"
+          >
+            Mi cuenta
+          </Link>
+        </div>
+      </section>
+
       {/* Section 2 — Qué encontrarás aquí */}
       <section>
         <h2 className="text-lg font-semibold text-slate-900">Qué encontrarás aquí</h2>
@@ -331,7 +398,7 @@ export function MemberHomePage() {
             className="group rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
           >
             <BookOpen size={24} className="text-teal-700" />
-            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Biblioteca de recursos</h3>
+            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Centro de conocimiento</h3>
             <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Guías, plantillas y materiales validados por ACASPEX.</p>
           </Link>
           <Link
@@ -351,12 +418,12 @@ export function MemberHomePage() {
             <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Documentos institucionales, modelos y recursos de representación.</p>
           </Link>
           <Link
-            to="/socios"
+            to="/socios/proyectos"
             className="group rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
           >
-            <Users size={24} className="text-teal-700" />
-            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Comunidad</h3>
-            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Conecta con otros socios, participa en grupos y mantente al día.</p>
+            <FolderKanban size={24} className="text-teal-700" />
+            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Banco de proyectos</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Repositorio de iniciativas, casos prácticos y proyectos de mejora compartidos por la comunidad ACASPEX.</p>
           </Link>
         </div>
       </section>
@@ -372,7 +439,7 @@ export function MemberHomePage() {
             to="/socios/recursos"
             className="hidden shrink-0 items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800 sm:inline-flex"
           >
-            Ver biblioteca
+            Ver centro de conocimiento
             <ChevronRight size={14} />
           </Link>
         </div>
@@ -396,13 +463,37 @@ export function MemberHomePage() {
             to="/socios/recursos"
             className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
           >
-            Ver biblioteca completa
+            Ver centro de conocimiento completo
             <ChevronRight size={16} />
           </Link>
         </div>
       </section>
 
-      {/* Section 4 — Comunidad ACASPEX */}
+      {/* Section 4 — Banco de proyectos */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <FolderKanban size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold text-slate-900">Banco de proyectos</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Repositorio de iniciativas, casos prácticos y proyectos de mejora compartidos por la comunidad ACASPEX. Convierte el conocimiento de la sociedad en aprendizaje reutilizable.
+            </p>
+            <div className="mt-4">
+              <Link
+                to="/socios/proyectos"
+                className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
+              >
+                Explorar banco de proyectos
+                <ChevronRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 5 — Comunidad ACASPEX */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
         <div className="flex items-start gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
@@ -447,7 +538,7 @@ export function MemberHomePage() {
         </div>
       </section>
 
-      {/* Section 5 — Mensaje institucional ACASPEX */}
+      {/* Section 6 — Mensaje institucional ACASPEX */}
       <section className="rounded-2xl border border-teal-100 bg-teal-50/50 p-6 sm:p-8">
         <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
         <p className="mt-2 text-sm leading-relaxed text-slate-700">
@@ -503,7 +594,7 @@ export function MemberLibraryPage() {
             <BookOpen size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-semibold text-slate-900">Biblioteca de recursos</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Centro de conocimiento ACASPEX</h1>
             <p className="mt-1 text-sm text-slate-600">
               Consulta guías, plantillas, grabaciones y materiales disponibles para socios.
             </p>
@@ -661,7 +752,7 @@ export function MemberResourceDetailPage() {
             to="/socios/recursos"
             className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
           >
-            Volver a biblioteca
+            Volver al centro de conocimiento
           </Link>
         </div>
       </section>
@@ -676,7 +767,7 @@ export function MemberResourceDetailPage() {
         to="/socios/recursos"
         className="text-sm font-medium text-teal-700 hover:text-teal-800"
       >
-        Volver a biblioteca
+        Volver al centro de conocimiento
       </Link>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -841,6 +932,164 @@ export function MemberAccountPage() {
           Esta pantalla utiliza datos ficticios de prototipo. La gestión real de datos, pagos y renovaciones se definirá en una fase posterior.
         </p>
       </section>
+    </div>
+  );
+}
+
+export function MemberProjectBankPage() {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const projects = mockProjects;
+
+  const categoryCounts: Record<string, number> = {};
+  for (const p of projects) {
+    categoryCounts[p.category] = (categoryCounts[p.category] ?? 0) + 1;
+  }
+
+  const filteredProjects = activeCategory
+    ? projects.filter((p) => p.category === activeCategory)
+    : projects;
+
+  const sidebarButtonClass = (isActive: boolean) =>
+    cn(
+      'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors',
+      isActive
+        ? 'bg-teal-50 text-teal-700'
+        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+    );
+
+  const mobileTabClass = (isActive: boolean) =>
+    cn(
+      'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap',
+      isActive
+        ? 'bg-teal-700 text-white'
+        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+    );
+
+  return (
+    <div className="space-y-8">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <FolderKanban size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold text-slate-900">Banco de proyectos</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Repositorio de iniciativas, casos prácticos y proyectos de mejora compartidos por la comunidad ACASPEX.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="lg:flex lg:gap-8">
+        <aside className="hidden lg:block lg:w-56 lg:shrink-0">
+          <nav className="sticky top-8 space-y-0.5">
+            <button
+              type="button"
+              onClick={() => setActiveCategory(null)}
+              className={sidebarButtonClass(activeCategory === null)}
+            >
+              <FolderKanban size={16} />
+              <span className="flex-1">Todos los proyectos</span>
+              <span className="text-xs tabular-nums text-slate-400">
+                {projects.length}
+              </span>
+            </button>
+
+            {Object.entries(projectCategoryLabel).map(([key, label]) => {
+              const count = categoryCounts[key] ?? 0;
+              const isActive = activeCategory === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveCategory(key)}
+                  className={sidebarButtonClass(isActive)}
+                >
+                  <Lightbulb size={16} className={isActive ? 'text-teal-700' : 'text-slate-400'} />
+                  <span className="flex-1">{label}</span>
+                  {count > 0 && (
+                    <span className="text-xs tabular-nums text-slate-400">{count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          <div className="mb-5 lg:hidden">
+            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
+              <button
+                type="button"
+                onClick={() => setActiveCategory(null)}
+                className={mobileTabClass(activeCategory === null)}
+              >
+                Todos
+              </button>
+              {Object.entries(projectCategoryLabel).map(([key, label]) => {
+                const isActive = activeCategory === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setActiveCategory(key)}
+                    className={mobileTabClass(isActive)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {filteredProjects.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-sm text-slate-600">
+                Próximamente: proyectos en esta categoría.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProjects.map((project) => {
+                const statusBadge = projectStatusBadgeClass[project.status] ?? 'bg-slate-100 text-slate-600';
+                const statusText = projectStatusLabel[project.status] ?? project.status;
+                const categoryText = projectCategoryLabel[project.category] ?? project.category;
+
+                return (
+                  <article
+                    key={project.id}
+                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <span className="inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
+                        {categoryText}
+                      </span>
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
+                        {statusText}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold text-slate-900">{project.title}</h3>
+                    <p className="mt-1 text-xs text-slate-500">{project.scope} · {project.organization}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.summary}</p>
+                    <div className="mt-4 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-teal-700">Aprendizaje transferible</p>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-700">{project.transferableLearning}</p>
+                    </div>
+                    {project.associatedMaterial && (
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-teal-700">
+                        <FileText size={12} />
+                        <span>Material asociado: {project.associatedMaterial}</span>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,8 @@ import { Link, Outlet } from 'react-router-dom';
 
 const memberLinks = [
   { label: 'Inicio', to: '/socios' },
-  { label: 'Biblioteca', to: '/socios/recursos' },
+  { label: 'Centro de conocimiento', to: '/socios/recursos' },
+  { label: 'Banco de proyectos', to: '/socios/proyectos' },
 ];
 
 export function MemberLayout() {

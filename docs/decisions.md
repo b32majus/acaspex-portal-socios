@@ -28,9 +28,9 @@ PDFs, plantillas y documentos sencillos pueden almacenarse en Supabase Storage, 
 
 GitHub se usará para control de versiones. El hosting preferente queda pendiente entre Cloudflare Pages y Netlify.
 
-### D007 — Dirección visual basada en Propuesta 2
+### D007 — Dirección visual basada en Propuesta 3
 
-La referencia visual principal para la evolución del portal es la Propuesta 2 (documentada en docs/visual-direction-propuesta-2-20260621.md). Propuesta 1 queda como referencia secundaria solo para mantener luminosidad, claridad y patrones de biblioteca. La dirección busca un microsite privado premium con sensación institucional, editorial y sanitaria, acento teal/verde petróleo, y menor dependencia del patrón card-heavy.
+La referencia visual principal pasa a ser Propuesta 3 (documentada en docs/visual-pivot-propuesta-3-20260621.md), según feedback de AnaT. Propuesta 2 queda como referencia estructural secundaria para mantener lógica de portal privado, centro de conocimiento, biblioteca/recursos con navegación, comunidad y material corporativo. La dirección busca un portal institucional, editorial, limpio y premium, con tono más serio, hero amplio, navegación horizontal, menos cards, biblioteca reconceptualizada como Centro de conocimiento y nueva sección Banco de proyectos.
 
 ## Decisiones pendientes
 

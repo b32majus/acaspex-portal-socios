@@ -61,7 +61,7 @@ export const mockResources: Resource[] = [
     id: 'res-003',
     title: 'Grabacion sesion: fundamentos de seguridad del paciente',
     subtitle: 'Sesion formativa para socios con acceso privado.',
-    description: 'Video ficticio alojado externamente y accesible desde la biblioteca de socios.',
+    description: 'Video ficticio alojado externamente y accesible desde el centro de conocimiento.',
     category: 'formacion',
     type: 'video',
     status: 'published',
