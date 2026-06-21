@@ -568,6 +568,7 @@ export function MemberHomePage() {
 
       {/* 3. Novedades del mes */}
       <section className="rounded-2xl border border-slate-100 bg-white p-6 sm:p-8">
+        {/* Phase 1: Novedades stays a Home module. No /novedades route per WO-043. */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-serif text-xl text-slate-900">Novedades del mes</h2>

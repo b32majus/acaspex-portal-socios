@@ -1,3 +1,9 @@
+/**
+ * Phase 1: News/activity implemented as a Home module.
+ * No dedicated /novedades route exists yet.
+ * Mock data only — future expansion can add /socios/novedades with a full list view.
+ */
+
 export type NewsItemType = 'resource' | 'recording' | 'update' | 'project' | 'publication';
 
 export type NewsItem = {
@@ -57,5 +63,26 @@ export const mockNews: NewsItem[] = [
     title: 'Píldora formativa: comunicación efectiva en entornos asistenciales',
     date: '2026-06-01',
     linkTo: '/socios/recursos',
+  },
+  {
+    id: 'n8',
+    type: 'resource',
+    title: 'Nueva guía: Protocolo de identificación segura del paciente',
+    date: '2026-05-28',
+    linkTo: '/socios/recursos',
+  },
+  {
+    id: 'n9',
+    type: 'update',
+    title: 'Actualización del plan de formación en seguridad del paciente 2026',
+    date: '2026-05-25',
+    linkTo: '/socios/recursos',
+  },
+  {
+    id: 'n10',
+    type: 'project',
+    title: 'Nuevo proyecto colaborativo: Reducción de caídas en hospitalización',
+    date: '2026-05-20',
+    linkTo: '/socios/proyectos',
   },
 ];
