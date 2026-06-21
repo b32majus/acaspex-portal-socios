@@ -4,6 +4,7 @@ import {
   BookOpen,
   Building2,
   CalendarCheck,
+  ChevronLeft,
   ChevronRight,
   ClipboardList,
   CreditCard,
@@ -12,6 +13,7 @@ import {
   Globe,
   GraduationCap,
   Handshake,
+  Heart,
   IdCard,
   Lightbulb,
   Mail,
@@ -20,6 +22,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Stethoscope,
   TrendingUp,
   User,
   Users,
@@ -27,7 +30,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { mockMembers, mockSocioDashboard } from '../data/mockMembers';
-import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel } from '../data/mockProjects';
+import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel, type ProjectCategory } from '../data/mockProjects';
 import { mockResources } from '../data/mockResources';
 import { mockNews } from '../data/mockNews';
 import { cn } from '../lib/utils';
@@ -1226,6 +1229,24 @@ export function MemberProjectBankPage() {
 
   const projects = mockProjects;
 
+  const officialCategoryOrder: ProjectCategory[] = [
+    'seguridad_paciente',
+    'mejora_procesos',
+    'experiencia_paciente',
+    'continuidad_asistencial',
+    'humanizacion',
+    'gestion_clinica',
+  ];
+
+  const categoryIcon: Record<ProjectCategory, React.ComponentType<{ size?: number | string; className?: string }>> = {
+    seguridad_paciente: ShieldCheck,
+    mejora_procesos: TrendingUp,
+    experiencia_paciente: Users,
+    continuidad_asistencial: Stethoscope,
+    humanizacion: Heart,
+    gestion_clinica: Building2,
+  };
+
   const categoryCounts: Record<string, number> = {};
   for (const p of projects) {
     categoryCounts[p.category] = (categoryCounts[p.category] ?? 0) + 1;
@@ -1235,11 +1256,13 @@ export function MemberProjectBankPage() {
     ? projects.filter((p) => p.category === activeCategory)
     : projects;
 
+  const activeLabel = activeCategory ? (projectCategoryLabel[activeCategory as ProjectCategory] ?? activeCategory) : null;
+
   const sidebarButtonClass = (isActive: boolean) =>
     cn(
-      'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors',
+      'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors',
       isActive
-        ? 'bg-teal-50 text-teal-700'
+        ? 'bg-teal-900 text-white'
         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
     );
 
@@ -1247,142 +1270,172 @@ export function MemberProjectBankPage() {
     cn(
       'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap',
       isActive
-        ? 'bg-teal-700 text-white'
+        ? 'bg-teal-900 text-white'
         : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
     );
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-            <FolderKanban size={20} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-semibold text-slate-900">Banco de proyectos</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Repositorio de iniciativas, casos prácticos y proyectos de mejora compartidos por la comunidad ACASPEX.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="lg:flex lg:gap-8">
+      {/* Sidebar — visible solo en desktop */}
+      <aside className="hidden lg:block lg:w-64 lg:shrink-0">
+        <nav className="sticky top-8 space-y-0.5 rounded-2xl border border-slate-100 bg-white p-2">
+          <button
+            type="button"
+            onClick={() => setActiveCategory(null)}
+            className={sidebarButtonClass(activeCategory === null)}
+          >
+            <FolderKanban size={16} className={activeCategory === null ? 'text-teal-200/70' : 'text-slate-400'} />
+            <span className="flex-1">Todos los proyectos</span>
+            <span className={cn('text-xs tabular-nums', activeCategory === null ? 'text-teal-200/70' : 'text-slate-400')}>
+              {projects.length}
+            </span>
+          </button>
 
-      <div className="lg:flex lg:gap-8">
-        <aside className="hidden lg:block lg:w-56 lg:shrink-0">
-          <nav className="sticky top-8 space-y-0.5">
+          {officialCategoryOrder.map((cat) => {
+            const Icon = categoryIcon[cat];
+            const count = categoryCounts[cat] ?? 0;
+            const isActive = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={sidebarButtonClass(isActive)}
+              >
+                <Icon size={16} className={isActive ? 'text-teal-200/70' : 'text-slate-400'} />
+                <span className="flex-1">{projectCategoryLabel[cat]}</span>
+                {count > 0 && (
+                  <span className={cn('text-xs tabular-nums', isActive ? 'text-teal-200/70' : 'text-slate-400')}>{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Contenido principal */}
+      <div className="min-w-0 flex-1">
+        {/* Píldoras móviles */}
+        <div className="mb-5 lg:hidden">
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
             <button
               type="button"
               onClick={() => setActiveCategory(null)}
-              className={sidebarButtonClass(activeCategory === null)}
+              className={mobileTabClass(activeCategory === null)}
             >
-              <FolderKanban size={16} />
-              <span className="flex-1">Todos los proyectos</span>
-              <span className="text-xs tabular-nums text-slate-400">
-                {projects.length}
-              </span>
+              Todos
             </button>
-
-            {Object.entries(projectCategoryLabel).map(([key, label]) => {
-              const count = categoryCounts[key] ?? 0;
-              const isActive = activeCategory === key;
+            {officialCategoryOrder.map((cat) => {
+              const isActive = activeCategory === cat;
               return (
                 <button
-                  key={key}
+                  key={cat}
                   type="button"
-                  onClick={() => setActiveCategory(key)}
-                  className={sidebarButtonClass(isActive)}
+                  onClick={() => setActiveCategory(cat)}
+                  className={mobileTabClass(isActive)}
                 >
-                  <Lightbulb size={16} className={isActive ? 'text-teal-700' : 'text-slate-400'} />
-                  <span className="flex-1">{label}</span>
-                  {count > 0 && (
-                    <span className="text-xs tabular-nums text-slate-400">{count}</span>
-                  )}
+                  {projectCategoryLabel[cat]}
                 </button>
               );
             })}
-          </nav>
-        </aside>
-
-        <div className="min-w-0 flex-1">
-          <div className="mb-5 lg:hidden">
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
-              <button
-                type="button"
-                onClick={() => setActiveCategory(null)}
-                className={mobileTabClass(activeCategory === null)}
-              >
-                Todos
-              </button>
-              {Object.entries(projectCategoryLabel).map(([key, label]) => {
-                const isActive = activeCategory === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setActiveCategory(key)}
-                    className={mobileTabClass(isActive)}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
+        </div>
 
-          {filteredProjects.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm text-slate-600">
-                Próximamente: proyectos en esta categoría.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredProjects.map((project) => {
-                const statusBadge = projectStatusBadgeClass[project.status] ?? 'bg-slate-100 text-slate-600';
-                const statusText = projectStatusLabel[project.status] ?? project.status;
-                const categoryText = projectCategoryLabel[project.category] ?? project.category;
+        {/* Cabecera institucional — solo en vista "Todos" */}
+        {!activeCategory && (
+          <section className="mb-8 rounded-2xl border border-slate-100 bg-white p-6 lg:p-8">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
+              <FolderKanban size={12} />
+              Experiencias de mejora
+            </span>
+            <h1 className="mt-4 font-serif text-3xl lg:text-4xl font-light text-slate-900">Banco de Proyectos</h1>
+            <p className="mt-3 text-sm text-slate-600 max-w-2xl">
+              Repositorio de experiencias de mejora compartidas por la comunidad ACASPEX. Casos prácticos, lecciones aprendidas y aprendizajes transferibles para aplicar en tu entorno asistencial.
+            </p>
+            <div className="mt-5 h-px w-16 bg-teal-700/30" />
+          </section>
+        )}
 
-                return (
-                  <article
-                    key={project.id}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <span className="inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
-                        {categoryText}
-                      </span>
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
-                        {statusText}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 text-base font-semibold text-slate-900">{project.title}</h3>
-                    <p className="mt-1 text-xs text-slate-500">{project.scope} · {project.organization}</p>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.summary}</p>
-                    <div className="mt-4 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-teal-700">Aprendizaje transferible</p>
-                      <p className="mt-1 text-sm leading-relaxed text-slate-700">{project.transferableLearning}</p>
-                    </div>
-                    {project.associatedMaterial && (
-                      <div className="mt-3 flex items-center gap-1.5 text-xs text-teal-700">
-                        <FileText size={12} />
-                        <span>Material asociado: {project.associatedMaterial}</span>
-                      </div>
-                    )}
-                    <div className="mt-4">
+        {/* Cabecera de categoría activa */}
+        {activeCategory && (
+          <div className="mb-6">
+            <h2 className="font-serif text-xl text-slate-900">{activeLabel}</h2>
+            <p className="mt-1 text-sm text-slate-500">{categoryCounts[activeCategory] ?? 0} proyectos</p>
+          </div>
+        )}
+
+        {/* Listado de proyectos */}
+        {filteredProjects.length === 0 ? (
+          <div className="rounded-2xl border border-slate-100 bg-white p-6">
+            <p className="text-sm text-slate-600">
+              Próximamente: proyectos en {activeLabel ? `«${activeLabel}»` : 'esta categoría'}.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {filteredProjects.map((project, index) => {
+              const isFirst = index === 0;
+              const statusBadge = projectStatusBadgeClass[project.status] ?? 'bg-slate-100 text-slate-600';
+              const statusText = projectStatusLabel[project.status] ?? project.status;
+              const categoryText = projectCategoryLabel[project.category] ?? project.category;
+
+              return (
+                <article
+                  key={project.id}
+                  className={cn(
+                    'rounded-2xl border bg-white transition-colors',
+                    isFirst
+                      ? 'border-teal-200 p-6 lg:p-8 bg-gradient-to-br from-white to-teal-50/40'
+                      : 'border-slate-100 p-5 lg:p-6 hover:border-slate-200',
+                  )}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
+                      {categoryText}
+                    </span>
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
+                      {statusText}
+                    </span>
+                  </div>
+                  <h3 className={cn('font-serif font-medium text-slate-900', isFirst ? 'mt-4 text-xl' : 'mt-3 text-lg')}>
+                    {project.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {project.scope} · {project.organization}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.summary}</p>
+
+                  <div className="mt-4 border-l-2 border-teal-200 bg-teal-50/40 py-2 pl-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-teal-700">Aprendizaje transferible</p>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-700">{project.transferableLearning}</p>
+                  </div>
+
+                  {project.associatedMaterial && (
+                    <div className="mt-3 flex items-center gap-1.5 text-sm text-teal-700">
+                      <FileText size={14} />
                       <Link
-                        to={`/socios/proyectos/${project.id}`}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+                        to="/socios/recursos"
+                        className="transition-colors hover:text-teal-800 hover:underline"
                       >
-                        Ver proyecto
-                        <ChevronRight size={14} />
+                        {project.associatedMaterial}
                       </Link>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  )}
+
+                  <div className="mt-4">
+                    <Link
+                      to={`/socios/proyectos/${project.id}`}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+                    >
+                      Ver proyecto
+                      <ChevronRight size={14} />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1396,14 +1449,15 @@ export function MemberProjectDetailPage() {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="space-y-4">
-          <h1 className="text-2xl font-semibold text-slate-900">Proyecto no encontrado</h1>
+          <h1 className="font-serif text-2xl font-medium text-slate-900">Proyecto no encontrado</h1>
           <p className="text-sm text-slate-600">
             El proyecto que buscas no existe o no está disponible.
           </p>
           <Link
             to="/socios/proyectos"
-            className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
+            className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
           >
+            <ChevronLeft size={14} />
             Volver al Banco de Proyectos
           </Link>
         </div>
@@ -1417,12 +1471,13 @@ export function MemberProjectDetailPage() {
 
   return (
     <div className="space-y-0">
-      <div className="border-b border-slate-100 bg-slate-50/50 pb-8 pt-2">
-        <div className="mx-auto max-w-3xl">
+      <div className="border-b border-slate-100 bg-white py-4">
+        <div className="mx-auto max-w-3xl px-6">
           <Link
             to="/socios/proyectos"
-            className="text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+            className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
           >
+            <ChevronLeft size={14} />
             Volver al Banco de Proyectos
           </Link>
         </div>
@@ -1461,9 +1516,9 @@ export function MemberProjectDetailPage() {
       </section>
 
       {/* Contenido editorial */}
-      <article className="bg-white px-6 py-12">
-        <div className="mx-auto max-w-3xl space-y-10">
-          <section className="border-t border-slate-100 pt-8">
+      <article className="bg-white px-6 py-10">
+        <div className="mx-auto max-w-3xl space-y-8 rounded-2xl border border-slate-100 p-6 sm:p-8">
+          <section>
             <h2 className="font-serif text-lg text-slate-900">Objetivo</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.objetivo}</p>
           </section>
@@ -1497,7 +1552,7 @@ export function MemberProjectDetailPage() {
             <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.lecciones_aprendidas}</p>
           </section>
 
-          <section className="border-t border-teal-100 pt-8">
+          <section className="border-t border-teal-100 bg-teal-50/30 -mx-6 -mb-6 p-6 sm:-mx-8 sm:-mb-8 sm:p-8">
             <h2 className="font-serif text-lg text-teal-900">Aprendizaje transferible</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.transferableLearning}</p>
           </section>
@@ -1505,12 +1560,12 @@ export function MemberProjectDetailPage() {
           {project.associatedMaterial && (
             <section className="border-t border-slate-100 pt-8">
               <p className="text-sm text-slate-600">
-                Material asociado: {project.associatedMaterial}.{' '}
+                Material asociado:{' '}
                 <Link
                   to="/socios/recursos"
                   className="font-medium text-teal-700 transition-colors hover:text-teal-800"
                 >
-                  Ver en el Centro de Conocimiento
+                  {project.associatedMaterial}
                 </Link>
               </p>
             </section>
@@ -1522,10 +1577,10 @@ export function MemberProjectDetailPage() {
         <div className="mx-auto max-w-3xl">
           <Link
             to="/socios/proyectos"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
           >
+            <ChevronLeft size={14} />
             Volver al Banco de Proyectos
-            <ChevronRight size={14} />
           </Link>
         </div>
       </div>
