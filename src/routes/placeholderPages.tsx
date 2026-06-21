@@ -48,10 +48,10 @@ export function LoginPage() {
       <div className="relative hidden flex-col justify-between bg-teal-900 p-10 lg:p-16 text-white overflow-hidden lg:flex">
         {/* Fondo sutil: Puente de Alcántara */}
         <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.12]"
+          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.25]"
           style={{ backgroundImage: `url(${assetBase}assets/acaspex/puente-alcantara.jpg)` }}
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-teal-900/80 via-teal-900/90 to-teal-900/95" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-teal-900/60 via-teal-900/70 to-teal-900/85" />
 
         <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-teal-800/30 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-teal-800/30 to-transparent" />
@@ -60,7 +60,7 @@ export function LoginPage() {
           <img
             src={`${assetBase}assets/acaspex/logo-horizontal.jpg`}
             alt="ACASPEX"
-            className="mb-6 w-44 rounded-lg bg-white p-3 shadow-sm lg:w-52"
+            className="mb-5 w-48 brightness-0 invert lg:w-56"
           />
           <h2 className="font-serif text-3xl lg:text-4xl font-light tracking-tight">ACASPEX</h2>
           <p className="mt-2 text-sm text-teal-100/80">Asociación de Calidad Asistencial y Seguridad del Paciente</p>
