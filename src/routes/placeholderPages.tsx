@@ -3749,11 +3749,16 @@ export function SignupPage() {
                   <li>Cuota general: 50 €</li>
                   <li>Cuota reducida: 30 €</li>
                   <li>Pago por transferencia bancaria</li>
-                  <li>Concepto recomendado: cuota, nombre y apellidos, documento identificativo</li>
                 </ul>
-                <p className="text-xs text-slate-500">
-                  Realiza la transferencia siguiendo las instrucciones facilitadas por ACASPEX en el formulario oficial.
-                </p>
+                <div className="rounded-lg bg-white border border-slate-200 p-3 text-sm text-slate-700 leading-relaxed">
+                  <p>Para completar tu inscripción como socio/a de ACASPEX, solo tienes que realizar una transferencia de <strong>50 €</strong> en la cuenta <strong>ES46 0049 5247 8628 1701 097</strong>, indicando en el concepto:</p>
+                  <p className="mt-1.5 font-mono text-xs text-slate-600 italic">"Abono cuota 2026 [Nombre y apellidos][DNI]"</p>
+                </div>
+                {form.membershipType !== 'general' && (
+                  <p className="text-xs text-amber-700 bg-amber-50 rounded-md px-3 py-2 border border-amber-200">
+                    Si te corresponde cuota reducida, el importe aplicable es de <strong>30 €</strong> y será necesario aportar acreditación.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -3852,13 +3857,15 @@ export function SignupPage() {
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-600"
                 />
                 <span className="text-sm text-slate-700">
-                  Acepto el tratamiento de mis datos personales con fines de gestión de la solicitud de alta y membresía de ACASPEX.
+                  He leído y acepto las indicaciones sobre tratamiento de datos personales
                 </span>
               </label>
             </div>
-            <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              La información completa sobre protección de datos será validada por ACASPEX antes de la puesta en producción del formulario.
-            </p>
+            <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-4">
+              <p className="text-xs leading-relaxed text-slate-600">
+                Le informamos que los datos de carácter personal facilitados por usted, serán utilizados únicamente con la finalidad de gestionar su pertenencia a nuestra entidad. Los datos se mantendrán mientras dure la relación y una vez finalizado el servicio, durante los periodos legales obligatorios. Tiene derecho acceder a sus datos personales, solicitar la rectificación de los datos que sean inexactos o, en su caso, solicitar la supresión, cuando entre otros motivos, los datos ya no sean necesarios para los fines para los que fueron recogidos. Para ejercitar sus derechos comuníquese con nosotros a través de la dirección de correo electrónico <strong>acaspex@outlook.es</strong>.
+              </p>
+            </div>
           </section>
 
           {/* Fallback Microsoft Forms */}
