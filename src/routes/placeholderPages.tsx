@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertTriangle,
   Bell,
@@ -1629,7 +1629,7 @@ export function AdminDashboardPage() {
     .slice(0, 3);
 
   const upcomingRenewals = mockRenewals
-    .filter((r) => r.paidUntil === '2026-12-31')
+    .filter((r) => r.renewalState === 'upcoming')
     .slice(0, 5);
 
   const formatDate = (dateStr: string) => {
@@ -1640,7 +1640,6 @@ export function AdminDashboardPage() {
   const pendingSignupCount = mockSignupRequests.filter((r) => r.status === 'pending_review').length;
   const upcomingRenewalCount = mockRenewals.filter((r) => r.renewalState === 'upcoming').length;
   const expiredRenewalCount = mockRenewals.filter((r) => r.renewalState === 'expired').length;
-  const draftResourceCount = mockResources.filter((r) => r.status === 'draft').length;
 
   const alerts = [
     {
@@ -1670,7 +1669,7 @@ export function AdminDashboardPage() {
     {
       key: 'draft-resources',
       label: 'Recursos en borrador',
-      count: draftResourceCount,
+      count: draftResources,
       href: '/admin/recursos',
       icon: FileText,
       color: 'slate',
@@ -2276,11 +2275,10 @@ export function AdminMemberDetailPage() {
 }
 
 export function AdminResourcesPage() {
+  const navigate = useNavigate();
   const publishedCount = mockResources.filter((r) => r.status === 'published').length;
   const draftCount = mockResources.filter((r) => r.status === 'draft').length;
   const archivedCount = mockResources.filter((r) => r.status === 'archived').length;
-
-  const [newResourceMessage, setNewResourceMessage] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -2292,17 +2290,12 @@ export function AdminResourcesPage() {
         <div>
           <button
             type="button"
-            onClick={() => setNewResourceMessage('Alta mock — sin guardado real')}
+            onClick={() => navigate('/admin/recursos/nuevo')}
             className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
           >
             <Upload size={15} />
             Nuevo recurso
           </button>
-          {newResourceMessage && (
-            <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/60 p-3">
-              <p className="text-sm text-amber-800/80">{newResourceMessage}</p>
-            </div>
-          )}
         </div>
       </section>
 
@@ -2624,6 +2617,172 @@ export function AdminResourceEditorPage() {
   );
 }
 
+export function AdminResourceNewPage() {
+  const navigate = useNavigate();
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('calidad');
+  const [type, setType] = useState('pdf');
+  const [status, setStatus] = useState<ResourceStatus>('draft');
+  const [description, setDescription] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-8">
+      <Link
+        to="/admin/recursos"
+        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+      >
+        <ChevronLeft size={14} />
+        Volver a recursos
+      </Link>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div>
+          <h1 className="font-serif text-3xl font-light text-slate-900">Nuevo recurso</h1>
+          <p className="mt-1 text-sm text-slate-500">Alta mock de recurso o material.</p>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
+            <p className="text-sm font-medium text-amber-800">Gestión mock — sin guardado real</p>
+          </div>
+        </div>
+
+        <h2 className="font-serif text-xl text-slate-900">Formulario de alta</h2>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="new-title" className="block text-xs font-medium text-slate-500">
+              Título
+            </label>
+            <input
+              id="new-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
+          <div>
+            <label htmlFor="new-category" className="block text-xs font-medium text-slate-500">
+              Categoría
+            </label>
+            <select
+              id="new-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              {Object.entries(categoryLabel).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="new-type" className="block text-xs font-medium text-slate-500">
+              Tipo de recurso
+            </label>
+            <select
+              id="new-type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              {Object.entries(typeLabel).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="new-status" className="block text-xs font-medium text-slate-500">
+              Estado
+            </label>
+            <select
+              id="new-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as ResourceStatus)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              {Object.entries(resourceStatusLabel).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="new-external-url" className="block text-xs font-medium text-slate-500">
+              Enlace externo
+            </label>
+            <input
+              id="new-external-url"
+              type="url"
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+              placeholder="https://…"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="new-description" className="block text-xs font-medium text-slate-500">
+              Descripción
+            </label>
+            <textarea
+              id="new-description"
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="new-file" className="block text-xs font-medium text-slate-500">
+              Material asociado mock
+            </label>
+            <input
+              id="new-file"
+              type="file"
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 opacity-60 cursor-not-allowed"
+            />
+            <p className="mt-1 text-xs text-slate-400">La subida de archivos está deshabilitada en la versión mock.</p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setFeedback('Recurso simulado. No se ha guardado ningún cambio real.')}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            <Upload size={15} />
+            Guardar recurso
+          </button>
+          <Link
+            to="/admin/recursos"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            Volver a recursos
+          </Link>
+        </div>
+
+        {feedback && (
+          <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+            <p className="text-sm text-emerald-800/80">{feedback}</p>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 const renewalStateLabel: Record<RenewalItem['renewalState'], string> = {
   upcoming: 'Próxima',
   expired: 'Expirada',
@@ -2643,6 +2802,9 @@ type RenewalSectionProps = {
 };
 
 function RenewalSection({ title, count, items }: RenewalSectionProps) {
+  const navigate = useNavigate();
+  const [feedback, setFeedback] = useState<string | null>(null);
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
@@ -2651,6 +2813,23 @@ function RenewalSection({ title, count, items }: RenewalSectionProps) {
           {count}
         </span>
       </div>
+
+      {feedback && (
+        <div className="mt-3 flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-800">
+          <div className="flex items-center gap-2">
+            <CheckCircle size={14} className="text-emerald-600" />
+            <span>{feedback}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            className="text-emerald-500 hover:text-emerald-700"
+            aria-label="Cerrar mensaje"
+          >
+            <XCircle size={14} />
+          </button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">No hay socios en este grupo.</p>
@@ -2709,24 +2888,24 @@ function RenewalSection({ title, count, items }: RenewalSectionProps) {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          disabled
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 opacity-60 cursor-not-allowed"
+                          onClick={() => navigate(`/admin/socios/${renewal.memberId}`)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
                         >
                           <Eye size={12} />
                           Ver socio
                         </button>
                         <button
                           type="button"
-                          disabled
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 opacity-60 cursor-not-allowed"
+                          onClick={() => setFeedback('Seguimiento marcado (mock — sin guardado real)')}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
                         >
                           <CheckCircle size={12} />
                           Marcar seguimiento
                         </button>
                         <button
                           type="button"
-                          disabled
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 opacity-60 cursor-not-allowed"
+                          onClick={() => setFeedback('Recordatorio simulado. No se ha enviado ningún email real.')}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
                         >
                           <Mail size={12} />
                           Enviar recordatorio mock
@@ -3389,6 +3568,7 @@ const signupInitialState: SignupFormState = {
 };
 
 export function SignupPage() {
+  const assetBase = import.meta.env.BASE_URL;
   const [form, setForm] = useState<SignupFormState>(signupInitialState);
   const [submitted, setSubmitted] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -3458,7 +3638,12 @@ export function SignupPage() {
       <div className="mx-auto max-w-3xl">
         {/* Cabecera */}
         <div className="mb-8 text-center">
-          <h1 className="font-serif text-3xl font-light text-slate-900 sm:text-4xl">Hazte socio de ACASPEX</h1>
+          <img
+            src={`${assetBase}assets/acaspex/logo-horizontal.png`}
+            alt="ACASPEX"
+            className="h-14 w-auto object-contain mx-auto"
+          />
+          <h1 className="font-serif text-3xl font-light text-slate-900 sm:text-4xl mt-3">Hazte socio de ACASPEX</h1>
           <p className="mt-2 text-sm text-slate-600">
             Formulario en fase de validación.
           </p>

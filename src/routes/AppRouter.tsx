@@ -7,6 +7,7 @@ import {
   AdminMembersPage,
   AdminRenewalsPage,
   AdminResourceEditorPage,
+  AdminResourceNewPage,
   AdminResourcesPage,
   AdminSignupDetailPage,
   AdminSignupRequestsPage,
@@ -42,6 +43,7 @@ export function AppRouter() {
           <Route path="/admin/solicitudes" element={<AdminSignupRequestsPage />} />
           <Route path="/admin/solicitudes/:signupId" element={<AdminSignupDetailPage />} />
           <Route path="/admin/recursos" element={<AdminResourcesPage />} />
+          <Route path="/admin/recursos/nuevo" element={<AdminResourceNewPage />} />
           <Route path="/admin/recursos/:resourceId" element={<AdminResourceEditorPage />} />
           <Route path="/admin/renovaciones" element={<AdminRenewalsPage />} />
         </Route>
