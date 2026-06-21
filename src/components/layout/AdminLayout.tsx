@@ -1,4 +1,4 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const adminLinks = [
   { label: 'Panel', to: '/admin' },
@@ -8,21 +8,42 @@ const adminLinks = [
 ];
 
 export function AdminLayout() {
+  const location = useLocation();
+
+  const isActive = (to: string) => {
+    if (to === '/admin') return location.pathname === '/admin';
+    return location.pathname.startsWith(to);
+  };
+
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="grid min-h-screen grid-cols-1 md:grid-cols-[240px_1fr]">
-        <aside className="border-b border-slate-200 bg-white p-6 md:border-b-0 md:border-r">
-          <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
-          <h1 className="mt-1 text-xl font-semibold">Administrador</h1>
-          <nav className="mt-6 flex flex-wrap gap-2 md:flex-col">
-            {adminLinks.map((link) => (
-              <Link key={link.to} className="rounded-xl border border-slate-200 px-4 py-2 text-sm hover:bg-slate-50" to={link.to}>
-                {link.label}
-              </Link>
-            ))}
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <aside className="border-b border-slate-200 bg-white md:w-64 md:flex-shrink-0 md:border-b-0 md:border-r">
+          <div className="px-5 pt-5 pb-3 md:px-6 md:pt-6 md:pb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-600">ACASPEX</p>
+            <h2 className="mt-0.5 text-lg font-semibold text-slate-800">Administración</h2>
+            <p className="mt-0.5 text-xs text-slate-400">Portal de socios</p>
+          </div>
+          <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:gap-0 md:px-3 md:pb-6">
+            {adminLinks.map((link) => {
+              const active = isActive(link.to);
+              return (
+                <Link
+                  key={link.to}
+                  className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-teal-50 text-teal-700'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
+                  to={link.to}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
         </aside>
-        <section className="p-6 md:p-8">
+        <section className="flex-1 p-6 md:p-8">
           <Outlet />
         </section>
       </div>

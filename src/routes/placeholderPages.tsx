@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   BookOpen,
   Building2,
   CalendarCheck,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   CreditCard,
+  Edit,
+  Eye,
   FileText,
+  Filter,
   FolderKanban,
   Globe,
   GraduationCap,
@@ -29,27 +33,11 @@ import {
   Video,
   Wrench,
 } from 'lucide-react';
-import { mockMembers, mockSocioDashboard } from '../data/mockMembers';
+import { mockMembers, mockRenewals, mockSocioDashboard, type MemberStatus, type MembershipType, type ReducedFeeReason, type RenewalItem } from '../data/mockMembers';
 import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel, type ProjectCategory } from '../data/mockProjects';
-import { mockResources } from '../data/mockResources';
+import { mockResources, type ResourceStatus } from '../data/mockResources';
 import { mockNews } from '../data/mockNews';
 import { cn } from '../lib/utils';
-
-type PlaceholderPageProps = {
-  title: string;
-};
-
-function PlaceholderPage({ title }: PlaceholderPageProps) {
-  const location = useLocation();
-
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-medium uppercase tracking-wide text-teal-700">Pantalla placeholder Fase 1</p>
-      <h2 className="mt-2 text-2xl font-semibold text-slate-900">{title}</h2>
-      <p className="mt-3 text-sm text-slate-600">Ruta actual: {location.pathname}</p>
-    </section>
-  );
-}
 
 export function LoginPage() {
   return (
@@ -146,6 +134,18 @@ const typeLabel: Record<string, string> = {
   template: 'Plantilla',
   link: 'Enlace',
   presentation: 'Presentación',
+};
+
+const resourceStatusLabel: Record<ResourceStatus, string> = {
+  published: 'Publicado',
+  draft: 'Borrador',
+  archived: 'Archivado',
+};
+
+const resourceStatusBadgeClass: Record<ResourceStatus, string> = {
+  published: 'bg-emerald-100 text-emerald-800',
+  draft: 'bg-amber-100 text-amber-700',
+  archived: 'bg-slate-100 text-slate-600',
 };
 
 const visualToneLabel: Record<string, string> = {
@@ -1589,27 +1589,980 @@ export function MemberProjectDetailPage() {
 }
 
 export function AdminDashboardPage() {
-  return <PlaceholderPage title="Panel admin" />;
+  const activeMembers = mockMembers.filter((m) => m.status === 'active').length;
+  const pendingMembers = mockMembers.filter((m) => m.status === 'pending_review').length;
+  const expiredMembers = mockMembers.filter((m) => m.status === 'expired').length;
+
+  const publishedResources = mockResources.filter((r) => r.status === 'published').length;
+  const draftResources = mockResources.filter((r) => r.status === 'draft').length;
+  const archivedResources = mockResources.filter((r) => r.status === 'archived').length;
+
+  const latestMembers = [...mockMembers]
+    .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))
+    .slice(0, 3);
+
+  const upcomingRenewals = mockRenewals
+    .filter((r) => r.paidUntil === '2026-12-31')
+    .slice(0, 5);
+
+  const formatDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <h1 className="font-serif text-2xl font-light text-slate-900">Panel de administración</h1>
+        <p className="mt-1 text-sm text-slate-500">Resumen de socios, recursos y renovaciones.</p>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-serif text-lg text-slate-900">Resumen de socios</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Activos</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{activeMembers}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Pendientes de revisión</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{pendingMembers}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Cuotas expiradas</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{expiredMembers}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Total registrados</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{mockMembers.length}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-serif text-lg text-slate-900">Resumen de recursos</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Publicados</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{publishedResources}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Borradores</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{draftResources}</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Archivados</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{archivedResources}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-serif text-lg text-slate-900">Últimas altas mock</h2>
+        {latestMembers.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-600">No hay altas recientes.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {latestMembers.map((member) => (
+              <li key={member.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                <p className="text-sm font-medium text-slate-900">
+                  {member.firstName} {member.lastName1} {member.lastName2}
+                </p>
+                <p className="text-xs text-slate-500">{formatDate(member.joinedAt)}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-serif text-lg text-slate-900">Próximas renovaciones mock</h2>
+        {upcomingRenewals.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-600">No hay renovaciones próximas.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {upcomingRenewals.map((renewal) => (
+              <li key={renewal.memberId} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                <p className="text-sm font-medium text-slate-900">{renewal.fullName}</p>
+                <p className="text-xs text-slate-500">Vigente hasta {renewal.paidUntil ? formatDate(renewal.paidUntil) : '—'}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-serif text-lg text-slate-900">Accesos rápidos</h2>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            to="/admin/socios"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-teal-300 hover:text-teal-700"
+          >
+            <Users size={15} />
+            Socios
+          </Link>
+          <Link
+            to="/admin/recursos"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-teal-300 hover:text-teal-700"
+          >
+            <BookOpen size={15} />
+            Recursos
+          </Link>
+          <Link
+            to="/admin/renovaciones"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-teal-300 hover:text-teal-700"
+          >
+            <RefreshCw size={15} />
+            Renovaciones
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+const memberStatusLabel: Record<MemberStatus, string> = {
+  active: 'Activo',
+  pending_review: 'Pendiente de revisión',
+  expired: 'Expirado',
+  inactive: 'Inactivo',
+  cancelled: 'Cancelado',
+};
+
+const membershipTypeLabel: Record<MembershipType, string> = {
+  general: 'General',
+  reduced: 'Reducida',
+};
+
+function formatIsoDate(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
 }
 
 export function AdminMembersPage() {
-  return <PlaceholderPage title="Socios" />;
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<MemberStatus | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<MembershipType | 'all'>('all');
+  const [organizationFilter, setOrganizationFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  const organizations = Array.from(new Set(mockMembers.map((m) => m.organization))).sort();
+  const categories = Array.from(new Set(mockMembers.map((m) => m.professionalCategory))).sort();
+
+  const filteredMembers = mockMembers.filter((member) => {
+    const fullName = `${member.firstName} ${member.lastName1} ${member.lastName2}`.toLowerCase();
+    const matchesSearch =
+      search.trim() === '' ||
+      fullName.includes(search.toLowerCase()) ||
+      member.email.toLowerCase().includes(search.toLowerCase()) ||
+      member.organization.toLowerCase().includes(search.toLowerCase()) ||
+      member.professionalCategory.toLowerCase().includes(search.toLowerCase()) ||
+      member.jobTitle.toLowerCase().includes(search.toLowerCase());
+
+    return (
+      matchesSearch &&
+      (statusFilter === 'all' || member.status === statusFilter) &&
+      (typeFilter === 'all' || member.membershipType === typeFilter) &&
+      (organizationFilter === 'all' || member.organization === organizationFilter) &&
+      (categoryFilter === 'all' || member.professionalCategory === categoryFilter)
+    );
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Cabecera */}
+      <section>
+        <h1 className="font-serif text-2xl font-light text-slate-900">Socios</h1>
+        <p className="mt-1 text-sm text-slate-500">Gestión mock del registro de socios.</p>
+      </section>
+
+      {/* Filtros */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <Filter size={16} className="text-teal-700" />
+          Filtros
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label htmlFor="member-search" className="block text-xs font-medium text-slate-500">
+              Buscar
+            </label>
+            <div className="relative mt-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                id="member-search"
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Nombre, email, centro…"
+                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="member-status" className="block text-xs font-medium text-slate-500">
+              Estado
+            </label>
+            <select
+              id="member-status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as MemberStatus | 'all')}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              <option value="all">Todos</option>
+              <option value="active">{memberStatusLabel.active}</option>
+              <option value="pending_review">{memberStatusLabel.pending_review}</option>
+              <option value="expired">{memberStatusLabel.expired}</option>
+              <option value="inactive">{memberStatusLabel.inactive}</option>
+              <option value="cancelled">{memberStatusLabel.cancelled}</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="member-type" className="block text-xs font-medium text-slate-500">
+              Tipo de cuota
+            </label>
+            <select
+              id="member-type"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as MembershipType | 'all')}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              <option value="all">Todas</option>
+              <option value="general">{membershipTypeLabel.general}</option>
+              <option value="reduced">{membershipTypeLabel.reduced}</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="member-organization" className="block text-xs font-medium text-slate-500">
+              Organización
+            </label>
+            <select
+              id="member-organization"
+              value={organizationFilter}
+              onChange={(e) => setOrganizationFilter(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              <option value="all">Todas</option>
+              {organizations.map((org) => (
+                <option key={org} value={org}>
+                  {org}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-4">
+            <label htmlFor="member-category" className="block text-xs font-medium text-slate-500">
+              Categoría profesional
+            </label>
+            <select
+              id="member-category"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 sm:w-auto"
+            >
+              <option value="all">Todas</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* Resultados */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm text-slate-500">
+            <span className="font-medium text-slate-900">{filteredMembers.length}</span> socios
+          </p>
+        </div>
+
+        {filteredMembers.length === 0 ? (
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-6 text-center">
+            <p className="text-sm text-slate-600">No hay socios que coincidan con los filtros.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[56rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                  <th className="pb-3 font-medium">Socio</th>
+                  <th className="pb-3 font-medium">Email</th>
+                  <th className="pb-3 font-medium">Categoría / Puesto</th>
+                  <th className="pb-3 font-medium">Organización</th>
+                  <th className="pb-3 font-medium">Cuota</th>
+                  <th className="pb-3 font-medium">Estado</th>
+                  <th className="pb-3 font-medium">Vigencia</th>
+                  <th className="pb-3 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredMembers.map((member) => {
+                  const badgeClass = statusBadgeClass[member.status] ?? 'bg-slate-100 text-slate-600';
+                  return (
+                    <tr key={member.id} className="hover:bg-slate-50/60">
+                      <td className="py-3 font-medium text-slate-900">
+                        {member.firstName} {member.lastName1} {member.lastName2}
+                      </td>
+                      <td className="py-3 text-slate-600">{member.email}</td>
+                      <td className="py-3 text-slate-600">
+                        <span className="block text-slate-900">{member.professionalCategory}</span>
+                        <span className="text-xs text-slate-500">{member.jobTitle}</span>
+                      </td>
+                      <td className="py-3 text-slate-600">{member.organization}</td>
+                      <td className="py-3 text-slate-600">
+                        {membershipTypeLabel[member.membershipType] ?? member.membershipType}
+                      </td>
+                      <td className="py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}>
+                          {memberStatusLabel[member.status] ?? member.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-slate-600">{formatIsoDate(member.paidUntil)}</td>
+                      <td className="py-3 text-right">
+                        <Link
+                          to={`/admin/socios/${member.id}`}
+                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-50"
+                        >
+                          Ver
+                          <ChevronRight size={13} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 export function AdminMemberDetailPage() {
-  const params = useParams();
-  return <PlaceholderPage title={`Ficha socio ${params.memberId ?? ''}`.trim()} />;
+  const { memberId } = useParams<{ memberId: string }>();
+  const member = mockMembers.find((m) => m.id === memberId);
+
+  if (!member) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="space-y-4">
+          <h1 className="font-serif text-2xl font-light text-slate-900">Socio no encontrado</h1>
+          <p className="text-sm text-slate-600">
+            No existe ningún socio con el identificador indicado.
+          </p>
+          <Link
+            to="/admin/socios"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            <ChevronLeft size={14} />
+            Volver a socios
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  const reducedFeeReasonLabel: Record<NonNullable<ReducedFeeReason>, string> = {
+    resident: 'Residente',
+    student: 'Estudiante',
+    retired: 'Jubilado/a',
+  };
+
+  const badgeClass = statusBadgeClass[member.status] ?? 'bg-slate-100 text-slate-600';
+  const fullName = `${member.firstName} ${member.lastName1} ${member.lastName2}`;
+
+  return (
+    <div className="space-y-8">
+      {/* Link de vuelta */}
+      <Link
+        to="/admin/socios"
+        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+      >
+        <ChevronLeft size={14} />
+        Volver a socios
+      </Link>
+
+      {/* Cabecera */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-teal-700">Ficha administrativa</p>
+            <h1 className="mt-2 font-serif text-3xl font-light text-slate-900">{fullName}</h1>
+            <p className="mt-1 text-sm text-slate-500">{member.organization}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${badgeClass}`}>
+              {memberStatusLabel[member.status] ?? member.status}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              {membershipTypeLabel[member.membershipType] ?? member.membershipType}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Datos personales / profesionales + Membresía */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Datos personales / profesionales */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <User size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Datos personales y profesionales</h2>
+          </div>
+          <dl className="mt-6 space-y-4 text-sm">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Email</dt>
+              <dd className="mt-0.5 text-slate-700">{member.email}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Teléfono</dt>
+              <dd className="mt-0.5 text-slate-700">{member.phone}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría profesional</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">{member.professionalCategory}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Puesto</dt>
+              <dd className="mt-0.5 text-slate-700">{member.jobTitle}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Organización</dt>
+              <dd className="mt-0.5 text-slate-700">{member.organization}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Vínculo con calidad y seguridad</dt>
+              <dd className="mt-0.5 leading-relaxed text-slate-700">{member.qualitySafetyLink}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Membresía */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <ShieldCheck size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Membresía</h2>
+          </div>
+          <dl className="mt-6 space-y-4 text-sm">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Fecha de alta</dt>
+              <dd className="mt-0.5 text-slate-700">{formatIsoDate(member.joinedAt)}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Estado</dt>
+              <dd className="mt-0.5">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}>
+                  {memberStatusLabel[member.status] ?? member.status}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo de cuota</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">
+                {membershipTypeLabel[member.membershipType] ?? member.membershipType}
+              </dd>
+            </div>
+            {member.membershipType === 'reduced' && member.reducedFeeReason && (
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Motivo cuota reducida</dt>
+                <dd className="mt-0.5 text-slate-700">{reducedFeeReasonLabel[member.reducedFeeReason as NonNullable<ReducedFeeReason>]}</dd>
+              </div>
+            )}
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Vigencia</dt>
+              <dd className="mt-0.5 text-slate-700">
+                {member.paidUntil ? `Válido hasta ${formatIsoDate(member.paidUntil)}` : 'Sin vigencia registrada'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Último pago</dt>
+              <dd className="mt-0.5 text-slate-700">
+                {member.lastPaymentDate
+                  ? `${formatIsoDate(member.lastPaymentDate)}${member.lastPaymentAmount !== null ? ` · ${member.lastPaymentAmount} €` : ''}`
+                  : '—'}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      {/* Consentimiento comunicación */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <Mail size={18} />
+          </div>
+          <h2 className="font-serif text-xl text-slate-900">Consentimiento comunicación</h2>
+        </div>
+        <div className="mt-5 flex items-start gap-3">
+          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-slate-300 bg-white">
+            {member.communicationConsent && <div className="h-3 w-3 rounded-sm bg-teal-700" />}
+          </div>
+          <p className="text-sm text-slate-700">
+            Acepta recibir comunicaciones de ACASPEX.
+            <span className="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              {member.communicationConsent ? 'Activado' : 'No activado'}
+            </span>
+          </p>
+        </div>
+      </section>
+
+      {/* Notas internas mock */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <FileText size={18} />
+          </div>
+          <h2 className="font-serif text-xl text-slate-900">Notas internas</h2>
+        </div>
+        <p className="mt-5 text-sm leading-relaxed text-slate-700">{member.notes}</p>
+      </section>
+
+      {/* Acciones visuales mock / deshabilitadas */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="font-serif text-xl text-slate-900">Acciones</h2>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <Search size={15} />
+            Revisar solicitud
+          </button>
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <CheckCircle size={15} />
+            Marcar como activo
+          </button>
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <RefreshCw size={15} />
+            Ver renovación
+          </button>
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <Edit size={15} />
+            Editar datos
+          </button>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export function AdminResourcesPage() {
-  return <PlaceholderPage title="Recursos" />;
+  const publishedCount = mockResources.filter((r) => r.status === 'published').length;
+  const draftCount = mockResources.filter((r) => r.status === 'draft').length;
+  const archivedCount = mockResources.filter((r) => r.status === 'archived').length;
+
+  return (
+    <div className="space-y-6">
+      <section>
+        <h1 className="font-serif text-2xl font-light text-slate-900">Recursos</h1>
+        <p className="mt-1 text-sm text-slate-500">Gestión mock del Centro de Conocimiento.</p>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Publicados</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900">{publishedCount}</p>
+        </div>
+        <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Borradores</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900">{draftCount}</p>
+        </div>
+        <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Archivados</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900">{archivedCount}</p>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[48rem] text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                <th className="pb-3 font-medium">Título</th>
+                <th className="pb-3 font-medium">Categoría</th>
+                <th className="pb-3 font-medium">Tipo</th>
+                <th className="pb-3 font-medium">Estado</th>
+                <th className="pb-3 font-medium">Fecha</th>
+                <th className="pb-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {mockResources.map((resource) => {
+                const statusBadge = resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600';
+                return (
+                  <tr key={resource.id} className="hover:bg-slate-50/60">
+                    <td className="py-3 font-medium text-slate-900">{resource.title}</td>
+                    <td className="py-3 text-slate-600">{categoryLabel[resource.category] ?? resource.category}</td>
+                    <td className="py-3 text-slate-600">{typeLabel[resource.type] ?? resource.type}</td>
+                    <td className="py-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
+                        {resourceStatusLabel[resource.status] ?? resource.status}
+                      </span>
+                    </td>
+                    <td className="py-3 text-slate-600">
+                      {resource.publishedAt ? resource.publishedAt.split('-').reverse().join('/') : '—'}
+                    </td>
+                    <td className="py-3 text-right">
+                      <Link
+                        to={`/admin/recursos/${resource.id}`}
+                        className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-50"
+                      >
+                        Editar
+                        <ChevronRight size={13} />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export function AdminResourceEditorPage() {
-  const params = useParams();
-  return <PlaceholderPage title={`Editar recurso ${params.resourceId ?? ''}`.trim()} />;
+  const { resourceId } = useParams<{ resourceId: string }>();
+  const resource = mockResources.find((r) => r.id === resourceId);
+
+  if (!resource) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="space-y-4">
+          <h1 className="font-serif text-2xl font-light text-slate-900">Recurso no encontrado</h1>
+          <p className="text-sm text-slate-600">
+            No existe ningún recurso con el identificador indicado.
+          </p>
+          <Link
+            to="/admin/recursos"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            <ChevronLeft size={14} />
+            Volver a recursos
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  const statusBadge = resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600';
+
+  return (
+    <div className="space-y-8">
+      <Link
+        to="/admin/recursos"
+        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+      >
+        <ChevronLeft size={14} />
+        Volver a recursos
+      </Link>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-teal-700">Recurso</p>
+            <h1 className="mt-2 font-serif text-3xl font-light text-slate-900">{resource.title}</h1>
+            <p className="mt-1 text-sm text-slate-500">{resource.subtitle}</p>
+          </div>
+          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statusBadge}`}>
+            {resourceStatusLabel[resource.status] ?? resource.status}
+          </span>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="font-serif text-xl text-slate-900">Detalles del recurso</h2>
+        <dl className="mt-6 grid gap-6 sm:grid-cols-2">
+          <div>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Título</dt>
+            <dd className="mt-0.5 text-sm text-slate-900">{resource.title}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría</dt>
+            <dd className="mt-0.5 text-sm text-slate-700">{categoryLabel[resource.category] ?? resource.category}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo</dt>
+            <dd className="mt-0.5 text-sm text-slate-700">{typeLabel[resource.type] ?? resource.type}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Estado</dt>
+            <dd className="mt-0.5">
+              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
+                {resourceStatusLabel[resource.status] ?? resource.status}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Fecha de publicación</dt>
+            <dd className="mt-0.5 text-sm text-slate-700">
+              {resource.publishedAt ? resource.publishedAt.split('-').reverse().join('/') : '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Nivel de acceso</dt>
+            <dd className="mt-0.5">
+              <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
+                Socios
+              </span>
+            </dd>
+          </div>
+        </dl>
+
+        <div className="mt-6 border-t border-slate-100 pt-6">
+          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Descripción</dt>
+          <dd className="mt-0.5 text-sm leading-relaxed text-slate-700">{resource.description}</dd>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="font-serif text-xl text-slate-900">Edición mock</h2>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="resource-title" className="block text-xs font-medium text-slate-500">
+              Título
+            </label>
+            <input
+              id="resource-title"
+              type="text"
+              defaultValue={resource.title}
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+            />
+          </div>
+          <div>
+            <label htmlFor="resource-subtitle" className="block text-xs font-medium text-slate-500">
+              Subtítulo
+            </label>
+            <input
+              id="resource-subtitle"
+              type="text"
+              defaultValue={resource.subtitle}
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+            />
+          </div>
+          <div>
+            <label htmlFor="resource-category" className="block text-xs font-medium text-slate-500">
+              Categoría
+            </label>
+            <select
+              id="resource-category"
+              defaultValue={resource.category}
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+            >
+              {Object.entries(categoryLabel).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="resource-type" className="block text-xs font-medium text-slate-500">
+              Tipo
+            </label>
+            <select
+              id="resource-type"
+              defaultValue={resource.type}
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+            >
+              {Object.entries(typeLabel).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="resource-description" className="block text-xs font-medium text-slate-500">
+              Descripción
+            </label>
+            <textarea
+              id="resource-description"
+              rows={4}
+              defaultValue={resource.description}
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-lg border border-amber-100 bg-amber-50/60 p-4">
+          <p className="text-sm text-amber-800/80">
+            Gestión mock — sin guardado real.
+          </p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+const renewalStateLabel: Record<RenewalItem['renewalState'], string> = {
+  upcoming: 'Próxima',
+  expired: 'Expirada',
+  not_applicable: 'No aplicable',
+};
+
+const renewalStateBadgeClass: Record<RenewalItem['renewalState'], string> = {
+  upcoming: 'bg-amber-100 text-amber-700',
+  expired: 'bg-red-100 text-red-700',
+  not_applicable: 'bg-slate-100 text-slate-600',
+};
+
+type RenewalSectionProps = {
+  title: string;
+  count: number;
+  items: RenewalItem[];
+};
+
+function RenewalSection({ title, count, items }: RenewalSectionProps) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-lg text-slate-900">{title}</h2>
+        <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-medium text-slate-700">
+          {count}
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-500">No hay socios en este grupo.</p>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[44rem] text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                <th className="pb-3 font-medium">Socio</th>
+                <th className="pb-3 font-medium">Estado</th>
+                <th className="pb-3 font-medium">Tipo cuota</th>
+                <th className="pb-3 font-medium">Vigencia</th>
+                <th className="pb-3 font-medium">Último pago</th>
+                <th className="pb-3 font-medium">Renovación</th>
+                <th className="pb-3 font-medium text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {items.map((renewal) => {
+                const member = mockMembers.find((m) => m.id === renewal.memberId);
+                const statusLabel = memberStatusLabel[renewal.status] ?? renewal.status;
+                const statusClass = statusBadgeClass[renewal.status] ?? 'bg-slate-100 text-slate-600';
+                const renewalLabel = renewalStateLabel[renewal.renewalState];
+                const renewalClass = renewalStateBadgeClass[renewal.renewalState];
+                const lastPayment =
+                  member?.lastPaymentDate && member.lastPaymentAmount != null
+                    ? `${formatIsoDate(member.lastPaymentDate)} · ${member.lastPaymentAmount}€`
+                    : '—';
+
+                return (
+                  <tr key={renewal.memberId} className="text-slate-700">
+                    <td className="py-3 pr-3">
+                      <Link
+                        to={`/admin/socios/${renewal.memberId}`}
+                        className="font-medium text-slate-900 hover:text-teal-700"
+                      >
+                        {renewal.fullName}
+                      </Link>
+                    </td>
+                    <td className="py-3 pr-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-3">
+                      {member ? membershipTypeLabel[member.membershipType] : '—'}
+                    </td>
+                    <td className="py-3 pr-3">{formatIsoDate(renewal.paidUntil)}</td>
+                    <td className="py-3 pr-3">{lastPayment}</td>
+                    <td className="py-3 pr-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${renewalClass}`}>
+                        {renewalLabel}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 opacity-60 cursor-not-allowed"
+                        >
+                          <Eye size={12} />
+                          Ver socio
+                        </button>
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 opacity-60 cursor-not-allowed"
+                        >
+                          <CheckCircle size={12} />
+                          Marcar seguimiento
+                        </button>
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 opacity-60 cursor-not-allowed"
+                        >
+                          <Mail size={12} />
+                          Enviar recordatorio mock
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
 }
 
 export function AdminRenewalsPage() {
-  return <PlaceholderPage title="Renovaciones" />;
+  const upcoming = mockRenewals.filter((r) => r.renewalState === 'upcoming');
+  const expired = mockRenewals.filter((r) => r.renewalState === 'expired');
+  const notApplicable = mockRenewals.filter((r) => r.renewalState === 'not_applicable');
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <h1 className="font-serif text-2xl font-light text-slate-900">Renovaciones</h1>
+        <p className="mt-1 text-sm text-slate-500">Seguimiento mock de cuotas y vigencias.</p>
+      </section>
+
+      <RenewalSection title="Próximas renovaciones" count={upcoming.length} items={upcoming} />
+      <RenewalSection title="Cuotas expiradas" count={expired.length} items={expired} />
+      <RenewalSection title="Sin cuota aplicable / revisión" count={notApplicable.length} items={notApplicable} />
+    </div>
+  );
 }
