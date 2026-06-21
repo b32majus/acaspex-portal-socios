@@ -48,15 +48,15 @@ export function LoginPage() {
       <div className="relative hidden flex-col justify-between bg-teal-900 p-10 lg:p-16 text-white overflow-hidden lg:flex">
         {/* Fondo sutil: Puente de Alcántara */}
         <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.65]"
+          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.7]"
           style={{ backgroundImage: `url(${assetBase}assets/acaspex/puente-alcantara.jpg)` }}
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-teal-900/25 via-teal-900/35 to-teal-900/60" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-teal-900/15 via-teal-900/25 to-teal-900/50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-teal-800/30 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-teal-800/30 to-transparent" />
 
         <div className="relative z-10">
-          <div className="mb-5 inline-block rounded-xl bg-white/95 px-3 pt-2 pb-3.5 shadow-sm backdrop-blur-[2px]">
+          <div className="mb-5 inline-block rounded-xl bg-white/95 px-3 pt-1.5 pb-4 shadow-sm backdrop-blur-[2px]">
             <img
               src={`${assetBase}assets/acaspex/logo-horizontal.jpg`}
               alt="ACASPEX"
@@ -64,7 +64,7 @@ export function LoginPage() {
             />
           </div>
           <h2 className="font-serif text-3xl lg:text-4xl font-light tracking-tight">ACASPEX</h2>
-          <p className="mt-2 text-sm text-teal-100/80">Asociación de Calidad Asistencial y Seguridad del Paciente</p>
+          <p className="mt-2 text-sm text-white/85">Asociación de Calidad Asistencial y Seguridad del Paciente</p>
         </div>
 
         <div className="relative z-10 space-y-4">
@@ -74,7 +74,7 @@ export function LoginPage() {
           </h3>
         </div>
 
-        <p className="relative z-10 text-xs text-teal-200/70">
+        <p className="relative z-10 text-xs text-white/70">
           Calidad asistencial · Seguridad del paciente · Comunidad profesional
         </p>
       </div>
