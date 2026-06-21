@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   BookOpen,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { mockMembers } from '../data/mockMembers';
 import { mockResources } from '../data/mockResources';
+import { cn } from '../lib/utils';
 
 type PlaceholderPageProps = {
   title: string;
@@ -39,25 +41,82 @@ function PlaceholderPage({ title }: PlaceholderPageProps) {
 
 export function LoginPage() {
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <section className="relative mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
-        <h1 className="mt-2 text-3xl font-semibold">Acceso socios</h1>
-        <p className="mt-3 text-slate-600">Accede al area privada de socios de ACASPEX.</p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link className="rounded-full bg-teal-700 px-5 py-3 text-center text-sm font-medium text-white" to="/socios">
-            Entrar como socio
-          </Link>
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+      <div className="flex w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-lg">
+        <div className="hidden w-1/2 flex-col justify-between bg-teal-800 p-10 text-white lg:flex">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-wide text-teal-200">ACASPEX</p>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold leading-tight">Portal privado de socios</h2>
+            <p className="text-sm leading-relaxed text-teal-100">
+              ACASPEX impulsa una comunidad comprometida con la calidad asistencial y la seguridad del paciente. Este espacio reúne materiales, formación y herramientas para acompañar ese trabajo compartido.
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-teal-300">Asociación de Calidad Asistencial y Seguridad del Paciente</p>
+          </div>
         </div>
-        <Link
-          to="/admin"
-          className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500"
-          title="Acceso administrador"
-          aria-label="Acceso administrador"
-        >
-          <Settings size={16} />
-        </Link>
-      </section>
+
+        <div className="relative w-full p-8 sm:p-12 lg:w-1/2">
+          <div className="mb-8 lg:hidden">
+            <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
+            <h2 className="mt-1 text-xl font-semibold text-slate-900">Portal privado de socios</h2>
+            <p className="mt-2 text-xs leading-relaxed text-slate-500">
+              ACASPEX impulsa una comunidad comprometida con la calidad asistencial y la seguridad del paciente.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">Acceso socios</h1>
+              <p className="mt-1 text-sm text-slate-500">Introduce tus datos para acceder al portal.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="login-email" className="block text-sm font-medium text-slate-700">
+                  Correo electrónico
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  placeholder="socio@ejemplo.com"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="login-password" className="block text-sm font-medium text-slate-700">
+                  Contraseña
+                </label>
+                <input
+                  id="login-password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
+            </div>
+
+            <Link
+              to="/socios"
+              className="block w-full rounded-full bg-teal-700 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            >
+              Entrar al portal
+            </Link>
+
+            <Link
+              to="/admin"
+              className="absolute bottom-3 right-3 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500"
+              title="Acceso administrador"
+              aria-label="Acceso administrador"
+            >
+              <Settings size={16} />
+            </Link>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
@@ -111,6 +170,37 @@ const statusBadgeClass: Record<string, string> = {
   cancelled: 'bg-red-50 text-red-500',
 };
 
+const visualTonePatterns: Record<string, React.CSSProperties> = {
+  formacion: {
+    backgroundImage: 'radial-gradient(circle, rgba(37,99,235,0.10) 0.5px, transparent 0.5px)',
+    backgroundSize: '8px 8px',
+  },
+  lean: {
+    backgroundImage: 'radial-gradient(circle, rgba(4,120,87,0.10) 0.5px, transparent 0.5px)',
+    backgroundSize: '8px 8px',
+  },
+  herramientas: {
+    backgroundImage: 'radial-gradient(circle, rgba(13,148,136,0.10) 0.5px, transparent 0.5px)',
+    backgroundSize: '8px 8px',
+  },
+  actas: {
+    backgroundImage: 'radial-gradient(circle, rgba(180,83,9,0.10) 0.5px, transparent 0.5px)',
+    backgroundSize: '8px 8px',
+  },
+  videos: {
+    backgroundImage: 'radial-gradient(circle, rgba(109,40,217,0.10) 0.5px, transparent 0.5px)',
+    backgroundSize: '8px 8px',
+  },
+  corporativo: {
+    backgroundImage: 'radial-gradient(circle, rgba(51,65,85,0.10) 0.5px, transparent 0.5px)',
+    backgroundSize: '8px 8px',
+  },
+  alianzas: {
+    backgroundImage: 'radial-gradient(circle, rgba(190,18,60,0.10) 0.5px, transparent 0.5px)',
+    backgroundSize: '8px 8px',
+  },
+};
+
 const visualToneConfig: Record<
   string,
   { color: string; bg: string; icon: React.ComponentType<{ size?: number | string; className?: string }>; label: string }
@@ -131,6 +221,7 @@ type ResourceCardProps = {
 
 function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
   const tone = visualToneConfig[resource.visualTone] ?? visualToneConfig.corporativo;
+  const pattern = visualTonePatterns[resource.visualTone] ?? visualTonePatterns.corporativo;
   const ToneIcon = tone.icon;
 
   return (
@@ -144,9 +235,11 @@ function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
               className="h-full w-full rounded-t-xl object-cover"
             />
           ) : (
-            <div className={`flex h-full w-full flex-col items-center justify-center ${tone.bg}`}>
-              <ToneIcon size={32} className={tone.color} />
-              <span className={`mt-1.5 text-xs font-medium ${tone.color}`}>{tone.label}</span>
+            <div className={`flex h-full w-full flex-col items-center justify-center ${tone.bg}`} style={pattern}>
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-white/60`}>
+                <ToneIcon size={24} className={tone.color} />
+              </div>
+              <span className={`mt-2 text-xs font-medium ${tone.color}`}>{tone.label}</span>
             </div>
           )}
         </div>
@@ -191,7 +284,7 @@ export function MemberHomePage() {
 
   if (!member) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
         <p className="text-slate-600">Socio no encontrado.</p>
       </section>
     );
@@ -203,123 +296,121 @@ export function MemberHomePage() {
     : member.status.charAt(0).toUpperCase() + member.status.slice(1);
 
   return (
-    <div className="space-y-8">
-      {/* Section 1 — Hero + membresía lateral */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
-            <p className="mt-3 text-2xl font-semibold text-slate-900">Hola, {member.firstName}</p>
-            <h1 className="mt-1 text-xl font-semibold text-slate-800">Bienvenida al área de socios de ACASPEX</h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Tu espacio privado con recursos, formación y herramientas para impulsar la calidad asistencial y la seguridad del paciente.
-            </p>
-          </div>
-          <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50/80 p-4 lg:w-56">
-            <div className="flex items-center gap-2">
-              <User size={16} className="text-teal-700" />
-              <span className="text-sm font-semibold text-slate-900">Tu membresía</span>
-            </div>
-            <div className="mt-2 space-y-1 text-xs text-slate-600">
-              <p>{member.firstName} {member.lastName1} {member.lastName2}</p>
-              <p>Tipo: {member.membershipType === 'general' ? 'General' : 'Reducida'}</p>
-              <p>Vence: {member.paidUntil ? member.paidUntil.split('-').reverse().join('/') : '—'}</p>
-            </div>
-            <span className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}>
+    <div className="space-y-10">
+      {/* Section 1 — Hero */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-800 to-teal-700 p-8 text-white shadow-md sm:p-10 lg:p-12">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-sm font-medium uppercase tracking-wide text-teal-200">ACASPEX</p>
+          <p className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl">Hola, {member.firstName}</p>
+          <h1 className="mt-2 text-xl font-light leading-relaxed text-teal-100 sm:text-2xl">
+            Bienvenida al área de socios
+          </h1>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-teal-100">
+            Tu espacio privado con recursos, formación y herramientas para impulsar la calidad asistencial y la seguridad del paciente.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${badgeClass}`}>
               {statusLabel}
             </span>
-            <div className="mt-3">
-              <Link
-                to="/socios/mi-cuenta"
-                className="inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:text-teal-800"
-              >
-                Ver mi cuenta
-                <ChevronRight size={12} />
-              </Link>
-            </div>
+            <span className="text-xs text-teal-200">
+              Membresía {member.membershipType === 'general' ? 'general' : 'reducida'} · Vence{' '}
+              {member.paidUntil ? member.paidUntil.split('-').reverse().join('/') : '—'}
+            </span>
           </div>
         </div>
+        <div className="pointer-events-none absolute -right-8 -top-8 h-56 w-56 rounded-full bg-teal-600/20" />
+        <div className="pointer-events-none absolute -bottom-10 right-20 h-40 w-40 rounded-full bg-teal-600/15" />
       </section>
 
       {/* Section 2 — Qué encontrarás aquí */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <section>
         <h2 className="text-lg font-semibold text-slate-900">Qué encontrarás aquí</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Link
+            to="/socios/recursos"
+            className="group rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
+          >
             <BookOpen size={24} className="text-teal-700" />
-            <h3 className="mt-2 text-sm font-semibold text-slate-900">Biblioteca de recursos</h3>
-            <p className="mt-1 text-xs text-slate-600">Guías, plantillas y materiales descargables validados por ACASPEX.</p>
-          </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Biblioteca de recursos</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Guías, plantillas y materiales validados por ACASPEX.</p>
+          </Link>
+          <Link
+            to="/socios/recursos"
+            className="group rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
+          >
             <Video size={24} className="text-teal-700" />
-            <h3 className="mt-2 text-sm font-semibold text-slate-900">Formación y metodología</h3>
-            <p className="mt-1 text-xs text-slate-600">Grabaciones, presentaciones y contenidos formativos para socios.</p>
-          </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Formación y metodología</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Grabaciones, presentaciones y contenidos formativos para socios.</p>
+          </Link>
+          <Link
+            to="/socios/recursos"
+            className="group rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
+          >
             <FileText size={24} className="text-teal-700" />
-            <h3 className="mt-2 text-sm font-semibold text-slate-900">Materiales corporativos</h3>
-            <p className="mt-1 text-xs text-slate-600">Documentos institucionales, modelos y recursos de representación.</p>
-          </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Materiales corporativos</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Documentos institucionales, modelos y recursos de representación.</p>
+          </Link>
+          <Link
+            to="/socios"
+            className="group rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
+          >
             <Users size={24} className="text-teal-700" />
-            <h3 className="mt-2 text-sm font-semibold text-slate-900">Comunidad</h3>
-            <p className="mt-1 text-xs text-slate-600">Conecta con otros socios, participa en grupos y mantente al día.</p>
-          </div>
+            <h3 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-teal-800">Comunidad</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">Conecta con otros socios, participa en grupos y mantente al día.</p>
+          </Link>
         </div>
       </section>
 
-      {/* Section 3 — Acceso destacado a biblioteca */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-            <BookOpen size={20} />
+      {/* Section 3 — Recursos destacados */}
+      <section>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Recursos destacados</h2>
+            <p className="mt-1 text-sm text-slate-600">Últimos materiales publicados para la comunidad ACASPEX.</p>
           </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-slate-900">Biblioteca de recursos</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Consulta guías, plantillas, grabaciones y materiales preparados para socios.
-            </p>
-            <div className="mt-4">
-              <Link
-                to="/socios/recursos"
-                className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
-              >
-                Ir a biblioteca
-                <ChevronRight size={16} />
-              </Link>
-            </div>
-          </div>
+          <Link
+            to="/socios/recursos"
+            className="hidden shrink-0 items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800 sm:inline-flex"
+          >
+            Ver biblioteca
+            <ChevronRight size={14} />
+          </Link>
         </div>
-      </section>
-
-      {/* Section 4 — Recursos recientes */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900">Últimos recursos publicados</h2>
 
         {publishedResources.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6">
             <p className="text-sm text-slate-600">
               Aún no hay recursos publicados. Próximamente encontrarás aquí materiales para socios.
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {publishedResources.map((resource) => (
               <ResourceCard key={resource.id} resource={resource} />
             ))}
           </div>
         )}
+
+        <div className="mt-5 sm:hidden">
+          <Link
+            to="/socios/recursos"
+            className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
+          >
+            Ver biblioteca completa
+            <ChevronRight size={16} />
+          </Link>
+        </div>
       </section>
 
-      {/* Section 5 — Comunidad ACASPEX */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      {/* Section 4 — Comunidad ACASPEX */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
         <div className="flex items-start gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
             <Users size={20} />
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold text-slate-900">Comunidad ACASPEX</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
               Forma parte activa de la comunidad ACASPEX. Conecta con otros socios, comparte experiencias y accede a canales exclusivos de comunicación.
             </p>
             <div className="mt-4 space-y-2">
@@ -356,8 +447,8 @@ export function MemberHomePage() {
         </div>
       </section>
 
-      {/* Section 6 — Mensaje institucional ACASPEX */}
-      <section className="rounded-2xl border border-teal-100 bg-teal-50/50 p-6 shadow-sm sm:p-8">
+      {/* Section 5 — Mensaje institucional ACASPEX */}
+      <section className="rounded-2xl border border-teal-100 bg-teal-50/50 p-6 sm:p-8">
         <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
         <p className="mt-2 text-sm leading-relaxed text-slate-700">
           ACASPEX impulsa una comunidad comprometida con la calidad asistencial y la seguridad del paciente. Este espacio reúne materiales, formación y herramientas para acompañar ese trabajo compartido.
@@ -368,21 +459,41 @@ export function MemberHomePage() {
 }
 
 export function MemberLibraryPage() {
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
   const publishedResources = mockResources
     .filter((r) => r.status === 'published' && r.id !== 'res-004')
     .sort((a, b) => (b.publishedAt!).localeCompare(a.publishedAt!));
 
   const featuredResources = publishedResources.filter((r) => r.featured === true);
 
-  const sections = visualToneOrder.map((tone) => ({
-    tone,
-    label: visualToneLabel[tone] ?? tone,
-    resources: publishedResources.filter((r) => r.visualTone === tone),
-  }));
+  const sectionCounts: Record<string, number> = {};
+  for (const tone of visualToneOrder) {
+    sectionCounts[tone] = publishedResources.filter((r) => r.visualTone === tone).length;
+  }
 
-  const renderResourceCard = (resource: (typeof publishedResources)[number]) => (
-    <ResourceCard key={resource.id} resource={resource} />
-  );
+  const filteredResources = activeSection
+    ? publishedResources.filter((r) => r.visualTone === activeSection)
+    : publishedResources;
+
+  const activeLabel = activeSection ? (visualToneLabel[activeSection] ?? activeSection) : null;
+  const activeConfig = activeSection ? visualToneConfig[activeSection] : null;
+
+  const sidebarButtonClass = (isActive: boolean) =>
+    cn(
+      'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors',
+      isActive
+        ? 'bg-teal-50 text-teal-700'
+        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+    );
+
+  const mobileTabClass = (isActive: boolean) =>
+    cn(
+      'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap',
+      isActive
+        ? 'bg-teal-700 text-white'
+        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+    );
 
   return (
     <div className="space-y-8">
@@ -404,25 +515,131 @@ export function MemberLibraryPage() {
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-slate-900">Destacados</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredResources.map(renderResourceCard)}
+            {featuredResources.map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} />
+            ))}
           </div>
         </section>
       )}
 
-      {sections.map((section) => (
-        <section key={section.tone} className="space-y-4">
-          <h2 className="text-lg font-semibold text-slate-900">{section.label}</h2>
-          {section.resources.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm text-slate-600">Próximamente: {section.label}</p>
+      <div className="lg:flex lg:gap-8">
+        <aside className="hidden lg:block lg:w-56 lg:shrink-0">
+          <nav className="sticky top-8 space-y-0.5">
+            <button
+              type="button"
+              onClick={() => setActiveSection(null)}
+              className={sidebarButtonClass(activeSection === null)}
+            >
+              <BookOpen size={16} />
+              <span className="flex-1">Todos los recursos</span>
+              <span className="text-xs tabular-nums text-slate-400">
+                {publishedResources.length}
+              </span>
+            </button>
+
+            {visualToneOrder.map((tone) => {
+              const config = visualToneConfig[tone];
+              const Icon = config.icon;
+              const count = sectionCounts[tone] ?? 0;
+              const isActive = activeSection === tone;
+              return (
+                <button
+                  key={tone}
+                  type="button"
+                  onClick={() => setActiveSection(tone)}
+                  className={sidebarButtonClass(isActive)}
+                >
+                  <Icon size={16} className={isActive ? 'text-teal-700' : 'text-slate-400'} />
+                  <span className="flex-1">{config.label}</span>
+                  {count > 0 && (
+                    <span className="text-xs tabular-nums text-slate-400">{count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          <div className="mb-5 lg:hidden">
+            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
+              <button
+                type="button"
+                onClick={() => setActiveSection(null)}
+                className={mobileTabClass(activeSection === null)}
+              >
+                Todos
+              </button>
+              {visualToneOrder.map((tone) => {
+                const config = visualToneConfig[tone];
+                const isActive = activeSection === tone;
+                return (
+                  <button
+                    key={tone}
+                    type="button"
+                    onClick={() => setActiveSection(tone)}
+                    className={mobileTabClass(isActive)}
+                  >
+                    {config.label}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+
+          {activeSection ? (
+            <section className="space-y-4">
+              {activeConfig && (
+                <div className="flex items-center gap-2.5">
+                  {(() => {
+                    const Icon = activeConfig.icon;
+                    return <Icon size={20} className="text-teal-700" />;
+                  })()}
+                  <h2 className="text-lg font-semibold text-slate-900">{activeLabel}</h2>
+                </div>
+              )}
+              {filteredResources.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <p className="text-sm text-slate-600">Próximamente: {activeLabel}</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {filteredResources.map((resource) => (
+                    <ResourceCard key={resource.id} resource={resource} />
+                  ))}
+                </div>
+              )}
+            </section>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {section.resources.map(renderResourceCard)}
+            <div className="space-y-8">
+              {visualToneOrder.map((tone) => {
+                const config = visualToneConfig[tone];
+                const Icon = config.icon;
+                const sectionResources = publishedResources.filter((r) => r.visualTone === tone);
+                return (
+                  <section key={tone} className="space-y-4">
+                    <div className="flex items-center gap-2.5">
+                      <Icon size={20} className="text-teal-700" />
+                      <h2 className="text-lg font-semibold text-slate-900">{config.label}</h2>
+                    </div>
+                    {sectionResources.length === 0 ? (
+                      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <p className="text-sm text-slate-600">Próximamente: {config.label}</p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {sectionResources.map((resource) => (
+                          <ResourceCard key={resource.id} resource={resource} />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
             </div>
           )}
-        </section>
-      ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -474,11 +691,14 @@ export function MemberResourceDetailPage() {
         ) : (
           (() => {
             const tone = visualToneConfig[resourceItem.visualTone] ?? visualToneConfig.corporativo;
+            const pattern = visualTonePatterns[resourceItem.visualTone] ?? visualTonePatterns.corporativo;
             const ToneIcon = tone.icon;
             return (
-              <div className={`flex aspect-video w-full flex-col items-center justify-center ${tone.bg}`}>
-                <ToneIcon size={40} className={tone.color} />
-                <span className={`mt-2 text-sm font-medium ${tone.color}`}>{tone.label}</span>
+              <div className={`flex aspect-video w-full flex-col items-center justify-center ${tone.bg}`} style={pattern}>
+                <div className={`flex h-16 w-16 items-center justify-center rounded-full bg-white/60`}>
+                  <ToneIcon size={32} className={tone.color} />
+                </div>
+                <span className={`mt-3 text-sm font-medium ${tone.color}`}>{tone.label}</span>
               </div>
             );
           })()

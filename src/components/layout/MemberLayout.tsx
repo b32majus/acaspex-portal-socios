@@ -3,7 +3,6 @@ import { Link, Outlet } from 'react-router-dom';
 const memberLinks = [
   { label: 'Inicio', to: '/socios' },
   { label: 'Biblioteca', to: '/socios/recursos' },
-  { label: 'Mi cuenta', to: '/socios/mi-cuenta' },
 ];
 
 export function MemberLayout() {

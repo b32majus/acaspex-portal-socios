@@ -18,6 +18,12 @@ Scaffold inicial mock con rutas placeholder y datos ficticios tipados. Sin backe
 
 Build validado correctamente tras scaffold y rutas placeholder el 2026-06-20.
 
+## Dirección visual activa
+
+La referencia visual principal para las siguientes WOs es Propuesta 2, documentada en docs/visual-direction-propuesta-2-20260621.md.
+
+Propuesta 1 queda como referencia secundaria solo para mantener luminosidad, claridad y algunos patrones de biblioteca.
+
 ## Documentos vivos
 
 Leer en este orden al retomar el proyecto:

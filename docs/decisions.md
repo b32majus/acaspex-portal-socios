@@ -28,6 +28,10 @@ PDFs, plantillas y documentos sencillos pueden almacenarse en Supabase Storage, 
 
 GitHub se usará para control de versiones. El hosting preferente queda pendiente entre Cloudflare Pages y Netlify.
 
+### D007 — Dirección visual basada en Propuesta 2
+
+La referencia visual principal para la evolución del portal es la Propuesta 2 (documentada en docs/visual-direction-propuesta-2-20260621.md). Propuesta 1 queda como referencia secundaria solo para mantener luminosidad, claridad y patrones de biblioteca. La dirección busca un microsite privado premium con sensación institucional, editorial y sanitaria, acento teal/verde petróleo, y menor dependencia del patrón card-heavy.
+
 ## Decisiones pendientes
 
 1. Importe y periodicidad de cuota.
@@ -35,8 +39,7 @@ GitHub se usará para control de versiones. El hosting preferente queda pendient
 3. Método de validación de pago en MVP.
 4. Renovación manual o automatizada.
 5. Hosting frontend.
-6. Sistema visual/UI.
-7. Roles internos.
+6. Roles internos.
 8. Emails oficiales de soporte y privacidad.
 9. Importación desde Microsoft Forms/Excel.
 10. Texto legal/RGPD.
