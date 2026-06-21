@@ -10,6 +10,7 @@ const memberLinks = [
 
 export function MemberLayout() {
   const location = useLocation();
+  const assetBase = import.meta.env.BASE_URL;
   const avatarMenuRef = useRef<HTMLDetailsElement>(null);
 
   const closeDropdown = () => {
@@ -24,7 +25,7 @@ export function MemberLayout() {
         <div className="mx-auto max-w-6xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/acaspex/logo-burbuja.jpg"
+              src={`${assetBase}assets/acaspex/logo-burbuja.jpg`}
               alt="ACASPEX"
               className="h-9 w-auto rounded-lg object-contain bg-teal-800/40 ring-1 ring-white/10"
             />

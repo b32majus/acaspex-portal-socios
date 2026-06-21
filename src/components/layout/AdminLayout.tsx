@@ -9,6 +9,7 @@ const adminLinks = [
 
 export function AdminLayout() {
   const location = useLocation();
+  const assetBase = import.meta.env.BASE_URL;
 
   const isActive = (to: string) => {
     if (to === '/admin') return location.pathname === '/admin';
@@ -21,7 +22,7 @@ export function AdminLayout() {
         <aside className="border-b border-slate-200 bg-white md:w-64 md:flex-shrink-0 md:border-b-0 md:border-r">
           <div className="px-5 pt-5 pb-3 md:px-6 md:pt-6 md:pb-4">
             <img
-              src="/assets/acaspex/logo-burbuja.jpg"
+              src={`${assetBase}assets/acaspex/logo-burbuja.jpg`}
               alt="ACASPEX"
               className="mb-2 h-12 w-auto max-w-full object-contain"
             />
