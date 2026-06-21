@@ -15,6 +15,7 @@ import {
   Lightbulb,
   Mail,
   MessageCircle,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
@@ -24,7 +25,7 @@ import {
   Video,
   Wrench,
 } from 'lucide-react';
-import { mockMembers } from '../data/mockMembers';
+import { mockMembers, mockSocioDashboard } from '../data/mockMembers';
 import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel } from '../data/mockProjects';
 import { mockResources } from '../data/mockResources';
 import { cn } from '../lib/utils';
@@ -126,16 +127,12 @@ export function LoginPage() {
 }
 
 const categoryLabel: Record<string, string> = {
+  calidad: 'Calidad asistencial',
+  seguridad: 'Seguridad del paciente',
+  investigacion: 'Investigación',
   formacion: 'Formación',
-  guias: 'Guías',
   herramientas: 'Herramientas',
-  jornadas: 'Jornadas',
-  plantillas: 'Plantillas',
-  lean: 'Metodología Lean',
-  actas: 'Actas',
-  videos: 'Vídeos',
-  corporativo: 'Corporativo',
-  alianzas: 'Alianzas',
+  corporativo: 'Material corporativo',
 };
 
 const typeLabel: Record<string, string> = {
@@ -218,59 +215,216 @@ const visualToneConfig: Record<
   alianzas: { color: 'text-rose-700', bg: 'bg-rose-50', icon: Handshake, label: 'Alianzas' },
 };
 
+const typeIconMap: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
+  pdf: FileText,
+  video: Video,
+  template: ClipboardList,
+  link: Globe,
+  presentation: BookOpen,
+};
+
+type MockCoverProps = {
+  resource: (typeof mockResources)[number];
+};
+
+function MockCover({ resource }: MockCoverProps) {
+  const { coverStyle, title, subtitle } = resource;
+
+  if (coverStyle === 'guia') {
+    return (
+      <div className="relative h-full w-full bg-gradient-to-br from-amber-50 via-orange-50/40 to-amber-50">
+        <div className="absolute left-0 top-0 h-full w-1.5 bg-amber-600/80" />
+        <div className="absolute left-3 top-4 text-[9px] font-semibold uppercase tracking-[0.2em] text-amber-700/70">
+          Guía
+        </div>
+        <div className="flex h-full flex-col justify-center px-7 py-6">
+          <h4 className="font-serif text-sm font-medium leading-snug text-slate-800">
+            {title}
+          </h4>
+          <div className="mt-3 h-px w-10 bg-amber-400/60" />
+          <p className="mt-2 text-[10px] leading-relaxed text-slate-500 line-clamp-2">
+            {subtitle}
+          </p>
+        </div>
+        <div className="absolute bottom-0 right-0 h-12 w-12 rounded-tl-2xl bg-amber-100/40" />
+      </div>
+    );
+  }
+
+  if (coverStyle === 'plantilla') {
+    return (
+      <div className="relative h-full w-full bg-white">
+        <div className="absolute right-0 top-0 h-full w-[38%] bg-slate-50" />
+        <div className="relative z-10 flex h-full flex-col justify-between p-5">
+          <div>
+            <div className="mb-3 h-1.5 w-14 rounded-full bg-blue-400/70" />
+            <div className="space-y-1.5">
+              <div className="h-1.5 w-full rounded bg-slate-100" />
+              <div className="h-1.5 w-4/5 rounded bg-slate-100" />
+              <div className="h-1.5 w-3/5 rounded bg-slate-100" />
+            </div>
+            <div className="mt-3 flex gap-1.5">
+              <div className="h-3.5 w-16 rounded border border-slate-200 bg-white" />
+              <div className="h-3.5 w-12 rounded border border-slate-200 bg-white" />
+              <div className="h-3.5 w-10 rounded border border-slate-200 bg-white" />
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <div className="h-1.5 w-3/4 rounded bg-slate-100" />
+              <div className="h-1.5 w-1/2 rounded bg-slate-100" />
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-[9px] font-medium uppercase tracking-wider text-blue-500/70">Plantilla</p>
+            <p className="text-[10px] leading-tight text-slate-500 line-clamp-2">
+              {title}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (coverStyle === 'video') {
+    return (
+      <div className="relative h-full w-full bg-gradient-to-br from-violet-900 via-slate-900 to-indigo-950">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/20 blur-2xl" />
+        </div>
+        <div className="absolute left-0 right-0 top-0 h-1 bg-violet-500/40" />
+        <div className="flex h-full flex-col items-center justify-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm ring-1 ring-white/10">
+            <div className="ml-0.5 h-0 w-0 border-b-[7px] border-l-[12px] border-t-[7px] border-b-transparent border-l-white border-t-transparent" />
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-5 pb-4 pt-8">
+          <p className="text-[11px] font-medium leading-snug text-white">{title}</p>
+          <div className="mt-1.5 flex items-center gap-2 text-[9px] text-white/50">
+            <span>HD</span>
+            <span className="h-1 w-1 rounded-full bg-white/30" />
+            <span>Vídeo</span>
+          </div>
+        </div>
+        <div className="absolute right-3 top-3 rounded bg-black/30 px-1.5 py-0.5 text-[9px] text-white/70">
+          ACASPEX
+        </div>
+      </div>
+    );
+  }
+
+  if (coverStyle === 'documento') {
+    return (
+      <div className="relative h-full w-full bg-white">
+        <div className="h-6 bg-teal-900 flex items-center px-3">
+          <span className="text-[9px] font-medium uppercase tracking-wider text-teal-100/80">PDF</span>
+          <span className="ml-auto text-[8px] text-teal-200/60">ACASPEX</span>
+        </div>
+        <div className="flex flex-col px-5 py-4">
+          <h4 className="font-serif text-sm font-medium leading-snug text-slate-800">
+            {title}
+          </h4>
+          <div className="mt-3 space-y-1.5">
+            <div className="h-1 w-full rounded bg-slate-100" />
+            <div className="h-1 w-full rounded bg-slate-100" />
+            <div className="h-1 w-4/5 rounded bg-slate-100" />
+            <div className="h-1 w-full rounded bg-slate-100" />
+            <div className="h-1 w-3/5 rounded bg-slate-100" />
+          </div>
+          <div className="mt-3 space-y-1.5">
+            <div className="h-1 w-full rounded bg-slate-100" />
+            <div className="h-1 w-2/3 rounded bg-slate-100" />
+          </div>
+        </div>
+        <div className="absolute bottom-3 right-4 text-[9px] text-slate-300">
+          {subtitle.length > 2 ? subtitle.slice(0, 40) + '…' : subtitle}
+        </div>
+      </div>
+    );
+  }
+
+  if (coverStyle === 'corporativo') {
+    return (
+      <div className="relative h-full w-full bg-teal-900 overflow-hidden">
+        <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-teal-700/30 blur-xl" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-teal-950/40 to-transparent" />
+        <div className="flex h-full flex-col justify-between p-5">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-teal-300/70">
+              ACASPEX
+            </p>
+            <div className="mt-1.5 h-px w-12 bg-teal-400/40" />
+          </div>
+          <div>
+            <h4 className="font-serif text-sm font-medium leading-snug text-white">
+              {title}
+            </h4>
+            <p className="mt-2 text-[10px] leading-relaxed text-teal-200/70 line-clamp-2">
+              {subtitle}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-0.5 flex-1 bg-teal-600/50" />
+            <span className="text-[9px] text-teal-300/50">Material corporativo</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-slate-100">
+      <FileText size={24} className="text-slate-400" />
+    </div>
+  );
+}
+
 type ResourceCardProps = {
   resource: (typeof mockResources)[number];
   showPreview?: boolean;
 };
 
 function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
-  const tone = visualToneConfig[resource.visualTone] ?? visualToneConfig.corporativo;
-  const pattern = visualTonePatterns[resource.visualTone] ?? visualTonePatterns.corporativo;
-  const ToneIcon = tone.icon;
+  const TypeIcon = typeIconMap[resource.type] ?? FileText;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <article className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
       {showPreview && (
         <div className="relative aspect-[16/10] overflow-hidden">
-          {resource.coverImageUrl ? (
-            <img
-              src={resource.coverImageUrl}
-              alt={resource.coverAlt ?? resource.title}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className={`flex h-full w-full items-center justify-center ${tone.bg}`} style={pattern}>
-              <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-white/60`}>
-                <ToneIcon size={24} className={tone.color} />
-              </div>
-            </div>
-          )}
+          <MockCover resource={resource} />
         </div>
       )}
-      <div className="flex flex-col gap-1.5 p-5">
-        <div className="flex items-start justify-between gap-2">
-          <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+      <div className="flex flex-col gap-2.5 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
             {categoryLabel[resource.category] ?? resource.category}
           </span>
-          {resource.type && (
-            <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-              <FileText size={12} />
-              {typeLabel[resource.type] ?? resource.type}
-            </span>
-          )}
+          <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+            <TypeIcon size={12} />
+            {typeLabel[resource.type] ?? resource.type}
+          </span>
         </div>
-        <h3 className="font-serif text-base font-medium text-slate-900">{resource.title}</h3>
-        <p className="text-sm text-slate-600">{resource.subtitle}</p>
-        {resource.fileLabel && (
-          <p className="text-xs text-slate-500">{resource.fileLabel}</p>
-        )}
-        <div className="mt-2">
+        <h3 className="font-serif text-base font-medium leading-snug text-slate-900">
+          {resource.title}
+        </h3>
+        <p className="text-xs leading-relaxed text-slate-600 line-clamp-2">
+          {resource.subtitle}
+        </p>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] text-slate-400">
+            {resource.publishedAt
+              ? resource.publishedAt.split('-').reverse().join('/')
+              : '—'}
+          </span>
+          <span className="inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-medium text-teal-700">
+            Socios
+          </span>
+        </div>
+        <div className="pt-1">
           <Link
             to={`/socios/recursos/${resource.id}`}
-            className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-teal-800"
           >
             Ver recurso
-            <ChevronRight size={14} />
+            <ChevronRight size={13} />
           </Link>
         </div>
       </div>
@@ -280,10 +434,7 @@ function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
 
 export function MemberHomePage() {
   const member = mockMembers.find((m) => m.id === 'mem-001');
-  const publishedResources = mockResources
-    .filter((r) => r.status === 'published' && r.publishedAt !== null)
-    .sort((a, b) => (b.publishedAt!).localeCompare(a.publishedAt!))
-    .slice(0, 3);
+  const dashboard = mockSocioDashboard;
 
   if (!member) {
     return (
@@ -293,83 +444,77 @@ export function MemberHomePage() {
     );
   }
 
-  const badgeClass = statusBadgeClass[member.status] ?? 'bg-slate-100 text-slate-600';
-  const statusLabel = member.status === 'pending_review'
-    ? 'Pendiente revisión'
-    : member.status.charAt(0).toUpperCase() + member.status.slice(1);
+  const badgeClass = statusBadgeClass[dashboard.status] ?? 'bg-slate-100 text-slate-600';
 
   return (
     <div className="space-y-10">
-      {/* Section 1 — Hero */}
+      {/* Hero */}
       <section className="relative overflow-hidden rounded-2xl bg-teal-900 p-8 text-white sm:p-10 lg:p-12">
         <div className="relative z-10 max-w-2xl">
           <p className="text-xs font-medium uppercase tracking-widest text-teal-200/80">Área de socios</p>
           <p className="mt-4 font-serif text-4xl lg:text-5xl font-light text-white">Hola, {member.firstName}</p>
           <h1 className="mt-2 text-lg lg:text-xl font-light text-teal-100">
-            Bienvenida al área de socios
+            Socia ACASPEX nº {dashboard.memberNumber}
           </h1>
           <p className="mt-4 max-w-xl text-sm text-teal-100/80">
             Tu espacio privado con recursos, formación y herramientas para impulsar la calidad asistencial y la seguridad del paciente.
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-teal-100/80">
-            <span>{statusLabel}</span>
-            <span className="text-teal-300/60">|</span>
-            <span>Cuota {member.membershipType === 'general' ? 'general' : 'reducida'}</span>
-            <span className="text-teal-300/60">|</span>
-            <span>Vence {member.paidUntil ? member.paidUntil.split('-').reverse().join('/') : '—'}</span>
-          </div>
         </div>
         <div className="pointer-events-none absolute -right-8 -top-8 h-56 w-56 rounded-full bg-teal-800/20 blur-2xl" />
       </section>
 
-      {/* Dashboard de socio — banda compacta */}
-      <section className="rounded-2xl border border-slate-100 bg-white px-6 py-4">
+      {/* Dashboard de socio — banda de indicadores */}
+      <section className="rounded-2xl border border-slate-100 bg-white px-6 py-5">
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
               <ShieldCheck size={18} />
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Estado</p>
-              <p className="text-sm font-medium text-slate-900">{statusLabel}</p>
+              <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass}`}>
+                {dashboard.statusLabel}
+              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
               <User size={18} />
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Cuota</p>
-              <p className="text-sm font-medium text-slate-900">
-                {member.membershipType === 'general' ? 'General' : 'Reducida'}
-              </p>
+              <p className="text-sm font-medium text-slate-900">{dashboard.membershipTypeLabel}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
               <CalendarCheck size={18} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Válido hasta</p>
-              <p className="text-sm font-medium text-slate-900">
-                {member.paidUntil ? member.paidUntil.split('-').reverse().join('/') : '—'}
-              </p>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Vigencia</p>
+              <p className="text-sm font-medium text-slate-900">Válido hasta {dashboard.validUntil}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
               <CreditCard size={18} />
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Último pago</p>
-              <p className="text-sm font-medium text-slate-900">
-                {member.lastPaymentAmount !== null && member.lastPaymentDate !== null
-                  ? `${member.lastPaymentAmount} € · ${member.lastPaymentDate.split('-').reverse().join('/')}`
-                  : '—'}
-              </p>
+              <p className="text-sm font-medium text-slate-900">{dashboard.lastPayment}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <RefreshCw size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Próx. renovación</p>
+              <p className="text-sm font-medium text-slate-900">{dashboard.nextRenewal}</p>
             </div>
           </div>
 
@@ -377,15 +522,32 @@ export function MemberHomePage() {
             to="/socios/mi-cuenta"
             className="ml-auto inline-flex items-center gap-1 text-sm text-slate-500 transition-colors hover:text-teal-800"
           >
-            Mi cuenta
+            Ver mi perfil
             <ChevronRight size={14} />
           </Link>
         </div>
+
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-slate-600">
+            <span className="inline-flex items-center gap-1.5">
+              <BookOpen size={15} className="text-teal-600" />
+              <span className="font-medium text-slate-900">{dashboard.resourcesAvailable}</span> recursos disponibles
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <FileText size={15} className="text-teal-600" />
+              <span className="font-medium text-slate-900">{dashboard.newsThisMonth}</span> novedades del mes
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Video size={15} className="text-teal-600" />
+              <span className="font-medium text-slate-900">{dashboard.recentTraining}</span> webinars este mes
+            </span>
+          </div>
+        </div>
       </section>
 
-      {/* Section 2 — Qué encontrarás aquí */}
+      {/* Accesos rápidos */}
       <section>
-        <h2 className="text-xs font-medium uppercase tracking-widest text-slate-500">Qué encontrarás aquí</h2>
+        <h2 className="text-xs font-medium uppercase tracking-widest text-slate-500">Accesos rápidos</h2>
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           <Link
             to="/socios/recursos"
@@ -395,8 +557,8 @@ export function MemberHomePage() {
               <BookOpen size={22} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Centro de conocimiento</h3>
-              <p className="mt-1 text-xs text-slate-600">Guías, plantillas y materiales validados por ACASPEX.</p>
+              <h3 className="text-sm font-semibold text-slate-900">Centro de Conocimiento ACASPEX</h3>
+              <p className="mt-1 text-xs text-slate-600">Guías, plantillas, formación y materiales validados.</p>
             </div>
           </Link>
           <Link
@@ -404,23 +566,11 @@ export function MemberHomePage() {
             className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50"
           >
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <Video size={22} />
+              <GraduationCap size={22} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Formación y metodología</h3>
-              <p className="mt-1 text-xs text-slate-600">Grabaciones, presentaciones y contenidos formativos para socios.</p>
-            </div>
-          </Link>
-          <Link
-            to="/socios/recursos"
-            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <FileText size={22} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Materiales corporativos</h3>
-              <p className="mt-1 text-xs text-slate-600">Documentos institucionales, modelos y recursos de representación.</p>
+              <h3 className="text-sm font-semibold text-slate-900">Academia ACASPEX</h3>
+              <p className="mt-1 text-xs text-slate-600">Formación y desarrollo profesional para socios.</p>
             </div>
           </Link>
           <Link
@@ -431,79 +581,38 @@ export function MemberHomePage() {
               <FolderKanban size={22} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Banco de proyectos</h3>
-              <p className="mt-1 text-xs text-slate-600">Repositorio de iniciativas, casos prácticos y proyectos de mejora compartidos por la comunidad ACASPEX.</p>
+              <h3 className="text-sm font-semibold text-slate-900">Banco de Proyectos</h3>
+              <p className="mt-1 text-xs text-slate-600">Iniciativas, casos prácticos y proyectos de mejora.</p>
+            </div>
+          </Link>
+          <Link
+            to="/socios/mi-cuenta"
+            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <User size={22} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-slate-900">Mi cuenta</h3>
+              <p className="mt-1 text-xs text-slate-600">Consulta el estado de tu membresía y datos de perfil.</p>
+            </div>
+          </Link>
+          <Link
+            to="/socios/recursos"
+            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50 sm:col-span-2"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <FileText size={22} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-slate-900">Novedades</h3>
+              <p className="mt-1 text-xs text-slate-600">Últimas publicaciones y actualizaciones para la comunidad ACASPEX.</p>
             </div>
           </Link>
         </div>
       </section>
 
-      {/* Section 3 — Recursos destacados */}
-      <section>
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="font-serif text-xl text-slate-900">Recursos destacados</h2>
-            <p className="mt-1 text-sm text-slate-600">Últimos materiales publicados para la comunidad ACASPEX.</p>
-          </div>
-          <Link
-            to="/socios/recursos"
-            className="hidden shrink-0 items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800 sm:inline-flex"
-          >
-            Ver centro de conocimiento
-            <ChevronRight size={14} />
-          </Link>
-        </div>
-
-        {publishedResources.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6">
-            <p className="text-sm text-slate-600">
-              Aún no hay recursos publicados. Próximamente encontrarás aquí materiales para socios.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {publishedResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} />
-            ))}
-          </div>
-        )}
-
-        <div className="mt-5 sm:hidden">
-          <Link
-            to="/socios/recursos"
-            className="inline-flex items-center gap-1 rounded-lg bg-teal-900 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
-          >
-            Ver centro de conocimiento completo
-            <ChevronRight size={16} />
-          </Link>
-        </div>
-      </section>
-
-      {/* Section 4 — Banco de proyectos */}
-      <section className="rounded-2xl border border-slate-100 bg-white px-6 py-6 sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-            <FolderKanban size={20} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-serif text-xl text-slate-900">Banco de proyectos</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Repositorio de iniciativas, casos prácticos y proyectos de mejora compartidos por la comunidad ACASPEX. Convierte el conocimiento de la sociedad en aprendizaje reutilizable.
-            </p>
-            <div className="mt-4">
-              <Link
-                to="/socios/proyectos"
-                className="inline-flex items-center gap-1 rounded-lg bg-teal-900 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
-              >
-                Explorar banco de proyectos
-                <ChevronRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 5 — Comunidad ACASPEX */}
+      {/* Comunidad ACASPEX */}
       <section className="rounded-2xl bg-teal-900 p-6 text-white lg:p-8">
         <h2 className="font-serif text-xl text-white">Comunidad ACASPEX</h2>
         <p className="mt-2 text-sm text-teal-100/80">
@@ -545,7 +654,7 @@ export function MemberHomePage() {
         </div>
       </section>
 
-      {/* Section 6 — Mensaje institucional ACASPEX */}
+      {/* Mensaje institucional */}
       <section className="rounded-2xl border border-slate-100 bg-white p-6 sm:p-8">
         <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -557,7 +666,7 @@ export function MemberHomePage() {
 }
 
 export function MemberLibraryPage() {
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const publishedResources = mockResources
     .filter((r) => r.status === 'published' && r.id !== 'res-004')
@@ -565,17 +674,27 @@ export function MemberLibraryPage() {
 
   const featuredResources = publishedResources.filter((r) => r.featured === true);
 
-  const sectionCounts: Record<string, number> = {};
-  for (const tone of visualToneOrder) {
-    sectionCounts[tone] = publishedResources.filter((r) => r.visualTone === tone).length;
+  const officialCategoryOrder = ['calidad', 'seguridad', 'investigacion', 'formacion', 'herramientas', 'corporativo'];
+
+  const categoryCounts: Record<string, number> = {};
+  for (const cat of officialCategoryOrder) {
+    categoryCounts[cat] = publishedResources.filter((r) => r.category === cat).length;
   }
 
-  const filteredResources = activeSection
-    ? publishedResources.filter((r) => r.visualTone === activeSection)
+  const filteredResources = activeCategory
+    ? publishedResources.filter((r) => r.category === activeCategory)
     : publishedResources;
 
-  const activeLabel = activeSection ? (visualToneLabel[activeSection] ?? activeSection) : null;
-  const activeConfig = activeSection ? visualToneConfig[activeSection] : null;
+  const activeLabel = activeCategory ? (categoryLabel[activeCategory] ?? activeCategory) : null;
+
+  const officialCategoryIcons: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
+    calidad: TrendingUp,
+    seguridad: ShieldCheck,
+    investigacion: Lightbulb,
+    formacion: GraduationCap,
+    herramientas: Wrench,
+    corporativo: Building2,
+  };
 
   const sidebarButtonClass = (isActive: boolean) =>
     cn(
@@ -594,158 +713,130 @@ export function MemberLibraryPage() {
     );
 
   return (
-    <div className="space-y-8">
-      {/* Hero de sección */}
-      <section className="relative overflow-hidden rounded-2xl bg-teal-900 px-6 py-10 text-white lg:px-10 lg:py-12">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-lg">
-            <h1 className="font-serif text-3xl lg:text-4xl font-light">Centro de conocimiento</h1>
-            <p className="mt-3 text-sm text-teal-100/80">
-              Consulta guías, plantillas, grabaciones y materiales disponibles para socios.
-            </p>
-          </div>
-          <div className="relative hidden lg:block w-full max-w-xs">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-300/70 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Buscar recursos..."
-              className="w-full rounded-lg border border-teal-700 bg-teal-800/50 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-teal-200/60 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-              readOnly
-            />
-          </div>
-        </div>
-      </section>
+    <div className="lg:flex lg:gap-8">
+      {/* Sidebar — visible solo en desktop */}
+      <aside className="hidden lg:block lg:w-64 lg:shrink-0">
+        <nav className="sticky top-8 space-y-0.5 rounded-2xl border border-slate-100 bg-white p-2">
+          <button
+            type="button"
+            onClick={() => setActiveCategory(null)}
+            className={sidebarButtonClass(activeCategory === null)}
+          >
+            <BookOpen size={16} />
+            <span className="flex-1">Todos los recursos</span>
+            <span className={cn('text-xs tabular-nums', activeCategory === null ? 'text-teal-200/70' : 'text-slate-400')}>
+              {publishedResources.length}
+            </span>
+          </button>
 
-      {featuredResources.length > 0 && (
-        <section className="space-y-5">
-          <h2 className="font-serif text-xl text-slate-900">Destacados</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredResources.map((resource, index) => (
-              <div key={resource.id} className={index === 0 ? 'lg:col-span-2' : ''}>
-                <ResourceCard resource={resource} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+          {officialCategoryOrder.map((cat) => {
+            const Icon = officialCategoryIcons[cat];
+            const count = categoryCounts[cat] ?? 0;
+            const isActive = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={sidebarButtonClass(isActive)}
+              >
+                <Icon size={16} className={isActive ? 'text-teal-200/70' : 'text-slate-400'} />
+                <span className="flex-1">{categoryLabel[cat]}</span>
+                {count > 0 && (
+                  <span className={cn('text-xs tabular-nums', isActive ? 'text-teal-200/70' : 'text-slate-400')}>{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
 
-      <div className="lg:flex lg:gap-8">
-        <aside className="hidden lg:block lg:w-64 lg:shrink-0">
-          <nav className="sticky top-8 space-y-0.5 rounded-2xl border border-slate-100 bg-white p-2">
+      {/* Contenido principal */}
+      <div className="min-w-0 flex-1">
+        {/* Píldoras móviles */}
+        <div className="mb-5 lg:hidden">
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
             <button
               type="button"
-              onClick={() => setActiveSection(null)}
-              className={sidebarButtonClass(activeSection === null)}
+              onClick={() => setActiveCategory(null)}
+              className={mobileTabClass(activeCategory === null)}
             >
-              <BookOpen size={16} />
-              <span className="flex-1">Todos los recursos</span>
-              <span className={cn('text-xs tabular-nums', activeSection === null ? 'text-teal-200/70' : 'text-slate-400')}>
-                {publishedResources.length}
-              </span>
+              Todos
             </button>
-
-            {visualToneOrder.map((tone) => {
-              const config = visualToneConfig[tone];
-              const Icon = config.icon;
-              const count = sectionCounts[tone] ?? 0;
-              const isActive = activeSection === tone;
+            {officialCategoryOrder.map((cat) => {
+              const isActive = activeCategory === cat;
               return (
                 <button
-                  key={tone}
+                  key={cat}
                   type="button"
-                  onClick={() => setActiveSection(tone)}
-                  className={sidebarButtonClass(isActive)}
+                  onClick={() => setActiveCategory(cat)}
+                  className={mobileTabClass(isActive)}
                 >
-                  <Icon size={16} className={isActive ? 'text-teal-200/70' : 'text-slate-400'} />
-                  <span className="flex-1">{config.label}</span>
-                  {count > 0 && (
-                    <span className={cn('text-xs tabular-nums', isActive ? 'text-teal-200/70' : 'text-slate-400')}>{count}</span>
-                  )}
+                  {categoryLabel[cat]}
                 </button>
               );
             })}
-          </nav>
-        </aside>
-
-        <div className="min-w-0 flex-1">
-          <div className="mb-5 lg:hidden">
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
-              <button
-                type="button"
-                onClick={() => setActiveSection(null)}
-                className={mobileTabClass(activeSection === null)}
-              >
-                Todos
-              </button>
-              {visualToneOrder.map((tone) => {
-                const config = visualToneConfig[tone];
-                const isActive = activeSection === tone;
-                return (
-                  <button
-                    key={tone}
-                    type="button"
-                    onClick={() => setActiveSection(tone)}
-                    className={mobileTabClass(isActive)}
-                  >
-                    {config.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
+        </div>
 
-          {activeSection ? (
-            <section className="space-y-5">
-              {activeConfig && (
-                <div className="flex items-center gap-2.5">
-                  {(() => {
-                    const Icon = activeConfig.icon;
-                    return <Icon size={20} className="text-teal-700" />;
-                  })()}
-                  <h2 className="font-serif text-lg text-slate-900">{activeLabel}</h2>
+        {/* Cabecera institucional — solo en vista "Todos" */}
+        {!activeCategory && (
+          <section className="mb-8 rounded-2xl border border-slate-100 bg-white p-6 lg:p-8">
+            <h1 className="font-serif text-3xl lg:text-4xl font-light text-slate-900">Centro de Conocimiento ACASPEX</h1>
+            <p className="mt-3 text-sm text-slate-600 max-w-2xl">
+              Explora, descubre y accede a contenidos para impulsar la calidad asistencial y la seguridad del paciente
+            </p>
+            <div className="mt-5 relative max-w-md">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Buscar en el Centro de Conocimiento…"
+                className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                readOnly
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Cabecera de categoría activa */}
+        {activeCategory && (
+          <div className="mb-6">
+            <h2 className="font-serif text-xl text-slate-900">{categoryLabel[activeCategory]}</h2>
+            <p className="mt-1 text-sm text-slate-500">{categoryCounts[activeCategory] ?? 0} recursos</p>
+          </div>
+        )}
+
+        {/* Destacados — solo en vista "Todos" */}
+        {!activeCategory && featuredResources.length > 0 && (
+          <section className="mb-8 space-y-5">
+            <h2 className="font-serif text-xl text-slate-900">Destacados</h2>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredResources.map((resource, index) => (
+                <div key={resource.id} className={index === 0 ? 'lg:col-span-2' : ''}>
+                  <ResourceCard resource={resource} />
                 </div>
-              )}
-              {filteredResources.length === 0 ? (
-                <div className="rounded-xl border border-slate-100 bg-white p-5">
-                  <p className="text-sm text-slate-600">Próximamente: {activeLabel}</p>
-                </div>
-              ) : (
-                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                  {filteredResources.map((resource) => (
-                    <ResourceCard key={resource.id} resource={resource} />
-                  ))}
-                </div>
-              )}
-            </section>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Recursos filtrados / todos */}
+        <section className="space-y-5">
+          {!activeCategory && (
+            <h2 className="font-serif text-xl text-slate-900">Todos los recursos</h2>
+          )}
+          {filteredResources.length === 0 ? (
+            <div className="rounded-xl border border-slate-100 bg-white p-5">
+              <p className="text-sm text-slate-600">Próximamente: {activeLabel}</p>
+            </div>
           ) : (
-            <div className="space-y-8">
-              {visualToneOrder.map((tone) => {
-                const config = visualToneConfig[tone];
-                const Icon = config.icon;
-                const sectionResources = publishedResources.filter((r) => r.visualTone === tone);
-                return (
-                  <section key={tone} className="space-y-5">
-                    <div className="flex items-center gap-2.5">
-                      <Icon size={20} className="text-teal-700" />
-                      <h2 className="font-serif text-lg text-slate-900">{config.label}</h2>
-                    </div>
-                    {sectionResources.length === 0 ? (
-                      <div className="rounded-xl border border-slate-100 bg-white p-5">
-                        <p className="text-sm text-slate-600">Próximamente: {config.label}</p>
-                      </div>
-                    ) : (
-                      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                        {sectionResources.map((resource) => (
-                          <ResourceCard key={resource.id} resource={resource} />
-                        ))}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredResources.map((resource) => (
+                <ResourceCard key={resource.id} resource={resource} />
+              ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
@@ -776,6 +867,7 @@ export function MemberResourceDetailPage() {
   }
 
   const resourceItem = resource!;
+  const TypeIcon = typeIconMap[resourceItem.type] ?? FileText;
 
   return (
     <div className="space-y-8">
@@ -787,29 +879,9 @@ export function MemberResourceDetailPage() {
       </Link>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {resourceItem.coverImageUrl ? (
-          <div className="aspect-video overflow-hidden">
-            <img
-              src={resourceItem.coverImageUrl}
-              alt={resourceItem.coverAlt ?? resourceItem.title}
-              className="h-full w-full object-cover"
-            />
-          </div>
-        ) : (
-          (() => {
-            const tone = visualToneConfig[resourceItem.visualTone] ?? visualToneConfig.corporativo;
-            const pattern = visualTonePatterns[resourceItem.visualTone] ?? visualTonePatterns.corporativo;
-            const ToneIcon = tone.icon;
-            return (
-              <div className={`flex aspect-video w-full flex-col items-center justify-center ${tone.bg}`} style={pattern}>
-                <div className={`flex h-16 w-16 items-center justify-center rounded-full bg-white/60`}>
-                  <ToneIcon size={32} className={tone.color} />
-                </div>
-                <span className={`mt-3 text-sm font-medium ${tone.color}`}>{tone.label}</span>
-              </div>
-            );
-          })()
-        )}
+        <div className="aspect-[2/1] overflow-hidden">
+          <MockCover resource={resourceItem} />
+        </div>
         <div className="p-6 sm:p-8">
           <h1 className="text-2xl font-semibold text-slate-900">{resourceItem.title}</h1>
           <p className="mt-1 text-slate-600">{resourceItem.subtitle}</p>
@@ -817,33 +889,48 @@ export function MemberResourceDetailPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="space-y-2 text-sm text-slate-700">
-          <p>
-            <span className="font-medium text-slate-900">Categoría:</span>{' '}
-            {categoryLabel[resourceItem.category] ?? resourceItem.category}
-          </p>
-          <p>
-            <span className="font-medium text-slate-900">Tipo:</span>{' '}
-            {typeLabel[resourceItem.type] ?? resourceItem.type}
-          </p>
-          <p>
-            <span className="font-medium text-slate-900">Publicado:</span>{' '}
-            {resourceItem.publishedAt
-              ? resourceItem.publishedAt.split('-').reverse().join('/')
-              : 'No publicado'}
-          </p>
-          {resourceItem.estimatedReadMinutes !== null && (
-            <p>
-              <span className="font-medium text-slate-900">Tiempo estimado:</span>{' '}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría</p>
+            <span className="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
+              {categoryLabel[resourceItem.category] ?? resourceItem.category}
+            </span>
+          </div>
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo</p>
+            <p className="mt-1 inline-flex items-center gap-1 text-sm text-slate-700">
+              <TypeIcon size={14} className="text-slate-400" />
+              {typeLabel[resourceItem.type] ?? resourceItem.type}
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Publicado</p>
+            <p className="mt-1 text-sm text-slate-700">
+              {resourceItem.publishedAt
+                ? resourceItem.publishedAt.split('-').reverse().join('/')
+                : '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Acceso</p>
+            <span className="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
+              Socios
+            </span>
+          </div>
+        </div>
+        {resourceItem.estimatedReadMinutes !== null && (
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="text-sm text-slate-600">
+              <span className="font-medium text-slate-700">Tiempo estimado:</span>{' '}
               {resourceItem.estimatedReadMinutes} min
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Descripción</h2>
-        <p className="mt-2 text-sm text-slate-700">{resourceItem.description}</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-700">{resourceItem.description}</p>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -852,18 +939,20 @@ export function MemberResourceDetailPage() {
             href={resourceItem.externalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
           >
-            Abrir recurso externo
+            Ver recurso
+            <ChevronRight size={14} />
           </a>
-        ) : resourceItem.fileLabel ? (
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
+        ) : (
+          <Link
+            to={`/socios/recursos/${resourceItem.id}`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
           >
-            Acceder al recurso
-          </button>
-        ) : null}
+            Ver recurso
+            <ChevronRight size={14} />
+          </Link>
+        )}
       </section>
     </div>
   );

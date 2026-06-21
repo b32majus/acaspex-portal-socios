@@ -1,8 +1,10 @@
 export type ResourceType = 'pdf' | 'video' | 'template' | 'link' | 'presentation';
 
-export type ResourceCategory = 'formacion' | 'herramientas' | 'jornadas' | 'guias' | 'plantillas' | 'lean' | 'actas' | 'videos' | 'corporativo' | 'alianzas';
+export type ResourceCategory = 'calidad' | 'seguridad' | 'investigacion' | 'formacion' | 'herramientas' | 'corporativo';
 
 export type ResourceStatus = 'draft' | 'published' | 'archived';
+
+export type ResourceCoverStyle = 'guia' | 'plantilla' | 'video' | 'documento' | 'corporativo';
 
 export type Resource = {
   id: string;
@@ -19,6 +21,7 @@ export type Resource = {
   coverImageUrl?: string | null;
   coverAlt?: string | null;
   visualTone: 'formacion' | 'lean' | 'herramientas' | 'actas' | 'videos' | 'corporativo' | 'alianzas';
+  coverStyle: ResourceCoverStyle;
   featured?: boolean;
 };
 
@@ -28,7 +31,7 @@ export const mockResources: Resource[] = [
     title: 'Guia basica para comunicar proyectos de mejora',
     subtitle: 'Estructura minima para convertir una mejora en una historia comprensible.',
     description: 'Recurso introductorio para ordenar contexto, problema, intervencion, resultados y aprendizaje transferible.',
-    category: 'guias',
+    category: 'calidad',
     type: 'pdf',
     status: 'published',
     publishedAt: '2026-05-15',
@@ -38,6 +41,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'lean',
+    coverStyle: 'guia',
     featured: true,
   },
   {
@@ -45,7 +49,7 @@ export const mockResources: Resource[] = [
     title: 'Plantilla de mapa de proceso asistencial',
     subtitle: 'Documento editable para identificar pasos, esperas y puntos criticos.',
     description: 'Plantilla ficticia para trabajar circuitos asistenciales y priorizar oportunidades de mejora.',
-    category: 'plantillas',
+    category: 'herramientas',
     type: 'template',
     status: 'published',
     publishedAt: '2026-05-22',
@@ -55,6 +59,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'herramientas',
+    coverStyle: 'plantilla',
     featured: false,
   },
   {
@@ -72,6 +77,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'formacion',
+    coverStyle: 'video',
     featured: true,
   },
   {
@@ -79,7 +85,7 @@ export const mockResources: Resource[] = [
     title: 'Materiales Jornada ACASPEX 2026',
     subtitle: 'Presentaciones y documentos de apoyo para socios.',
     description: 'Espacio ficticio para agrupar recursos derivados de una jornada cientifica.',
-    category: 'jornadas',
+    category: 'investigacion',
     type: 'presentation',
     status: 'draft',
     publishedAt: null,
@@ -89,6 +95,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'corporativo',
+    coverStyle: 'corporativo',
     featured: false,
   },
   {
@@ -106,6 +113,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'herramientas',
+    coverStyle: 'documento',
     featured: true,
   },
   {
@@ -123,6 +131,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'corporativo',
+    coverStyle: 'corporativo',
     featured: false,
   },
   {
@@ -140,6 +149,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'corporativo',
+    coverStyle: 'corporativo',
     featured: false,
   },
   {
@@ -157,6 +167,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'corporativo',
+    coverStyle: 'plantilla',
     featured: false,
   },
   {
@@ -174,6 +185,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'corporativo',
+    coverStyle: 'plantilla',
     featured: false,
   },
   {
@@ -191,6 +203,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'corporativo',
+    coverStyle: 'documento',
     featured: false,
   },
   {
@@ -198,7 +211,7 @@ export const mockResources: Resource[] = [
     title: 'Acta de constitucion de la comision de calidad asistencial',
     subtitle: 'Documento fundacional de la comision interna de calidad y seguridad.',
     description: 'Acta ficticia que recoge la composicion, objetivos y plan de trabajo inicial de una comision de calidad asistencial tipica en un centro sanitario.',
-    category: 'actas',
+    category: 'herramientas',
     type: 'pdf',
     status: 'published',
     publishedAt: '2026-01-20',
@@ -208,6 +221,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'actas',
+    coverStyle: 'documento',
     featured: true,
   },
   {
@@ -215,7 +229,7 @@ export const mockResources: Resource[] = [
     title: 'Plantilla de acta de reunion',
     subtitle: 'Modelo editable para documentar reuniones de trabajo y comisiones.',
     description: 'Plantilla ficticia con estructura estandar: asistentes, orden del dia, acuerdos, acciones y seguimiento. Adaptable a comisiones clinicas y grupos de mejora.',
-    category: 'actas',
+    category: 'herramientas',
     type: 'template',
     status: 'published',
     publishedAt: '2026-02-05',
@@ -225,6 +239,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'actas',
+    coverStyle: 'plantilla',
     featured: false,
   },
   {
@@ -232,7 +247,7 @@ export const mockResources: Resource[] = [
     title: 'Memoria anual de actividades 2025',
     subtitle: 'Resumen ejecutivo de las actividades, formaciones y resultados del ejercicio anterior.',
     description: 'Documento ficticio que recopila las principales acciones realizadas durante 2025: jornadas, formaciones, proyectos de mejora e indicadores de participacion.',
-    category: 'actas',
+    category: 'herramientas',
     type: 'pdf',
     status: 'published',
     publishedAt: '2026-03-15',
@@ -242,6 +257,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'actas',
+    coverStyle: 'documento',
     featured: false,
   },
   {
@@ -249,7 +265,7 @@ export const mockResources: Resource[] = [
     title: 'Grabacion: taller practico de mejora continua en UCI',
     subtitle: 'Sesion grabada sobre aplicacion de ciclos PDSA en cuidados intensivos.',
     description: 'Video ficticio que muestra un taller practico donde equipos de UCI aplican metodologia de mejora continua a casos reales simulados de su unidad.',
-    category: 'videos',
+    category: 'formacion',
     type: 'video',
     status: 'published',
     publishedAt: '2026-04-10',
@@ -259,6 +275,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'videos',
+    coverStyle: 'video',
     featured: true,
   },
   {
@@ -266,7 +283,7 @@ export const mockResources: Resource[] = [
     title: 'Grabacion: presentacion de resultados del programa de seguridad',
     subtitle: 'Exposicion de indicadores y aprendizajes del programa anual de seguridad del paciente.',
     description: 'Video ficticio con la presentacion de resultados del programa de seguridad: eventos notificados, analisis causal, acciones correctoras y evolucion de indicadores.',
-    category: 'videos',
+    category: 'formacion',
     type: 'video',
     status: 'published',
     publishedAt: '2026-05-18',
@@ -276,6 +293,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'videos',
+    coverStyle: 'video',
     featured: false,
   },
   {
@@ -283,7 +301,7 @@ export const mockResources: Resource[] = [
     title: 'Pildora formativa: comunicacion efectiva en entornos asistenciales',
     subtitle: 'Microformacion grabada sobre tecnicas de comunicacion clinica.',
     description: 'Video breve ficticio con pautas practicas para mejorar la comunicacion entre profesionales, con pacientes y en el traspaso de informacion clinica.',
-    category: 'videos',
+    category: 'formacion',
     type: 'video',
     status: 'published',
     publishedAt: '2026-06-05',
@@ -293,6 +311,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'videos',
+    coverStyle: 'video',
     featured: false,
   },
   {
@@ -300,7 +319,7 @@ export const mockResources: Resource[] = [
     title: 'Kit de inicio en metodologia Lean Healthcare',
     subtitle: 'Recursos basicos para introducir la mejora continua en entornos sanitarios.',
     description: 'Conjunto ficticio de materiales introductorios: principios Lean, mapa de valor, eventos kaizen y ejemplos de aplicacion en plantas de hospitalizacion.',
-    category: 'lean',
+    category: 'calidad',
     type: 'pdf',
     status: 'published',
     publishedAt: '2026-04-22',
@@ -310,6 +329,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'lean',
+    coverStyle: 'guia',
     featured: true,
   },
   {
@@ -317,7 +337,7 @@ export const mockResources: Resource[] = [
     title: 'Caso practico: reduccion de esperas en consultas externas',
     subtitle: 'Ejemplo documentado de aplicacion Lean en un servicio de consultas.',
     description: 'Caso ficticio que describe como un equipo aplico herramientas Lean para reducir el tiempo de espera en consultas externas, con datos simulados de antes y despues.',
-    category: 'lean',
+    category: 'calidad',
     type: 'pdf',
     status: 'published',
     publishedAt: '2026-06-01',
@@ -327,6 +347,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'lean',
+    coverStyle: 'documento',
     featured: false,
   },
   {
@@ -344,6 +365,7 @@ export const mockResources: Resource[] = [
     coverImageUrl: null,
     coverAlt: null,
     visualTone: 'corporativo',
+    coverStyle: 'documento',
     featured: false,
   },
 ];

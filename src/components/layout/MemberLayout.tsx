@@ -34,7 +34,7 @@ export function MemberLayout() {
             <details className="relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 hover:bg-teal-800/50 rounded-full px-2 py-1">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 text-xs font-medium text-white">L</span>
-                <span className="text-sm text-white/90">Lucia</span>
+                <span className="text-sm text-white/90">Lucía</span>
                 <ChevronDown className="h-4 w-4 text-white/60" />
               </summary>
               <div className="absolute right-0 top-full z-10 mt-2 w-44 rounded-xl border border-teal-700/50 bg-teal-900 py-1 shadow-lg">

@@ -37,7 +37,7 @@ export type RenewalItem = {
 export const mockMembers: Member[] = [
   {
     id: 'mem-001',
-    firstName: 'Lucia',
+    firstName: 'Lucía',
     lastName1: 'Morales',
     lastName2: 'Santos',
     email: 'lucia.morales@example.test',
@@ -170,3 +170,29 @@ export const mockRenewals: RenewalItem[] = mockMembers.map((member) => ({
   paidUntil: member.paidUntil,
   renewalState: member.status === 'expired' ? 'expired' : member.paidUntil === '2026-12-31' ? 'upcoming' : 'not_applicable',
 }));
+
+export type SocioDashboard = {
+  memberNumber: string;
+  status: MemberStatus;
+  statusLabel: string;
+  membershipTypeLabel: string;
+  validUntil: string;
+  lastPayment: string;
+  nextRenewal: string;
+  resourcesAvailable: number;
+  newsThisMonth: number;
+  recentTraining: number;
+};
+
+export const mockSocioDashboard: SocioDashboard = {
+  memberNumber: 'ACX-0054',
+  status: 'active',
+  statusLabel: 'Socia activa',
+  membershipTypeLabel: 'General',
+  validUntil: '31/12/2026',
+  lastPayment: '18/01/2026',
+  nextRenewal: '01/01/2027',
+  resourcesAvailable: 47,
+  newsThisMonth: 3,
+  recentTraining: 2,
+};
