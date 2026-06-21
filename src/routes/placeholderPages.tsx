@@ -28,6 +28,7 @@ import {
 import { mockMembers, mockSocioDashboard } from '../data/mockMembers';
 import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel } from '../data/mockProjects';
 import { mockResources } from '../data/mockResources';
+import { mockNews } from '../data/mockNews';
 import { cn } from '../lib/utils';
 
 type PlaceholderPageProps = {
@@ -432,6 +433,26 @@ function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
   );
 }
 
+const NEWS_TYPE_CONFIG: Record<string, { icon: React.ComponentType<{ size?: number | string; className?: string }>; label: string }> = {
+  resource: { icon: FileText, label: 'Nuevo recurso' },
+  recording: { icon: Video, label: 'Nueva grabación' },
+  update: { icon: RefreshCw, label: 'Actualización' },
+  project: { icon: FolderKanban, label: 'Proyecto destacado' },
+  publication: { icon: BookOpen, label: 'Publicación' },
+};
+
+function formatNewsDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date('2026-06-21');
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Hoy';
+  if (diffDays === 1) return 'Ayer';
+  if (diffDays <= 7) return `Hace ${diffDays} días`;
+  if (diffDays <= 30) return `Hace ${Math.ceil(diffDays / 7)} semanas`;
+  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  return `${date.getDate()} de ${months[date.getMonth()]}, ${date.getFullYear()}`;
+}
+
 export function MemberHomePage() {
   const member = mockMembers.find((m) => m.id === 'mem-001');
   const dashboard = mockSocioDashboard;
@@ -448,13 +469,13 @@ export function MemberHomePage() {
 
   return (
     <div className="space-y-10">
-      {/* Hero */}
+      {/* 1. Hero / bienvenida */}
       <section className="relative overflow-hidden rounded-2xl bg-teal-900 p-8 text-white sm:p-10 lg:p-12">
         <div className="relative z-10 max-w-2xl">
           <p className="text-xs font-medium uppercase tracking-widest text-teal-200/80">Área de socios</p>
           <p className="mt-4 font-serif text-4xl lg:text-5xl font-light text-white">Hola, {member.firstName}</p>
           <h1 className="mt-2 text-lg lg:text-xl font-light text-teal-100">
-            Socia ACASPEX nº {dashboard.memberNumber}
+            Socia ACASPEX n.º {dashboard.memberNumber}
           </h1>
           <p className="mt-4 max-w-xl text-sm text-teal-100/80">
             Tu espacio privado con recursos, formación y herramientas para impulsar la calidad asistencial y la seguridad del paciente.
@@ -463,7 +484,7 @@ export function MemberHomePage() {
         <div className="pointer-events-none absolute -right-8 -top-8 h-56 w-56 rounded-full bg-teal-800/20 blur-2xl" />
       </section>
 
-      {/* Dashboard de socio — banda de indicadores */}
+      {/* 2. Dashboard de socio — banda de indicadores */}
       <section className="rounded-2xl border border-slate-100 bg-white px-6 py-5">
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
           <div className="flex items-center gap-3">
@@ -545,116 +566,178 @@ export function MemberHomePage() {
         </div>
       </section>
 
-      {/* Accesos rápidos */}
-      <section>
-        <h2 className="text-xs font-medium uppercase tracking-widest text-slate-500">Accesos rápidos</h2>
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+      {/* 3. Novedades del mes */}
+      <section className="rounded-2xl border border-slate-100 bg-white p-6 sm:p-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-serif text-xl text-slate-900">Novedades del mes</h2>
+            <p className="mt-1 text-sm text-slate-500">Actividad reciente en el portal de socios</p>
+          </div>
           <Link
             to="/socios/recursos"
-            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50"
+            className="hidden text-sm font-medium text-teal-700 transition-colors hover:text-teal-800 sm:block"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <BookOpen size={22} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Centro de Conocimiento ACASPEX</h3>
-              <p className="mt-1 text-xs text-slate-600">Guías, plantillas, formación y materiales validados.</p>
-            </div>
+            Ver todos los recursos
           </Link>
+        </div>
+        <div className="mt-6 divide-y divide-slate-100">
+          {mockNews.slice(0, 5).map((item) => {
+            const config = NEWS_TYPE_CONFIG[item.type] ?? { icon: FileText, label: item.type };
+            const Icon = config.icon;
+            return (
+              <Link
+                key={item.id}
+                to={item.linkTo}
+                className="flex items-start gap-4 px-1 py-3.5 transition-colors hover:bg-slate-50 first:pt-0 last:pb-0"
+              >
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+                  <Icon size={13} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-teal-600">
+                      {config.label}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {formatNewsDate(item.date)}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-sm text-slate-700">{item.title}</p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+        <div className="mt-4 sm:hidden">
           <Link
             to="/socios/recursos"
-            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50"
+            className="text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <GraduationCap size={22} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Academia ACASPEX</h3>
-              <p className="mt-1 text-xs text-slate-600">Formación y desarrollo profesional para socios.</p>
-            </div>
-          </Link>
-          <Link
-            to="/socios/proyectos"
-            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <FolderKanban size={22} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Banco de Proyectos</h3>
-              <p className="mt-1 text-xs text-slate-600">Iniciativas, casos prácticos y proyectos de mejora.</p>
-            </div>
-          </Link>
-          <Link
-            to="/socios/mi-cuenta"
-            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <User size={22} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Mi cuenta</h3>
-              <p className="mt-1 text-xs text-slate-600">Consulta el estado de tu membresía y datos de perfil.</p>
-            </div>
-          </Link>
-          <Link
-            to="/socios/recursos"
-            className="group flex items-start gap-4 rounded-xl p-4 transition-colors hover:bg-slate-50 sm:col-span-2"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <FileText size={22} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-900">Novedades</h3>
-              <p className="mt-1 text-xs text-slate-600">Últimas publicaciones y actualizaciones para la comunidad ACASPEX.</p>
-            </div>
+            Ver todos los recursos
           </Link>
         </div>
       </section>
 
-      {/* Comunidad ACASPEX */}
-      <section className="rounded-2xl bg-teal-900 p-6 text-white lg:p-8">
-        <h2 className="font-serif text-xl text-white">Comunidad ACASPEX</h2>
-        <p className="mt-2 text-sm text-teal-100/80">
-          Forma parte activa de la comunidad ACASPEX. Conecta con otros socios, comparte experiencias y accede a canales exclusivos de comunicación.
-        </p>
-        <p className="mt-5 text-xs font-medium uppercase tracking-wide text-teal-300/70">Canales</p>
-        <div className="mt-3 flex flex-wrap gap-4">
-          <a
-            href="https://wa.me/0"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="flex flex-col items-center gap-1.5 group"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-white transition-transform group-hover:scale-105">
-              <MessageCircle size={22} />
+      {/* 4. Centro de Conocimiento — módulo destacado */}
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 lg:p-10">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-xs font-medium uppercase tracking-widest text-teal-600">Módulo destacado</p>
+          <h2 className="mt-3 font-serif text-2xl lg:text-3xl font-light text-slate-900">Centro de Conocimiento ACASPEX</h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600 max-w-lg">
+            Una biblioteca profesional con guías, plantillas, grabaciones y materiales validados para socios. Documentos revisados, formación estructurada y recursos prácticos para aplicar en tu entorno asistencial.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              to="/socios/recursos"
+              className="inline-flex items-center gap-2 rounded-lg bg-teal-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            >
+              Entrar al Centro de Conocimiento
+              <ChevronRight size={15} />
+            </Link>
+            <Link
+              to="/socios/recursos"
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              <BookOpen size={15} />
+              Explorar recursos
+            </Link>
+          </div>
+        </div>
+        <div className="pointer-events-none absolute -right-8 -top-8 hidden h-40 w-40 rounded-full bg-teal-50/60 blur-xl lg:block" />
+        <div className="pointer-events-none absolute bottom-0 right-0 hidden h-24 w-24 rounded-full bg-amber-50/50 blur-lg lg:block" />
+      </section>
+
+      {/* 5. Academia ACASPEX */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <GraduationCap size={20} />
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-serif text-xl text-slate-900">Academia ACASPEX</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Espacio de formación y desarrollo profesional para socios. Próximamente: grabaciones de sesiones clínicas, presentaciones de jornadas, materiales complementarios de estudio y certificados de participación.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
+                <Video size={12} />
+                Grabaciones
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
+                <BookOpen size={12} />
+                Presentaciones
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
+                <FileText size={12} />
+                Materiales complementarios
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
+                <ShieldCheck size={12} />
+                Certificados
+              </span>
             </div>
-            <span className="text-xs text-teal-100/80">Grupo de socios</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Banco de Proyectos — acceso secundario editorial */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        <div className="sm:flex sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <FolderKanban size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-serif text-xl text-slate-900">Banco de Proyectos</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Iniciativas, casos prácticos y proyectos de mejora compartidos por la comunidad ACASPEX.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/socios/proyectos"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800 sm:mt-0"
+          >
+            Explorar proyectos
+            <ChevronRight size={14} />
+          </Link>
+        </div>
+      </section>
+
+      {/* 7. Comunidad — enlaces institucionales sobrios */}
+      <section className="rounded-2xl border border-slate-100 bg-white p-6 sm:p-8">
+        <h2 className="font-serif text-lg text-slate-900">Comunidad ACASPEX</h2>
+        <p className="mt-1 text-sm text-slate-500">Conecta con otros socios y accede a canales de comunicación.</p>
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+          <a
+            href="mailto:contacto@acaspex.org"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-600 transition-colors hover:text-teal-700"
+          >
+            <Mail size={14} />
+            contacto@acaspex.org
           </a>
           <a
             href="https://www.linkedin.com/company/acaspex"
             target="_blank"
             rel="noreferrer noopener"
-            className="flex flex-col items-center gap-1.5 group"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-600 transition-colors hover:text-teal-700"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white transition-transform group-hover:scale-105">
-              <Globe size={22} />
-            </div>
-            <span className="text-xs text-teal-100/80">LinkedIn</span>
+            <Globe size={14} />
+            LinkedIn ACASPEX
           </a>
           <a
-            href="mailto:contacto@acaspex.org"
-            className="flex flex-col items-center gap-1.5 group"
+            href="https://wa.me/0"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-600 transition-colors hover:text-teal-700"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-white transition-transform group-hover:scale-105">
-              <Mail size={22} />
-            </div>
-            <span className="text-xs text-teal-100/80">contacto@acaspex.org</span>
+            <MessageCircle size={14} />
+            Grupo de socios
           </a>
         </div>
       </section>
 
-      {/* Mensaje institucional */}
+      {/* 8. Mensaje institucional */}
       <section className="rounded-2xl border border-slate-100 bg-white p-6 sm:p-8">
         <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">
