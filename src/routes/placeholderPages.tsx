@@ -64,7 +64,7 @@ export function LoginPage() {
             />
           </div>
           <h2 className="font-serif text-3xl lg:text-4xl font-light tracking-tight">ACASPEX</h2>
-          <p className="mt-2 text-sm text-white/85">Asociación de Calidad Asistencial y Seguridad del Paciente</p>
+          <p className="mt-2 text-sm text-white/85">Asociación Extremeña de Calidad Asistencial y Seguridad de Pacientes</p>
         </div>
 
         <div className="relative z-10 space-y-4">
