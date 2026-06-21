@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 const adminLinks = [
   { label: 'Panel', to: '/admin' },
   { label: 'Socios', to: '/admin/socios' },
+  { label: 'Solicitudes', to: '/admin/solicitudes' },
   { label: 'Recursos', to: '/admin/recursos' },
   { label: 'Renovaciones', to: '/admin/renovaciones' },
 ];

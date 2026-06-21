@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
+  AlertTriangle,
+  Bell,
   BookOpen,
   Building2,
   CalendarCheck,
@@ -19,6 +21,7 @@ import {
   Handshake,
   Heart,
   IdCard,
+  Info,
   Lightbulb,
   Mail,
   MessageCircle,
@@ -28,15 +31,24 @@ import {
   ShieldCheck,
   Stethoscope,
   TrendingUp,
+  Upload,
   User,
   Users,
   Video,
   Wrench,
+  XCircle,
 } from 'lucide-react';
 import { mockMembers, mockRenewals, mockSocioDashboard, type MemberStatus, type MembershipType, type ReducedFeeReason, type RenewalItem } from '../data/mockMembers';
 import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel, type ProjectCategory } from '../data/mockProjects';
-import { mockResources, type ResourceStatus } from '../data/mockResources';
+import { mockResources, type ResourceCategory, type ResourceStatus, type ResourceType } from '../data/mockResources';
 import { mockNews } from '../data/mockNews';
+import {
+  mockSignupRequests,
+  type SignupDocumentType,
+  type SignupMembershipType,
+  type SignupReducedFeeReason,
+  type SignupStatus,
+} from '../data/mockSignup';
 import { cn } from '../lib/utils';
 
 export function LoginPage() {
@@ -1625,11 +1637,86 @@ export function AdminDashboardPage() {
     return `${day}/${month}/${year}`;
   };
 
+  const pendingSignupCount = mockSignupRequests.filter((r) => r.status === 'pending_review').length;
+  const upcomingRenewalCount = mockRenewals.filter((r) => r.renewalState === 'upcoming').length;
+  const expiredRenewalCount = mockRenewals.filter((r) => r.renewalState === 'expired').length;
+  const draftResourceCount = mockResources.filter((r) => r.status === 'draft').length;
+
+  const alerts = [
+    {
+      key: 'pending-signups',
+      label: 'Solicitudes pendientes',
+      count: pendingSignupCount,
+      href: '/admin/solicitudes',
+      icon: Users,
+      color: 'amber',
+    },
+    {
+      key: 'upcoming-renewals',
+      label: 'Renovaciones próximas',
+      count: upcomingRenewalCount,
+      href: '/admin/renovaciones',
+      icon: RefreshCw,
+      color: 'teal',
+    },
+    {
+      key: 'expired-renewals',
+      label: 'Cuotas expiradas',
+      count: expiredRenewalCount,
+      href: '/admin/renovaciones',
+      icon: AlertTriangle,
+      color: 'red',
+    },
+    {
+      key: 'draft-resources',
+      label: 'Recursos en borrador',
+      count: draftResourceCount,
+      href: '/admin/recursos',
+      icon: FileText,
+      color: 'slate',
+    },
+  ] as const;
+
+  const alertColorClass: Record<(typeof alerts)[number]['color'], { card: string; iconBg: string; icon: string }> = {
+    amber: { card: 'border-amber-200 bg-amber-50/60 hover:border-amber-300', iconBg: 'bg-amber-100', icon: 'text-amber-700' },
+    teal: { card: 'border-teal-200 bg-teal-50/40 hover:border-teal-300', iconBg: 'bg-teal-100', icon: 'text-teal-700' },
+    red: { card: 'border-red-200 bg-red-50/50 hover:border-red-300', iconBg: 'bg-red-100', icon: 'text-red-700' },
+    slate: { card: 'border-slate-200 bg-slate-50 hover:border-slate-300', iconBg: 'bg-slate-200', icon: 'text-slate-700' },
+  };
+
   return (
     <div className="space-y-8">
       <section>
         <h1 className="font-serif text-2xl font-light text-slate-900">Panel de administración</h1>
         <p className="mt-1 text-sm text-slate-500">Resumen de socios, recursos y renovaciones.</p>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="mb-5 flex items-center gap-2">
+          <Bell size={18} className="text-teal-700" />
+          <h2 className="font-serif text-lg text-slate-900">Alertas operativas</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {alerts.map((alert) => {
+            const Icon = alert.icon;
+            const colors = alertColorClass[alert.color];
+            return (
+              <Link
+                key={alert.key}
+                to={alert.href}
+                className={`flex items-center gap-4 rounded-xl border p-4 transition-colors ${colors.card}`}
+              >
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${colors.iconBg}`}>
+                  <Icon size={18} className={colors.icon} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-slate-500">{alert.label}</p>
+                  <p className="mt-0.5 text-2xl font-semibold text-slate-900">{alert.count}</p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -2193,11 +2280,30 @@ export function AdminResourcesPage() {
   const draftCount = mockResources.filter((r) => r.status === 'draft').length;
   const archivedCount = mockResources.filter((r) => r.status === 'archived').length;
 
+  const [newResourceMessage, setNewResourceMessage] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
-      <section>
-        <h1 className="font-serif text-2xl font-light text-slate-900">Recursos</h1>
-        <p className="mt-1 text-sm text-slate-500">Gestión mock del Centro de Conocimiento.</p>
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="font-serif text-2xl font-light text-slate-900">Recursos</h1>
+          <p className="mt-1 text-sm text-slate-500">Gestión mock del Centro de Conocimiento.</p>
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={() => setNewResourceMessage('Alta mock — sin guardado real')}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            <Upload size={15} />
+            Nuevo recurso
+          </button>
+          {newResourceMessage && (
+            <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/60 p-3">
+              <p className="text-sm text-amber-800/80">{newResourceMessage}</p>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
@@ -2268,6 +2374,15 @@ export function AdminResourceEditorPage() {
   const { resourceId } = useParams<{ resourceId: string }>();
   const resource = mockResources.find((r) => r.id === resourceId);
 
+  const [title, setTitle] = useState(resource?.title ?? '');
+  const [subtitle, setSubtitle] = useState(resource?.subtitle ?? '');
+  const [category, setCategory] = useState(resource?.category ?? 'calidad');
+  const [type, setType] = useState(resource?.type ?? 'pdf');
+  const [status, setStatus] = useState<ResourceStatus>(resource?.status ?? 'draft');
+  const [description, setDescription] = useState(resource?.description ?? '');
+  const [externalUrl, setExternalUrl] = useState(resource?.externalUrl ?? '');
+  const [mockMessage, setMockMessage] = useState<string | null>(null);
+
   if (!resource) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -2288,7 +2403,7 @@ export function AdminResourceEditorPage() {
     );
   }
 
-  const statusBadge = resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600';
+  const statusBadge = resourceStatusBadgeClass[status] ?? 'bg-slate-100 text-slate-600';
 
   return (
     <div className="space-y-8">
@@ -2308,7 +2423,7 @@ export function AdminResourceEditorPage() {
             <p className="mt-1 text-sm text-slate-500">{resource.subtitle}</p>
           </div>
           <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statusBadge}`}>
-            {resourceStatusLabel[resource.status] ?? resource.status}
+            {resourceStatusLabel[status] ?? status}
           </span>
         </div>
       </section>
@@ -2331,7 +2446,7 @@ export function AdminResourceEditorPage() {
           <div>
             <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Estado</dt>
             <dd className="mt-0.5">
-              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
+              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600'}`}>
                 {resourceStatusLabel[resource.status] ?? resource.status}
               </span>
             </dd>
@@ -2359,6 +2474,13 @@ export function AdminResourceEditorPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
+            <p className="text-sm font-medium text-amber-800">Gestión mock — sin guardado real</p>
+          </div>
+        </div>
+
         <h2 className="font-serif text-xl text-slate-900">Edición mock</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <div>
@@ -2368,9 +2490,9 @@ export function AdminResourceEditorPage() {
             <input
               id="resource-title"
               type="text"
-              defaultValue={resource.title}
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />
           </div>
           <div>
@@ -2380,9 +2502,9 @@ export function AdminResourceEditorPage() {
             <input
               id="resource-subtitle"
               type="text"
-              defaultValue={resource.subtitle}
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />
           </div>
           <div>
@@ -2391,9 +2513,9 @@ export function AdminResourceEditorPage() {
             </label>
             <select
               id="resource-category"
-              defaultValue={resource.category}
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as ResourceCategory)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
               {Object.entries(categoryLabel).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -2408,9 +2530,9 @@ export function AdminResourceEditorPage() {
             </label>
             <select
               id="resource-type"
-              defaultValue={resource.type}
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+              value={type}
+              onChange={(e) => setType(e.target.value as ResourceType)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
               {Object.entries(typeLabel).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -2419,6 +2541,34 @@ export function AdminResourceEditorPage() {
               ))}
             </select>
           </div>
+          <div>
+            <label htmlFor="resource-status" className="block text-xs font-medium text-slate-500">
+              Estado
+            </label>
+            <select
+              id="resource-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as ResourceStatus)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              <option value="draft">Borrador</option>
+              <option value="published">Publicado</option>
+              <option value="archived">Archivado</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="resource-external-url" className="block text-xs font-medium text-slate-500">
+              Enlace externo
+            </label>
+            <input
+              id="resource-external-url"
+              type="url"
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+              placeholder="https://…"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
           <div className="sm:col-span-2">
             <label htmlFor="resource-description" className="block text-xs font-medium text-slate-500">
               Descripción
@@ -2426,18 +2576,49 @@ export function AdminResourceEditorPage() {
             <textarea
               id="resource-description"
               rows={4}
-              defaultValue={resource.description}
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="resource-file" className="block text-xs font-medium text-slate-500">
+              Archivo mock
+            </label>
+            <input
+              id="resource-file"
+              type="file"
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 opacity-60 cursor-not-allowed"
+            />
+            <p className="mt-1 text-xs text-slate-400">La subida de archivos está deshabilitada en la versión mock.</p>
           </div>
         </div>
 
-        <div className="mt-6 rounded-lg border border-amber-100 bg-amber-50/60 p-4">
-          <p className="text-sm text-amber-800/80">
-            Gestión mock — sin guardado real.
-          </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setMockMessage('Borrador guardado (mock — sin guardado real)')}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Edit size={15} />
+            Guardar borrador
+          </button>
+          <button
+            type="button"
+            onClick={() => setMockMessage('Recurso publicado (mock — sin guardado real)')}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            <Upload size={15} />
+            Publicar
+          </button>
         </div>
+
+        {mockMessage && (
+          <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+            <p className="text-sm text-emerald-800/80">{mockMessage}</p>
+          </div>
+        )}
       </section>
     </div>
   );
@@ -2579,5 +2760,1026 @@ export function AdminRenewalsPage() {
       <RenewalSection title="Cuotas expiradas" count={expired.length} items={expired} />
       <RenewalSection title="Sin cuota aplicable / revisión" count={notApplicable.length} items={notApplicable} />
     </div>
+  );
+}
+
+const signupStatusLabel: Record<SignupStatus, string> = {
+  pending_review: 'Pendiente de revisión',
+  active: 'Activo',
+  expired: 'Expirado',
+  inactive: 'Inactivo',
+  cancelled: 'Cancelado',
+};
+
+const signupMembershipSimpleLabel: Record<SignupMembershipType, string> = {
+  general: 'General',
+  reduced: 'Reducida',
+};
+
+function formatSignupDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+export function AdminSignupRequestsPage() {
+  const [statusFilter, setStatusFilter] = useState<SignupStatus | 'all'>('pending_review');
+
+  const filteredRequests = mockSignupRequests.filter((req) =>
+    statusFilter === 'all' ? true : req.status === statusFilter,
+  );
+
+  return (
+    <div className="space-y-6">
+      <section>
+        <h1 className="font-serif text-2xl font-light text-slate-900">Solicitudes de alta</h1>
+        <p className="mt-1 text-sm text-slate-500">Bandeja de revisión de solicitudes de socio.</p>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <Filter size={16} className="text-teal-700" />
+          Filtros
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label htmlFor="signup-status" className="block text-xs font-medium text-slate-500">
+              Estado
+            </label>
+            <select
+              id="signup-status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as SignupStatus | 'all')}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              <option value="all">Todas</option>
+              <option value="pending_review">{signupStatusLabel.pending_review}</option>
+              <option value="active">{signupStatusLabel.active}</option>
+              <option value="expired">{signupStatusLabel.expired}</option>
+              <option value="inactive">{signupStatusLabel.inactive}</option>
+              <option value="cancelled">{signupStatusLabel.cancelled}</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm text-slate-500">
+            <span className="font-medium text-slate-900">{filteredRequests.length}</span> solicitudes
+          </p>
+        </div>
+
+        {filteredRequests.length === 0 ? (
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-6 text-center">
+            <p className="text-sm text-slate-600">No hay solicitudes en este estado</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[48rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                  <th className="pb-3 font-medium">Solicitante</th>
+                  <th className="pb-3 font-medium">Email</th>
+                  <th className="pb-3 font-medium">Fecha de solicitud</th>
+                  <th className="pb-3 font-medium">Tipo de cuota</th>
+                  <th className="pb-3 font-medium">Documentos</th>
+                  <th className="pb-3 font-medium">Estado</th>
+                  <th className="pb-3 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredRequests.map((req) => {
+                  const badgeClass = statusBadgeClass[req.status] ?? 'bg-slate-100 text-slate-600';
+                  const accreditationText =
+                    req.membershipType === 'general'
+                      ? 'No aplica'
+                      : req.accreditationUploaded
+                        ? 'Sí'
+                        : 'No';
+
+                  return (
+                    <tr key={req.id} className="hover:bg-slate-50/60">
+                      <td className="py-3 font-medium text-slate-900">
+                        {req.firstName} {req.lastName1} {req.lastName2}
+                      </td>
+                      <td className="py-3 text-slate-600">{req.email}</td>
+                      <td className="py-3 text-slate-600">{formatSignupDate(req.requestedAt)}</td>
+                      <td className="py-3 text-slate-600">
+                        {signupMembershipSimpleLabel[req.membershipType]}
+                      </td>
+                      <td className="py-3 text-slate-600">
+                        <div className="space-y-0.5">
+                          <p>Justificante: {req.transferReceiptUploaded ? 'Sí' : 'No'}</p>
+                          <p>Acreditación: {accreditationText}</p>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}
+                        >
+                          {signupStatusLabel[req.status] ?? req.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <Link
+                          to={`/admin/solicitudes/${req.id}`}
+                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-50"
+                        >
+                          Revisar solicitud
+                          <ChevronRight size={13} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+export function AdminSignupDetailPage() {
+  const { signupId } = useParams<{ signupId: string }>();
+  const request = mockSignupRequests.find((r) => r.id === signupId);
+
+  const [paymentAmount, setPaymentAmount] = useState<number | ''>(
+    request ? (request.membershipType === 'reduced' ? 30 : 50) : '',
+  );
+  const [paymentDate, setPaymentDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [paymentReference, setPaymentReference] = useState('');
+  const [activationMessage, setActivationMessage] = useState<string | null>(null);
+
+  if (!request) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="space-y-4">
+          <h1 className="font-serif text-2xl font-light text-slate-900">Solicitud no encontrada</h1>
+          <p className="text-sm text-slate-600">
+            No existe ninguna solicitud con el identificador indicado.
+          </p>
+          <Link
+            to="/admin/solicitudes"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            <ChevronLeft size={14} />
+            Volver a solicitudes
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  const fullName = `${request.firstName} ${request.lastName1} ${request.lastName2}`;
+  const badgeClass = statusBadgeClass[request.status] ?? 'bg-slate-100 text-slate-600';
+  const isReduced = request.membershipType === 'reduced';
+
+  const today = new Date();
+  const paidUntilPreview = new Date(today);
+  paidUntilPreview.setMonth(paidUntilPreview.getMonth() + 12);
+  const paidUntilPreviewLabel = paidUntilPreview.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const handleActivate = () => {
+    const paidUntil = new Date();
+    paidUntil.setMonth(paidUntil.getMonth() + 12);
+    const paidUntilLabel = paidUntil.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    setActivationMessage(`Socio activado (simulación). Vigencia hasta ${paidUntilLabel}.`);
+  };
+
+  return (
+    <div className="space-y-8">
+      <Link
+        to="/admin/solicitudes"
+        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+      >
+        <ChevronLeft size={14} />
+        Volver a solicitudes
+      </Link>
+
+      {/* Cabecera */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-teal-700">Solicitud de alta</p>
+            <h1 className="mt-2 font-serif text-3xl font-light text-slate-900">{fullName}</h1>
+            <p className="mt-1 text-sm text-slate-500">{request.email}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${badgeClass}`}>
+              {signupStatusLabel[request.status] ?? request.status}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              {signupMembershipSimpleLabel[request.membershipType] ?? request.membershipType}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Datos de la solicitud */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Identificación */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <IdCard size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Identificación</h2>
+          </div>
+          <dl className="mt-6 space-y-4 text-sm">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Documento</dt>
+              <dd className="mt-0.5 text-slate-700">
+                {documentTypeLabel[request.documentType]} · {request.documentNumber}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Domicilio</dt>
+              <dd className="mt-0.5 text-slate-700">{request.address}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Código postal</dt>
+              <dd className="mt-0.5 text-slate-700">{request.postalCode}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Contacto */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <Mail size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Contacto</h2>
+          </div>
+          <dl className="mt-6 space-y-4 text-sm">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Email</dt>
+              <dd className="mt-0.5 text-slate-700">{request.email}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Email de confirmación</dt>
+              <dd className="mt-0.5 text-slate-700">{request.emailConfirmation}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Teléfono</dt>
+              <dd className="mt-0.5 text-slate-700">{request.phone}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Perfil profesional */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:col-span-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <User size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Perfil profesional</h2>
+          </div>
+          <dl className="mt-6 grid gap-6 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría profesional</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">{request.professionalCategory}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Puesto de trabajo</dt>
+              <dd className="mt-0.5 text-slate-700">{request.jobTitle}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Organización</dt>
+              <dd className="mt-0.5 text-slate-700">{request.organization}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Vínculo con calidad y seguridad del paciente
+              </dt>
+              <dd className="mt-0.5 leading-relaxed text-slate-700">{request.qualitySafetyLink}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Cuota */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <CreditCard size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Cuota</h2>
+          </div>
+          <dl className="mt-6 space-y-4 text-sm">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo de cuota</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">
+                {signupMembershipTypeLabel[request.membershipType] ?? request.membershipType}
+              </dd>
+            </div>
+            {isReduced && request.reducedFeeReason && (
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Motivo cuota reducida</dt>
+                <dd className="mt-0.5 text-slate-700">
+                  {signupReducedFeeReasonLabel[request.reducedFeeReason]}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Fecha de solicitud</dt>
+              <dd className="mt-0.5 text-slate-700">{formatSignupDate(request.requestedAt)}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Consentimientos</dt>
+              <dd className="mt-0.5 text-slate-700">
+                Comunicaciones: {request.communicationConsent ? 'Sí' : 'No'} · Datos: {request.dataProcessingConsent ? 'Sí' : 'No'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Notas</dt>
+              <dd className="mt-0.5 leading-relaxed text-slate-700">{request.notes}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      {/* Documentación adjunta */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="font-serif text-xl text-slate-900">Documentación adjunta</h2>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Justificante de transferencia</p>
+            <p className="mt-2 text-sm font-medium text-slate-900">
+              {request.transferReceiptUploaded ? 'Subido' : 'No subido'}
+            </p>
+            {request.transferReceiptFileName && (
+              <p className="mt-1 break-all text-xs text-slate-600">{request.transferReceiptFileName}</p>
+            )}
+            <button
+              type="button"
+              disabled
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+            >
+              <FileText size={15} />
+              Validar justificante
+            </button>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Acreditación de cuota reducida</p>
+            {isReduced ? (
+              <>
+                <p className="mt-2 text-sm font-medium text-slate-900">
+                  {request.accreditationUploaded ? 'Subida' : 'No subida'}
+                </p>
+                {request.accreditationFileName && (
+                  <p className="mt-1 break-all text-xs text-slate-600">{request.accreditationFileName}</p>
+                )}
+                <button
+                  type="button"
+                  disabled
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+                >
+                  <ShieldCheck size={15} />
+                  Validar acreditación
+                </button>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">No aplica</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Validación administrativa */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="font-serif text-xl text-slate-900">Validación administrativa</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Al activar hoy, la vigencia sería hasta <span className="font-medium text-slate-900">{paidUntilPreviewLabel}</span>.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <CheckCircle size={15} />
+            Activar socio
+          </button>
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <XCircle size={15} />
+            Denegar / cancelar solicitud
+          </button>
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <Mail size={15} />
+            Enviar comunicación de bienvenida
+          </button>
+        </div>
+      </section>
+
+      {/* Registro de pago */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="font-serif text-xl text-slate-900">Registro de pago (simulación)</h2>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="payment-amount" className="block text-xs font-medium text-slate-500">
+              Importe (€)
+            </label>
+            <input
+              id="payment-amount"
+              type="number"
+              min={0}
+              step={0.01}
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
+          <div>
+            <label htmlFor="payment-date" className="block text-xs font-medium text-slate-500">
+              Fecha de pago
+            </label>
+            <input
+              id="payment-date"
+              type="date"
+              value={paymentDate}
+              onChange={(e) => setPaymentDate(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
+          <div>
+            <label htmlFor="payment-method" className="block text-xs font-medium text-slate-500">
+              Método
+            </label>
+            <select
+              id="payment-method"
+              value="transfer"
+              disabled
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
+            >
+              <option value="transfer">Transferencia</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="payment-reference" className="block text-xs font-medium text-slate-500">
+              Referencia
+            </label>
+            <input
+              id="payment-reference"
+              type="text"
+              value={paymentReference}
+              onChange={(e) => setPaymentReference(e.target.value)}
+              placeholder="Referencia de la operación"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
+          >
+            <CreditCard size={15} />
+            Registrar pago
+          </button>
+          <button
+            type="button"
+            onClick={handleActivate}
+            aria-disabled="true"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors hover:bg-slate-50 cursor-not-allowed"
+          >
+            <CheckCircle size={15} />
+            Activar socio
+          </button>
+        </div>
+        {activationMessage && (
+          <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+            <p className="text-sm text-emerald-800/80">{activationMessage}</p>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+const signupMembershipTypeLabel: Record<SignupMembershipType, string> = {
+  general: 'General — 50 €/año',
+  reduced: 'Reducida — 30 €/año',
+};
+
+const signupReducedFeeReasonLabel: Record<NonNullable<SignupReducedFeeReason>, string> = {
+  resident: 'Residente',
+  student: 'Estudiante',
+  retired: 'Jubilado/a',
+};
+
+const documentTypeLabel: Record<SignupDocumentType, string> = {
+  dni: 'DNI',
+  nie: 'NIE',
+  passport: 'Pasaporte',
+};
+
+type SignupFormState = {
+  firstName: string;
+  lastName1: string;
+  lastName2: string;
+  documentType: SignupDocumentType;
+  documentNumber: string;
+  address: string;
+  postalCode: string;
+  email: string;
+  emailConfirmation: string;
+  phone: string;
+  professionalCategory: string;
+  jobTitle: string;
+  organization: string;
+  qualitySafetyLink: string;
+  membershipType: SignupMembershipType;
+  reducedFeeReason: SignupReducedFeeReason;
+  communicationConsent: boolean;
+  dataProcessingConsent: boolean;
+};
+
+const signupInitialState: SignupFormState = {
+  firstName: '',
+  lastName1: '',
+  lastName2: '',
+  documentType: 'dni',
+  documentNumber: '',
+  address: '',
+  postalCode: '',
+  email: '',
+  emailConfirmation: '',
+  phone: '',
+  professionalCategory: '',
+  jobTitle: '',
+  organization: '',
+  qualitySafetyLink: '',
+  membershipType: 'general',
+  reducedFeeReason: null,
+  communicationConsent: false,
+  dataProcessingConsent: false,
+};
+
+export function SignupPage() {
+  const [form, setForm] = useState<SignupFormState>(signupInitialState);
+  const [submitted, setSubmitted] = useState(false);
+
+  const updateField = <K extends keyof SignupFormState>(field: K, value: SignupFormState[K]) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <main className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-2xl border border-teal-200 bg-white p-8 shadow-sm sm:p-10">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <CheckCircle size={28} />
+            </div>
+            <h1 className="mt-5 font-serif text-2xl font-light text-slate-900">Solicitud recibida</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Hemos registrado tu solicitud de alta. Queda en estado <strong>pending_review</strong> y será revisada por el equipo de ACASPEX.
+            </p>
+            <div className="mt-6 rounded-lg border border-amber-100 bg-amber-50/60 p-4">
+              <p className="text-sm leading-relaxed text-amber-800/80">
+                Mientras validamos este formulario, también puedes usar el formulario anterior de Microsoft Forms.
+              </p>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-teal-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+              >
+                Volver al inicio
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setForm(signupInitialState);
+                  setSubmitted(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                Enviar otra solicitud
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const isReduced = form.membershipType === 'reduced';
+
+  return (
+    <main className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:py-14 lg:px-8">
+      <div className="mx-auto max-w-3xl">
+        {/* Cabecera */}
+        <div className="mb-8 text-center">
+          <h1 className="font-serif text-3xl font-light text-slate-900 sm:text-4xl">Hazte socio de ACASPEX</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Completa el formulario para iniciar tu solicitud de alta. Sin pago real en esta versión mock.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Identificación */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+                <IdCard size={18} />
+              </div>
+              <h2 className="font-serif text-xl text-slate-900">Identificación</h2>
+            </div>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <div>
+                <label htmlFor="signup-firstName" className="block text-sm font-medium text-slate-700">
+                  Nombre
+                </label>
+                <input
+                  id="signup-firstName"
+                  type="text"
+                  value={form.firstName}
+                  onChange={(e) => updateField('firstName', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-lastName1" className="block text-sm font-medium text-slate-700">
+                  Primer apellido
+                </label>
+                <input
+                  id="signup-lastName1"
+                  type="text"
+                  value={form.lastName1}
+                  onChange={(e) => updateField('lastName1', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-lastName2" className="block text-sm font-medium text-slate-700">
+                  Segundo apellido
+                </label>
+                <input
+                  id="signup-lastName2"
+                  type="text"
+                  value={form.lastName2}
+                  onChange={(e) => updateField('lastName2', e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-documentType" className="block text-sm font-medium text-slate-700">
+                  Tipo de documento
+                </label>
+                <select
+                  id="signup-documentType"
+                  value={form.documentType}
+                  onChange={(e) => updateField('documentType', e.target.value as SignupDocumentType)}
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                >
+                  <option value="dni">{documentTypeLabel.dni}</option>
+                  <option value="nie">{documentTypeLabel.nie}</option>
+                  <option value="passport">{documentTypeLabel.passport}</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="signup-documentNumber" className="block text-sm font-medium text-slate-700">
+                  Número de documento
+                </label>
+                <input
+                  id="signup-documentNumber"
+                  type="text"
+                  value={form.documentNumber}
+                  onChange={(e) => updateField('documentNumber', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-address" className="block text-sm font-medium text-slate-700">
+                  Domicilio
+                </label>
+                <input
+                  id="signup-address"
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => updateField('address', e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-postalCode" className="block text-sm font-medium text-slate-700">
+                  Código postal
+                </label>
+                <input
+                  id="signup-postalCode"
+                  type="text"
+                  value={form.postalCode}
+                  onChange={(e) => updateField('postalCode', e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Contacto */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+                <Mail size={18} />
+              </div>
+              <h2 className="font-serif text-xl text-slate-900">Contacto</h2>
+            </div>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <div>
+                <label htmlFor="signup-email" className="block text-sm font-medium text-slate-700">
+                  Email
+                </label>
+                <input
+                  id="signup-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => updateField('email', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-emailConfirmation" className="block text-sm font-medium text-slate-700">
+                  Repetir email
+                </label>
+                <input
+                  id="signup-emailConfirmation"
+                  type="email"
+                  value={form.emailConfirmation}
+                  onChange={(e) => updateField('emailConfirmation', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="signup-phone" className="block text-sm font-medium text-slate-700">
+                  Teléfono móvil
+                </label>
+                <input
+                  id="signup-phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => updateField('phone', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 sm:w-1/2"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Perfil profesional */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+                <User size={18} />
+              </div>
+              <h2 className="font-serif text-xl text-slate-900">Perfil profesional</h2>
+            </div>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <div>
+                <label htmlFor="signup-professionalCategory" className="block text-sm font-medium text-slate-700">
+                  Categoría profesional
+                </label>
+                <input
+                  id="signup-professionalCategory"
+                  type="text"
+                  value={form.professionalCategory}
+                  onChange={(e) => updateField('professionalCategory', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-jobTitle" className="block text-sm font-medium text-slate-700">
+                  Puesto de trabajo
+                </label>
+                <input
+                  id="signup-jobTitle"
+                  type="text"
+                  value={form.jobTitle}
+                  onChange={(e) => updateField('jobTitle', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="signup-organization" className="block text-sm font-medium text-slate-700">
+                  Organización
+                </label>
+                <input
+                  id="signup-organization"
+                  type="text"
+                  value={form.organization}
+                  onChange={(e) => updateField('organization', e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="signup-qualitySafetyLink" className="block text-sm font-medium text-slate-700">
+                  Vinculación con calidad asistencial y seguridad del paciente
+                </label>
+                <textarea
+                  id="signup-qualitySafetyLink"
+                  rows={3}
+                  value={form.qualitySafetyLink}
+                  onChange={(e) => updateField('qualitySafetyLink', e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Cuota */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+                <CreditCard size={18} />
+              </div>
+              <h2 className="font-serif text-xl text-slate-900">Cuota</h2>
+            </div>
+            <div className="mt-6 space-y-5">
+              <div>
+                <label htmlFor="signup-membershipType" className="block text-sm font-medium text-slate-700">
+                  Tipo de cuota
+                </label>
+                <select
+                  id="signup-membershipType"
+                  value={form.membershipType}
+                  onChange={(e) => {
+                    const value = e.target.value as SignupMembershipType;
+                    setForm((prev) => ({
+                      ...prev,
+                      membershipType: value,
+                      reducedFeeReason: value === 'general' ? null : prev.reducedFeeReason,
+                    }));
+                  }}
+                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 sm:w-1/2"
+                >
+                  <option value="general">{signupMembershipTypeLabel.general}</option>
+                  <option value="reduced">{signupMembershipTypeLabel.reduced}</option>
+                </select>
+              </div>
+
+              {isReduced && (
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+                  <div>
+                    <label htmlFor="signup-reducedFeeReason" className="block text-sm font-medium text-slate-700">
+                      Motivo de la cuota reducida
+                    </label>
+                    <select
+                      id="signup-reducedFeeReason"
+                      value={form.reducedFeeReason ?? ''}
+                      onChange={(e) =>
+                        updateField('reducedFeeReason', (e.target.value as SignupReducedFeeReason) || null)
+                      }
+                      required={isReduced}
+                      className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 sm:w-1/2"
+                    >
+                      <option value="">Selecciona un motivo</option>
+                      <option value="resident">{signupReducedFeeReasonLabel.resident}</option>
+                      <option value="student">{signupReducedFeeReasonLabel.student}</option>
+                      <option value="retired">{signupReducedFeeReasonLabel.retired}</option>
+                    </select>
+                  </div>
+                  <div className="mt-5">
+                    <label htmlFor="signup-accreditation" className="block text-sm font-medium text-slate-700">
+                      Acreditación de cuota reducida
+                    </label>
+                    <div className="mt-1.5 flex items-center gap-3">
+                      <input
+                        id="signup-accreditation"
+                        type="file"
+                        disabled
+                        className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-100 file:px-4 file:py-2 file:font-medium file:text-teal-700 hover:file:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                      />
+                    </div>
+                    <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
+                      <Info size={13} className="mt-0.5 shrink-0" />
+                      Subida de documentos deshabilitada en esta versión mock.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="signup-transferReceipt" className="block text-sm font-medium text-slate-700">
+                  Justificante de transferencia
+                </label>
+                <div className="mt-1.5 flex items-center gap-3">
+                  <input
+                    id="signup-transferReceipt"
+                    type="file"
+                    disabled
+                    className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-100 file:px-4 file:py-2 file:font-medium file:text-teal-700 hover:file:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  />
+                </div>
+                <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
+                  <Info size={13} className="mt-0.5 shrink-0" />
+                  No se realiza ningún pago real. Esta versión solo simula el adjunto.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Consentimientos */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+                <ShieldCheck size={18} />
+              </div>
+              <h2 className="font-serif text-xl text-slate-900">Consentimientos</h2>
+            </div>
+            <div className="mt-6 space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.communicationConsent}
+                  onChange={(e) => updateField('communicationConsent', e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-600"
+                />
+                <span className="text-sm text-slate-700">
+                  Acepto recibir comunicaciones informativas de ACASPEX sobre actividades, recursos y novedades del portal.
+                </span>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.dataProcessingConsent}
+                  onChange={(e) => updateField('dataProcessingConsent', e.target.checked)}
+                  required
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-600"
+                />
+                <span className="text-sm text-slate-700">
+                  Acepto el tratamiento de mis datos personales con fines de gestión de la solicitud de alta y membresía de ACASPEX.
+                </span>
+              </label>
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-slate-500">
+              Texto legal provisional. En la versión definitiva se incluirá la información completa de protección de datos y condiciones de alta.
+            </p>
+          </section>
+
+          {/* Fallback Microsoft Forms */}
+          <div className="rounded-lg border border-amber-100 bg-amber-50/60 p-4">
+            <p className="text-sm leading-relaxed text-amber-800/80">
+              Mientras validamos este formulario, también puedes usar el formulario anterior de Microsoft Forms.
+            </p>
+          </div>
+
+          {/* Enviar */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            >
+              <Upload size={16} />
+              Enviar solicitud
+            </button>
+            <Link
+              to="/"
+              className="text-center text-sm font-medium text-slate-500 transition-colors hover:text-teal-700 sm:text-left"
+            >
+              Volver al inicio
+            </Link>
+          </div>
+        </form>
+      </div>
+    </main>
   );
 }

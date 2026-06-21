@@ -8,6 +8,8 @@ import {
   AdminRenewalsPage,
   AdminResourceEditorPage,
   AdminResourcesPage,
+  AdminSignupDetailPage,
+  AdminSignupRequestsPage,
   LoginPage,
   MemberAccountPage,
   MemberHomePage,
@@ -15,6 +17,7 @@ import {
   MemberProjectBankPage,
   MemberProjectDetailPage,
   MemberResourceDetailPage,
+  SignupPage,
 } from './placeholderPages';
 
 export function AppRouter() {
@@ -23,6 +26,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/hazte-socio" element={<SignupPage />} />
         <Route element={<MemberLayout />}>
           <Route path="/socios" element={<MemberHomePage />} />
           <Route path="/socios/recursos" element={<MemberLibraryPage />} />
@@ -35,6 +39,8 @@ export function AppRouter() {
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/socios" element={<AdminMembersPage />} />
           <Route path="/admin/socios/:memberId" element={<AdminMemberDetailPage />} />
+          <Route path="/admin/solicitudes" element={<AdminSignupRequestsPage />} />
+          <Route path="/admin/solicitudes/:signupId" element={<AdminSignupDetailPage />} />
           <Route path="/admin/recursos" element={<AdminResourcesPage />} />
           <Route path="/admin/recursos/:resourceId" element={<AdminResourceEditorPage />} />
           <Route path="/admin/renovaciones" element={<AdminRenewalsPage />} />
