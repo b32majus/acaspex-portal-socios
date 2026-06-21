@@ -1,5 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { BookOpen, CalendarCheck, ChevronRight, FileText, User } from 'lucide-react';
+import { BookOpen, CalendarCheck, ChevronRight, FileText, Settings, User } from 'lucide-react';
 import { mockMembers } from '../data/mockMembers';
 import { mockResources } from '../data/mockResources';
 
@@ -22,7 +22,7 @@ function PlaceholderPage({ title }: PlaceholderPageProps) {
 export function LoginPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <section className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+      <section className="relative mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
         <h1 className="mt-2 text-3xl font-semibold">Acceso socios</h1>
         <p className="mt-3 text-slate-600">Accede al area privada de socios de ACASPEX.</p>
@@ -31,6 +31,14 @@ export function LoginPage() {
             Entrar como socio
           </Link>
         </div>
+        <Link
+          to="/admin"
+          className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500"
+          title="Acceso administrador"
+          aria-label="Acceso administrador"
+        >
+          <Settings size={16} />
+        </Link>
       </section>
     </main>
   );
