@@ -13,6 +13,7 @@ import {
   MemberHomePage,
   MemberLibraryPage,
   MemberProjectBankPage,
+  MemberProjectDetailPage,
   MemberResourceDetailPage,
 } from './placeholderPages';
 
@@ -27,6 +28,7 @@ export function AppRouter() {
           <Route path="/socios/recursos" element={<MemberLibraryPage />} />
           <Route path="/socios/recursos/:resourceId" element={<MemberResourceDetailPage />} />
           <Route path="/socios/proyectos" element={<MemberProjectBankPage />} />
+          <Route path="/socios/proyectos/:projectId" element={<MemberProjectDetailPage />} />
           <Route path="/socios/mi-cuenta" element={<MemberAccountPage />} />
         </Route>
         <Route element={<AdminLayout />}>

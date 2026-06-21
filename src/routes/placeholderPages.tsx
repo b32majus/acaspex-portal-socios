@@ -1368,11 +1368,165 @@ export function MemberProjectBankPage() {
                         <span>Material asociado: {project.associatedMaterial}</span>
                       </div>
                     )}
+                    <div className="mt-4">
+                      <Link
+                        to={`/socios/proyectos/${project.id}`}
+                        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+                      >
+                        Ver proyecto
+                        <ChevronRight size={14} />
+                      </Link>
+                    </div>
                   </article>
                 );
               })}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function MemberProjectDetailPage() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const project = mockProjects.find((p) => p.id === projectId);
+
+  if (!project) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="space-y-4">
+          <h1 className="text-2xl font-semibold text-slate-900">Proyecto no encontrado</h1>
+          <p className="text-sm text-slate-600">
+            El proyecto que buscas no existe o no está disponible.
+          </p>
+          <Link
+            to="/socios/proyectos"
+            className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
+          >
+            Volver al Banco de Proyectos
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  const statusBadge = projectStatusBadgeClass[project.status] ?? 'bg-slate-100 text-slate-600';
+  const statusText = projectStatusLabel[project.status] ?? project.status;
+  const categoryText = projectCategoryLabel[project.category] ?? project.category;
+
+  return (
+    <div className="space-y-0">
+      <div className="border-b border-slate-100 bg-slate-50/50 pb-8 pt-2">
+        <div className="mx-auto max-w-3xl">
+          <Link
+            to="/socios/proyectos"
+            className="text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+          >
+            Volver al Banco de Proyectos
+          </Link>
+        </div>
+      </div>
+
+      {/* Hero editorial */}
+      <section className="bg-teal-900 text-white">
+        <div className="mx-auto max-w-3xl px-6 py-10 sm:py-14">
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-teal-50">
+              {categoryText}
+            </span>
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
+              {statusText}
+            </span>
+            {project.fuente && (
+              <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-teal-50">
+                {project.fuente}
+              </span>
+            )}
+          </div>
+          <h1 className="mt-5 font-serif text-3xl font-light leading-tight sm:text-4xl">
+            {project.title}
+          </h1>
+          <p className="mt-3 text-sm text-teal-100/80">
+            {project.scope} · {project.organization}
+          </p>
+        </div>
+      </section>
+
+      {/* Resumen */}
+      <section className="bg-slate-50">
+        <div className="mx-auto max-w-3xl px-6 py-8">
+          <p className="text-sm leading-relaxed text-slate-700">{project.summary}</p>
+        </div>
+      </section>
+
+      {/* Contenido editorial */}
+      <article className="bg-white px-6 py-12">
+        <div className="mx-auto max-w-3xl space-y-10">
+          <section className="border-t border-slate-100 pt-8">
+            <h2 className="font-serif text-lg text-slate-900">Objetivo</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.objetivo}</p>
+          </section>
+
+          <section className="border-t border-slate-100 pt-8">
+            <h2 className="font-serif text-lg text-slate-900">Contexto</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.contexto}</p>
+          </section>
+
+          <section className="border-t border-slate-100 pt-8">
+            <h2 className="font-serif text-lg text-slate-900">Metodología</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.metodologia}</p>
+          </section>
+
+          <section className="border-t border-slate-100 pt-8">
+            <h2 className="font-serif text-lg text-slate-900">Indicadores</h2>
+            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-slate-700">
+              {project.indicadores.map((indicador, index) => (
+                <li key={index}>{indicador}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="border-t border-slate-100 pt-8">
+            <h2 className="font-serif text-lg text-slate-900">Resultados</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.resultados}</p>
+          </section>
+
+          <section className="border-t border-slate-100 pt-8">
+            <h2 className="font-serif text-lg text-slate-900">Lecciones aprendidas</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.lecciones_aprendidas}</p>
+          </section>
+
+          <section className="border-t border-teal-100 pt-8">
+            <h2 className="font-serif text-lg text-teal-900">Aprendizaje transferible</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">{project.transferableLearning}</p>
+          </section>
+
+          {project.associatedMaterial && (
+            <section className="border-t border-slate-100 pt-8">
+              <p className="text-sm text-slate-600">
+                Material asociado: {project.associatedMaterial}.{' '}
+                <Link
+                  to="/socios/recursos"
+                  className="font-medium text-teal-700 transition-colors hover:text-teal-800"
+                >
+                  Ver en el Centro de Conocimiento
+                </Link>
+              </p>
+            </section>
+          )}
+        </div>
+      </article>
+
+      <div className="border-t border-slate-100 bg-white px-6 py-10">
+        <div className="mx-auto max-w-3xl">
+          <Link
+            to="/socios/proyectos"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            Volver al Banco de Proyectos
+            <ChevronRight size={14} />
+          </Link>
         </div>
       </div>
     </div>
