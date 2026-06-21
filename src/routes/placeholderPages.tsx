@@ -56,11 +56,11 @@ export function LoginPage() {
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-teal-800/30 to-transparent" />
 
         <div className="relative z-10">
-          <div className="mb-5 inline-block rounded-xl bg-white/95 px-3 pt-1.5 pb-4 shadow-sm backdrop-blur-[2px]">
+          <div className="mb-5 inline-block rounded-xl bg-white/95 px-3 pt-0 pb-5 shadow-sm backdrop-blur-[2px]">
             <img
               src={`${assetBase}assets/acaspex/logo-horizontal.jpg`}
               alt="ACASPEX"
-              className="w-48 lg:w-56"
+              className="w-48 -mt-1 lg:w-56"
             />
           </div>
           <h2 className="font-serif text-3xl lg:text-4xl font-light tracking-tight">ACASPEX</h2>
