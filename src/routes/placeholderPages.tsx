@@ -577,7 +577,7 @@ export function MemberHomePage() {
             to="/socios/recursos"
             className="hidden text-sm font-medium text-teal-700 transition-colors hover:text-teal-800 sm:block"
           >
-            Ver todos los recursos
+            Ir al Centro de Conocimiento
           </Link>
         </div>
         <div className="mt-6 divide-y divide-slate-100">
@@ -613,7 +613,7 @@ export function MemberHomePage() {
             to="/socios/recursos"
             className="text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
           >
-            Ver todos los recursos
+            Ir al Centro de Conocimiento
           </Link>
         </div>
       </section>
@@ -735,14 +735,6 @@ export function MemberHomePage() {
             Grupo de socios
           </a>
         </div>
-      </section>
-
-      {/* 8. Mensaje institucional */}
-      <section className="rounded-2xl border border-slate-100 bg-white p-6 sm:p-8">
-        <p className="text-sm font-medium uppercase tracking-wide text-teal-700">ACASPEX</p>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">
-          ACASPEX impulsa una comunidad comprometida con la calidad asistencial y la seguridad del paciente. Este espacio reúne materiales, formación y herramientas para acompañar ese trabajo compartido.
-        </p>
       </section>
     </div>
   );
