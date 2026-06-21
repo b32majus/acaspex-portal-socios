@@ -20,6 +20,11 @@ export function AdminLayout() {
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside className="border-b border-slate-200 bg-white md:w-64 md:flex-shrink-0 md:border-b-0 md:border-r">
           <div className="px-5 pt-5 pb-3 md:px-6 md:pt-6 md:pb-4">
+            <img
+              src="/assets/acaspex/logo-burbuja.jpg"
+              alt="ACASPEX"
+              className="mb-2 h-12 w-auto max-w-full object-contain"
+            />
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-600">ACASPEX</p>
             <h2 className="mt-0.5 text-lg font-semibold text-slate-800">Administración</h2>
             <p className="mt-0.5 text-xs text-slate-400">Portal de socios</p>

@@ -22,9 +22,16 @@ export function MemberLayout() {
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <header className="bg-teal-900 text-white px-6 py-4 lg:px-8">
         <div className="mx-auto max-w-6xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-serif text-xl lg:text-2xl font-light tracking-tight text-white">ACASPEX</h1>
-            <p className="text-[11px] font-medium uppercase tracking-widest text-teal-200/70">Área de socios</p>
+          <div className="flex items-center gap-3">
+            <img
+              src="/assets/acaspex/logo-burbuja.jpg"
+              alt="ACASPEX"
+              className="h-9 w-auto rounded-lg object-contain bg-teal-800/40 ring-1 ring-white/10"
+            />
+            <div>
+              <h1 className="font-serif text-xl lg:text-2xl font-light tracking-tight text-white">ACASPEX</h1>
+              <p className="text-[11px] font-medium uppercase tracking-widest text-teal-200/70">Área de socios</p>
+            </div>
           </div>
           <nav className="flex flex-wrap items-center gap-2">
             {memberLinks.map((link) => {
