@@ -12,6 +12,7 @@ import {
   Globe,
   GraduationCap,
   Handshake,
+  IdCard,
   Lightbulb,
   Mail,
   MessageCircle,
@@ -1036,6 +1037,7 @@ export function MemberResourceDetailPage() {
 
 export function MemberAccountPage() {
   const member = mockMembers.find((m) => m.id === 'mem-001');
+  const dashboard = mockSocioDashboard;
 
   if (!member) {
     return (
@@ -1045,69 +1047,171 @@ export function MemberAccountPage() {
     );
   }
 
-  const badgeClass = statusBadgeClass[member.status] ?? 'bg-slate-100 text-slate-600';
-  const statusLabel = member.status === 'pending_review'
-    ? 'Pendiente revisión'
-    : member.status.charAt(0).toUpperCase() + member.status.slice(1);
+  const badgeClass = statusBadgeClass[dashboard.status] ?? 'bg-slate-100 text-slate-600';
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Mi cuenta</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Consulta el estado de tu membresía y los datos asociados a tu perfil de socio.
-        </p>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-            <User size={20} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-slate-900">Datos personales</h2>
-            <div className="mt-3 space-y-1 text-sm text-slate-700">
-              <p><span className="font-medium text-slate-900">Nombre completo:</span> {member.firstName} {member.lastName1} {member.lastName2}</p>
-              <p><span className="font-medium text-slate-900">Email:</span> {member.email}</p>
-              <p><span className="font-medium text-slate-900">Teléfono:</span> {member.phone}</p>
-              <p><span className="font-medium text-slate-900">Categoría profesional:</span> {member.professionalCategory}</p>
-              <p><span className="font-medium text-slate-900">Puesto:</span> {member.jobTitle}</p>
-              <p><span className="font-medium text-slate-900">Organización:</span> {member.organization}</p>
-            </div>
-          </div>
+    <div className="space-y-10">
+      {/* Header editorial */}
+      <section className="relative overflow-hidden rounded-2xl bg-teal-900 p-8 text-white sm:p-10 lg:p-12">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-xs font-medium uppercase tracking-widest text-teal-200/80">Área de socios</p>
+          <h1 className="mt-4 font-serif text-4xl font-light text-white">Mi cuenta</h1>
+          <p className="mt-2 text-lg font-light text-teal-100">
+            Consulta el estado de tu membresía y los datos asociados a tu perfil de socio.
+          </p>
         </div>
+        <div className="pointer-events-none absolute -right-8 -top-8 h-56 w-56 rounded-full bg-teal-800/20 blur-2xl" />
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-            <CalendarCheck size={20} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-slate-900">Estado de membresía</h2>
-            <div className="mt-3 space-y-1 text-sm text-slate-700">
-              <p>
-                <span className="font-medium text-slate-900">Estado:</span>{' '}
-                <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}>
-                  {statusLabel}
+      {/* Credencial digital */}
+      <section className="mx-auto max-w-3xl">
+        <div className="relative overflow-hidden rounded-xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white shadow-sm">
+          <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-teal-100/40 blur-2xl" />
+          <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-8">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-teal-100 text-teal-700 shadow-sm">
+              <User size={40} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-teal-800">ACASPEX</span>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}>
+                  {dashboard.statusLabel}
                 </span>
+              </div>
+              <p className="mt-2 font-serif text-2xl font-medium text-slate-900">
+                {member.firstName} {member.lastName1} {member.lastName2}
               </p>
-              <p><span className="font-medium text-slate-900">Tipo de cuota:</span> {member.membershipType === 'general' ? 'General' : 'Reducida'}</p>
-              <p><span className="font-medium text-slate-900">Válido hasta:</span> {member.paidUntil ? member.paidUntil.split('-').reverse().join('/') : '—'}</p>
-              <p><span className="font-medium text-slate-900">Último pago:</span> {member.lastPaymentAmount !== null ? `${member.lastPaymentAmount} euros` : '—'}</p>
-              <p><span className="font-medium text-slate-900">Fecha último pago:</span> {member.lastPaymentDate ? member.lastPaymentDate.split('-').reverse().join('/') : '—'}</p>
+              <div className="mt-3 grid gap-y-2 text-sm text-slate-700 sm:grid-cols-2">
+                <p>
+                  <span className="font-medium text-slate-900">N.º de socio:</span>{' '}
+                  <span className="font-mono text-teal-800">{dashboard.memberNumber}</span>
+                </p>
+                <p>
+                  <span className="font-medium text-slate-900">Tipo:</span>{' '}
+                  {dashboard.membershipTypeLabel}
+                </p>
+                <p>
+                  <span className="font-medium text-slate-900">Vigencia:</span>{' '}
+                  {dashboard.validUntil}
+                </p>
+              </div>
             </div>
+            <div className="hidden shrink-0 text-teal-700/30 sm:block">
+              <IdCard size={64} strokeWidth={1} />
+            </div>
+          </div>
+          <div className="border-t border-teal-100 bg-teal-50/60 px-6 py-3 sm:px-8">
+            <p className="text-xs text-teal-800/70">Credencial digital mock / pendiente de validación</p>
           </div>
         </div>
       </section>
 
+      {/* Perfil + Membresía */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Perfil */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <User size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Perfil</h2>
+          </div>
+          <dl className="mt-6 space-y-4 text-sm">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Nombre completo</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">{member.firstName} {member.lastName1} {member.lastName2}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Email</dt>
+              <dd className="mt-0.5 text-slate-700">{member.email}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Teléfono</dt>
+              <dd className="mt-0.5 text-slate-700">{member.phone}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría profesional</dt>
+              <dd className="mt-0.5 text-slate-700">{member.professionalCategory}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Puesto</dt>
+              <dd className="mt-0.5 text-slate-700">{member.jobTitle}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Centro / Organización</dt>
+              <dd className="mt-0.5 text-slate-700">{member.organization}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Vínculo con calidad y seguridad</dt>
+              <dd className="mt-0.5 leading-relaxed text-slate-700">{member.qualitySafetyLink}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Membresía */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <ShieldCheck size={18} />
+            </div>
+            <h2 className="font-serif text-xl text-slate-900">Membresía</h2>
+          </div>
+          <dl className="mt-6 space-y-4 text-sm">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Estado</dt>
+              <dd className="mt-0.5">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}>
+                  {dashboard.statusLabel}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo de cuota</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">{dashboard.membershipTypeLabel}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Vigencia</dt>
+              <dd className="mt-0.5 text-slate-700">Válido hasta {dashboard.validUntil}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Último pago</dt>
+              <dd className="mt-0.5 text-slate-700">
+                {member.lastPaymentAmount !== null ? `${member.lastPaymentAmount} €` : '—'} el {dashboard.lastPayment}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Próxima renovación</dt>
+              <dd className="mt-0.5 text-slate-700">{dashboard.nextRenewal}</dd>
+            </div>
+          </dl>
+          <div className="mt-6 rounded-lg border border-amber-100 bg-amber-50/60 p-3">
+            <p className="text-xs leading-relaxed text-amber-800/80">Información pendiente de validación por ACASPEX.</p>
+          </div>
+        </section>
+      </div>
+
+      {/* Consentimiento comunicaciones */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h2 className="text-lg font-semibold text-slate-900">Consentimiento comunicaciones</h2>
-        <p className="mt-2 text-sm text-slate-700">
-          Comunicaciones: {member.communicationConsent ? 'Activadas' : 'No activadas'}
-        </p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <Mail size={18} />
+          </div>
+          <h2 className="font-serif text-xl text-slate-900">Consentimiento comunicaciones</h2>
+        </div>
+        <div className="mt-5 flex items-start gap-3">
+          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-slate-300 bg-white">
+            {member.communicationConsent && <div className="h-3 w-3 rounded-sm bg-teal-700" />}
+          </div>
+          <p className="text-sm text-slate-700">
+            Acepto recibir comunicaciones de ACASPEX.
+            <span className="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              {member.communicationConsent ? 'Activado' : 'No activado'}
+            </span>
+          </p>
+        </div>
       </section>
 
+      {/* Nota informativa */}
       <section className="rounded-2xl border border-teal-100 bg-teal-50/50 p-6 shadow-sm">
         <p className="text-sm text-slate-600">
           Esta pantalla utiliza datos ficticios de prototipo. La gestión real de datos, pagos y renovaciones se definirá en una fase posterior.
