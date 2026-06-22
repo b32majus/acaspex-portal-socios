@@ -7,7 +7,7 @@
 
 Creadas las policies RLS mínimas para `public.signup_requests`:
 
-- `supabase/migrations/20260622_005_acaspex_signup_requests_policies.sql`
+- `supabase/migrations/2026062200005_005_acaspex_signup_requests_policies.sql`
 
 ## Policies creadas
 

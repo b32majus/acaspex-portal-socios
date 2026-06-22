@@ -7,7 +7,7 @@
 
 Creadas las policies RLS mínimas para `public.resources`:
 
-- `supabase/migrations/20260622_010_acaspex_resources_policies.sql`
+- `supabase/migrations/2026062200010_010_acaspex_resources_policies.sql`
 
 ## Policies creadas
 

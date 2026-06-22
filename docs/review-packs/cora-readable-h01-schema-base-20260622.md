@@ -7,7 +7,7 @@
 
 Creado el primer SQL de estructura base para Supabase staging del Portal Socios ACASPEX:
 
-- supabase/migrations/20260622_001_acaspex_schema.sql
+- supabase/migrations/2026062200001_001_acaspex_schema.sql
 
 ## Incluye
 

@@ -9,12 +9,12 @@
 
 | Migración | Archivo | Contenido |
 |-----------|---------|-----------|
-| `013` | `20260622_013_acaspex_storage_buckets.sql` | 3 buckets privados (idempotente con `do update`, H0.3-fix1) |
-| `014` | `20260622_014_acaspex_storage_payment_receipts_public_upload_policy.sql` | Upload público controlado con regex estricto (H0.3-fix1) |
-| `015` | `20260622_015_acaspex_storage_payment_receipts_admin_policies.sql` | Admin policies para justificantes |
-| `016` | `20260622_016_acaspex_storage_reduced_fee_accreditations_policies.sql` | Admin policies para acreditaciones |
-| `017` | `20260622_017_acaspex_storage_resource_file_helpers.sql` | Helper de acceso a resource files |
-| `018` | `20260622_018_acaspex_storage_resource_files_policies.sql` | Storage policies para resource files |
+| `013` | `2026062200013_013_acaspex_storage_buckets.sql` | 3 buckets privados (idempotente con `do update`, H0.3-fix1) |
+| `014` | `2026062200014_014_acaspex_storage_payment_receipts_public_upload_policy.sql` | Upload público controlado con regex estricto (H0.3-fix1) |
+| `015` | `2026062200015_015_acaspex_storage_payment_receipts_admin_policies.sql` | Admin policies para justificantes |
+| `016` | `2026062200016_016_acaspex_storage_reduced_fee_accreditations_policies.sql` | Admin policies para acreditaciones |
+| `017` | `2026062200017_017_acaspex_storage_resource_file_helpers.sql` | Helper de acceso a resource files |
+| `018` | `2026062200018_018_acaspex_storage_resource_files_policies.sql` | Storage policies para resource files |
 
 ---
 

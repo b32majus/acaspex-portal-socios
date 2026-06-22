@@ -7,7 +7,7 @@
 
 Creadas las policies RLS mínimas para `public.resource_visibility`:
 
-- `supabase/migrations/20260622_011_acaspex_resource_visibility_policies.sql`
+- `supabase/migrations/2026062200011_011_acaspex_resource_visibility_policies.sql`
 
 ## Policies creadas
 

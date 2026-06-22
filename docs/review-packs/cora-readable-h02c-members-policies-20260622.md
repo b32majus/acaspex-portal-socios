@@ -7,7 +7,7 @@
 
 Creadas las policies RLS mínimas para `public.members`:
 
-- `supabase/migrations/20260622_004_acaspex_members_policies.sql`
+- `supabase/migrations/2026062200004_004_acaspex_members_policies.sql`
 
 ## Policies creadas
 

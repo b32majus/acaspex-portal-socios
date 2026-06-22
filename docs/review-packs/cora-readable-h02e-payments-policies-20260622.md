@@ -7,7 +7,7 @@
 
 Creadas las policies RLS mínimas para `public.payments`:
 
-- `supabase/migrations/20260622_006_acaspex_payments_policies.sql`
+- `supabase/migrations/2026062200006_006_acaspex_payments_policies.sql`
 
 ## Policies creadas
 

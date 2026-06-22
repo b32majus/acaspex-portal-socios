@@ -7,7 +7,7 @@
 
 Creada función auxiliar segura para evaluar visibilidad de recursos por rol (H0.2h-b renombra desde `can_access_published_resource`):
 
-- `supabase/migrations/20260622_009_acaspex_resource_access_helpers.sql`
+- `supabase/migrations/2026062200009_009_acaspex_resource_access_helpers.sql`
 
 ## Función creada
 

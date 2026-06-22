@@ -7,7 +7,7 @@
 
 Creadas las policies RLS mínimas para `public.resource_categories`:
 
-- `supabase/migrations/20260622_008_acaspex_resource_categories_policies.sql`
+- `supabase/migrations/2026062200008_008_acaspex_resource_categories_policies.sql`
 
 ## Policies creadas
 

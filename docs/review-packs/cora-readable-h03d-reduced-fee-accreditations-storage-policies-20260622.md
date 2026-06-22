@@ -2,7 +2,7 @@
 
 **Status:** approved
 **Fecha:** 2026-06-22
-**Archivo creado:** `supabase/migrations/20260622_016_acaspex_storage_reduced_fee_accreditations_policies.sql`
+**Archivo creado:** `supabase/migrations/2026062200016_016_acaspex_storage_reduced_fee_accreditations_policies.sql`
 
 ## Policies creadas
 

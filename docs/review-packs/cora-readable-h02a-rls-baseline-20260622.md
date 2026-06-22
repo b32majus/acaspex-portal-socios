@@ -7,7 +7,7 @@
 
 Creada la capa de seguridad base para Supabase staging del Portal Socios ACASPEX:
 
-- `supabase/migrations/20260622_002_acaspex_rls_baseline.sql`
+- `supabase/migrations/2026062200002_002_acaspex_rls_baseline.sql`
 
 ## Funciones auxiliares creadas
 

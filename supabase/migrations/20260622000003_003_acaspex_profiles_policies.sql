@@ -2,7 +2,7 @@
 -- H0.2b: crea las policies mínimas de lectura, inserción y
 -- actualización sobre public.profiles.
 -- Depende de las funciones auxiliares creadas en H0.2a
--- (20260622_002_acaspex_rls_baseline.sql).
+-- (20260622000002_002_acaspex_rls_baseline.sql).
 -- No crea policies para ninguna otra tabla.
 -- Ejecutar solo tras revisión explícita.
 

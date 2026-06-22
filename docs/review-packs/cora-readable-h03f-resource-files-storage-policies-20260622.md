@@ -2,7 +2,7 @@
 
 **Status:** approved
 **Fecha:** 2026-06-22
-**Archivo creado:** `supabase/migrations/20260622_018_acaspex_storage_resource_files_policies.sql`
+**Archivo creado:** `supabase/migrations/2026062200018_018_acaspex_storage_resource_files_policies.sql`
 
 ## Policies creadas
 

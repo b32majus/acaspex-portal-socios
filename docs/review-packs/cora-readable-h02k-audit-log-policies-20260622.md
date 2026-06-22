@@ -7,7 +7,7 @@
 
 Creada una única policy RLS para `public.audit_log`:
 
-- `supabase/migrations/20260622_012_acaspex_audit_log_policies.sql`
+- `supabase/migrations/2026062200012_012_acaspex_audit_log_policies.sql`
 
 ## Policy creada
 

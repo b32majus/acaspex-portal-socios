@@ -2,7 +2,7 @@
 
 **Status:** approved
 **Fecha:** 2026-06-22
-**Archivo revisado:** `supabase/migrations/20260622_013_acaspex_storage_buckets.sql`
+**Archivo revisado:** `supabase/migrations/2026062200013_013_acaspex_storage_buckets.sql`
 
 ## Resultado de revisión
 

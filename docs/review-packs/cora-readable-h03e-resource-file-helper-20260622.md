@@ -2,7 +2,7 @@
 
 **Status:** approved
 **Fecha:** 2026-06-22
-**Archivo creado:** `supabase/migrations/20260622_017_acaspex_storage_resource_file_helpers.sql`
+**Archivo creado:** `supabase/migrations/2026062200017_017_acaspex_storage_resource_file_helpers.sql`
 
 ## Función creada
 

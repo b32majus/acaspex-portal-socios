@@ -2,7 +2,7 @@
 
 **Status:** approved
 **Fecha:** 2026-06-22
-**Archivo creado:** `supabase/migrations/20260622_014_acaspex_storage_payment_receipts_public_upload_policy.sql`
+**Archivo creado:** `supabase/migrations/2026062200014_014_acaspex_storage_payment_receipts_public_upload_policy.sql`
 
 ## Policy creada
 

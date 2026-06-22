@@ -7,7 +7,7 @@
 
 Creado el script de registro de buckets privados:
 
-- `supabase/migrations/20260622_013_acaspex_storage_buckets.sql`
+- `supabase/migrations/2026062200013_013_acaspex_storage_buckets.sql`
 
 ## Buckets definidos
 

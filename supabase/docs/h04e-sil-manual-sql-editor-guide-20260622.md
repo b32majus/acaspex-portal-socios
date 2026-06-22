@@ -24,7 +24,7 @@
 
 ### Paso 2 — Ejecutar migración 001
 
-1. Copia TODO el contenido del archivo `20260622_001_acaspex_schema.sql`.
+1. Copia TODO el contenido del archivo `2026062200001_001_acaspex_schema.sql`.
 2. Pégalo en el SQL Editor.
 3. Pulsa **Run** (o Ctrl+Enter).
 4. Espera el resultado: debe aparecer `Success. No rows returned` o similar.
