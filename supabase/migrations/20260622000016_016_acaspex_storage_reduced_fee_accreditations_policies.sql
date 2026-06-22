@@ -19,8 +19,6 @@ create policy "accreditations_select_admin"
     and public.is_admin()
   );
 
-comment on policy "accreditations_select_admin" on storage.objects is
-  'Solo administradores pueden leer acreditaciones de cuota reducida.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- INSERT — solo administradores
@@ -35,8 +33,6 @@ create policy "accreditations_insert_admin"
     and public.is_admin()
   );
 
-comment on policy "accreditations_insert_admin" on storage.objects is
-  'Solo administradores pueden subir acreditaciones de cuota reducida. No se permite upload público.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- UPDATE — solo administradores
@@ -54,8 +50,6 @@ create policy "accreditations_update_admin"
     and public.is_admin()
   );
 
-comment on policy "accreditations_update_admin" on storage.objects is
-  'Solo administradores pueden actualizar acreditaciones.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- DELETE — solo administradores
@@ -69,8 +63,6 @@ create policy "accreditations_delete_admin"
     and public.is_admin()
   );
 
-comment on policy "accreditations_delete_admin" on storage.objects is
-  'Solo administradores pueden eliminar acreditaciones.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- NO creado en H0.3d

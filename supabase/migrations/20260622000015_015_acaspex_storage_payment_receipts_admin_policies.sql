@@ -19,8 +19,6 @@ create policy "payment_receipts_select_admin"
     and public.is_admin()
   );
 
-comment on policy "payment_receipts_select_admin" on storage.objects is
-  'Solo administradores pueden leer justificantes de pago.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- INSERT — administradores (carga administrativa manual)
@@ -37,8 +35,6 @@ create policy "payment_receipts_insert_admin"
     and public.is_admin()
   );
 
-comment on policy "payment_receipts_insert_admin" on storage.objects is
-  'Administradores pueden subir justificantes sin restricción de prefijo. La subida pública controlada (signup-requests/) definida en H0.3b sigue vigente.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- UPDATE — solo administradores
@@ -56,8 +52,6 @@ create policy "payment_receipts_update_admin"
     and public.is_admin()
   );
 
-comment on policy "payment_receipts_update_admin" on storage.objects is
-  'Solo administradores pueden actualizar justificantes.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- DELETE — solo administradores
@@ -71,8 +65,6 @@ create policy "payment_receipts_delete_admin"
     and public.is_admin()
   );
 
-comment on policy "payment_receipts_delete_admin" on storage.objects is
-  'Solo administradores pueden eliminar justificantes.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- NO creado en H0.3c

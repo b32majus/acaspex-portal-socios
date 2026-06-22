@@ -20,8 +20,6 @@ create policy "resource_files_select_by_visibility"
     and public.can_access_resource_file_object(name)
   );
 
-comment on policy "resource_files_select_by_visibility" on storage.objects is
-  'Acceso dinámico: administrador ve todo; socio y Junta solo archivos de recursos publicados con visibilidad asignada. Sin acceso anónimo.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- INSERT — solo administradores
@@ -35,8 +33,6 @@ create policy "resource_files_insert_admin"
     and public.is_admin()
   );
 
-comment on policy "resource_files_insert_admin" on storage.objects is
-  'Solo administradores suben archivos de recursos.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- UPDATE — solo administradores
@@ -54,8 +50,6 @@ create policy "resource_files_update_admin"
     and public.is_admin()
   );
 
-comment on policy "resource_files_update_admin" on storage.objects is
-  'Solo administradores actualizan archivos de recursos.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- DELETE — solo administradores
@@ -69,8 +63,6 @@ create policy "resource_files_delete_admin"
     and public.is_admin()
   );
 
-comment on policy "resource_files_delete_admin" on storage.objects is
-  'Solo administradores eliminan archivos de recursos.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- NO creado en H0.3f

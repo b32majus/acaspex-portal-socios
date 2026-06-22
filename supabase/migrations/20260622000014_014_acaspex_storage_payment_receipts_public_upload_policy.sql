@@ -23,5 +23,3 @@ create policy "payment_receipts_public_upload"
     and lower(name) ~ '^signup-requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/payment-receipt\.(pdf|jpg|jpeg|png)$'
   );
 
-comment on policy "payment_receipts_public_upload" on storage.objects is
-  'Upload público controlado: solo INSERT, solo bajo signup-requests/{uuid}/payment-receipt.{pdf|jpg|jpeg|png}. El bucket sigue siendo privado; la lectura solo para administradores (H0.3c).';
