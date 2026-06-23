@@ -2785,13 +2785,99 @@ export function AdminResourceEditorPage() {
 
 export function AdminResourceNewPage() {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('calidad');
-  const [type, setType] = useState('pdf');
-  const [status, setStatus] = useState<ResourceStatus>('draft');
+  const [category, setCategory] = useState('corporativo');
+  const [type, setType] = useState('document');
+  const [status, setStatus] = useState<ResourceStatus>('published');
   const [description, setDescription] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const configured = isSupabaseConfigured();
+
+  async function handleSave() {
+    if (!configured) {
+      setFeedback({ type: 'error', message: 'El sistema de almacenamiento no está configurado.' });
+      return;
+    }
+    if (!file) {
+      setFeedback({ type: 'error', message: 'Selecciona un archivo para subir.' });
+      return;
+    }
+    if (!title.trim()) {
+      setFeedback({ type: 'error', message: 'El título es obligatorio.' });
+      return;
+    }
+
+    setSaving(true);
+    setFeedback(null);
+
+    try {
+      // 1. Upload file to Storage
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+      const storagePath = `corporativo/2026/${crypto.randomUUID()}-${safeName}`;
+
+      const { error: uploadError } = await supabase!
+        .storage
+        .from('acaspex-resource-files')
+        .upload(storagePath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) throw new Error(uploadError.message);
+
+      // 2. Create resource record
+      const { data: resource, error: resourceError } = await supabase!
+        .from('resources')
+        .insert({
+          title: title.trim(),
+          description: description.trim() || null,
+          resource_type: type as ResourceType,
+          status,
+          file_path: storagePath,
+          external_url: externalUrl.trim() || null,
+          created_by: session?.user?.id ?? null,
+          published_at: status === 'published' ? new Date().toISOString() : null,
+        })
+        .select('id')
+        .single();
+
+      if (resourceError) {
+        // Cleanup: try to delete uploaded file
+        await supabase!.storage.from('acaspex-resource-files').remove([storagePath]);
+        throw new Error(resourceError.message);
+      }
+
+      // 3. Create visibility for admin and junta
+      const { error: visibilityError } = await supabase!
+        .from('resource_visibility')
+        .insert([
+          { resource_id: (resource as { id: string }).id, role: 'administrador' },
+          { resource_id: (resource as { id: string }).id, role: 'junta_directiva' },
+        ]);
+
+      if (visibilityError) {
+        console.warn('Visibility insert warning:', visibilityError.message);
+      }
+
+      setFeedback({ type: 'success', message: 'Recurso creado correctamente.' });
+      setFile(null);
+      setTitle('');
+      setDescription('');
+      setExternalUrl('');
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: 'No se ha podido crear el recurso. ' + (err instanceof Error ? err.message : 'Inténtalo de nuevo.'),
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -2806,23 +2892,16 @@ export function AdminResourceNewPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div>
           <h1 className="font-serif text-3xl font-light text-slate-900">Nuevo recurso</h1>
-          <p className="mt-1 text-sm text-slate-500">Alta mock de recurso o material.</p>
+          <p className="mt-1 text-sm text-slate-500">Sube un archivo y publícalo en la sección correspondiente.</p>
         </div>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-start gap-3">
-            <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
-            <p className="text-sm font-medium text-amber-800">Gestión mock — sin guardado real</p>
-          </div>
-        </div>
-
-        <h2 className="font-serif text-xl text-slate-900">Formulario de alta</h2>
+        <h2 className="font-serif text-xl text-slate-900">Formulario</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor="new-title" className="block text-xs font-medium text-slate-500">
-              Título
+              Título *
             </label>
             <input
               id="new-title"
@@ -2834,7 +2913,7 @@ export function AdminResourceNewPage() {
           </div>
           <div>
             <label htmlFor="new-category" className="block text-xs font-medium text-slate-500">
-              Categoría
+              Sección
             </label>
             <select
               id="new-category"
@@ -2842,16 +2921,15 @@ export function AdminResourceNewPage() {
               onChange={(e) => setCategory(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
-              {Object.entries(categoryLabel).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
+              <option value="corporativo">Material Corporativo</option>
+              <option value="calidad">Centro de conocimiento</option>
+              <option value="formacion">Formación</option>
+              <option value="proyectos">Proyectos</option>
             </select>
           </div>
           <div>
             <label htmlFor="new-type" className="block text-xs font-medium text-slate-500">
-              Tipo de recurso
+              Tipo de material
             </label>
             <select
               id="new-type"
@@ -2859,11 +2937,11 @@ export function AdminResourceNewPage() {
               onChange={(e) => setType(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
-              {Object.entries(typeLabel).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
+              <option value="document">Documento / Plantilla</option>
+              <option value="pdf">PDF</option>
+              <option value="presentation">Presentación</option>
+              <option value="template">Plantilla</option>
+              <option value="other">Otro</option>
             </select>
           </div>
           <div>
@@ -2876,16 +2954,23 @@ export function AdminResourceNewPage() {
               onChange={(e) => setStatus(e.target.value as ResourceStatus)}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
-              {Object.entries(resourceStatusLabel).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
+              <option value="published">Publicado</option>
+              <option value="draft">Borrador</option>
+              <option value="archived">Archivado</option>
             </select>
           </div>
           <div>
+            <label htmlFor="new-visibility" className="block text-xs font-medium text-slate-500">
+              Visibilidad
+            </label>
+            <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              Junta Directiva + Administración
+            </div>
+            <p className="mt-1 text-xs text-slate-400">Fijado para Material Corporativo.</p>
+          </div>
+          <div>
             <label htmlFor="new-external-url" className="block text-xs font-medium text-slate-500">
-              Enlace externo
+              Enlace externo (opcional)
             </label>
             <input
               id="new-external-url"
@@ -2910,26 +2995,33 @@ export function AdminResourceNewPage() {
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="new-file" className="block text-xs font-medium text-slate-500">
-              Material asociado mock
+              Archivo *
             </label>
             <input
               id="new-file"
               type="file"
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 opacity-60 cursor-not-allowed"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              accept=".png,.jpg,.jpeg,.pdf,.docx,.pptx"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded-md file:border-0 file:bg-teal-50 file:px-3 file:py-1 file:text-xs file:font-medium file:text-teal-700"
             />
-            <p className="mt-1 text-xs text-slate-400">La subida de archivos está deshabilitada en la versión mock.</p>
+            {file && (
+              <p className="mt-1 text-xs text-slate-500">
+                {file.name} ({(file.size / 1024).toFixed(0)} KB)
+              </p>
+            )}
+            <p className="mt-1 text-xs text-slate-400">PNG, JPG, PDF, DOCX, PPTX. Máx. 50 MB.</p>
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => setFeedback('Recurso simulado. No se ha guardado ningún cambio real.')}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Upload size={15} />
-            Guardar recurso
+            {saving ? 'Guardando...' : 'Guardar recurso'}
           </button>
           <Link
             to="/admin/recursos"
@@ -2940,8 +3032,25 @@ export function AdminResourceNewPage() {
         </div>
 
         {feedback && (
-          <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
-            <p className="text-sm text-emerald-800/80">{feedback}</p>
+          <div className={`mt-5 rounded-lg border p-4 ${
+            feedback.type === 'success' ? 'border-emerald-100 bg-emerald-50/60' :
+            feedback.type === 'error' ? 'border-red-100 bg-red-50/60' :
+            'border-amber-100 bg-amber-50/60'
+          }`}>
+            <p className={`text-sm ${
+              feedback.type === 'success' ? 'text-emerald-800' :
+              feedback.type === 'error' ? 'text-red-800' :
+              'text-amber-800'
+            }`}>{feedback.message}</p>
+            {feedback.type === 'success' && (
+              <Link
+                to="/socios/material-corporativo"
+                className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800"
+              >
+                Ver en Material Corporativo
+                <ChevronRight size={14} />
+              </Link>
+            )}
           </div>
         )}
       </section>
