@@ -943,6 +943,7 @@ export function MemberHomePage() {
 }
 
 export function MemberLibraryPage() {
+  const { canAccessBoardArea } = useIdentity();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const publishedResources = mockResources
@@ -951,7 +952,10 @@ export function MemberLibraryPage() {
 
   const featuredResources = publishedResources.filter((r) => r.featured === true);
 
-  const officialCategoryOrder = ['calidad', 'seguridad', 'investigacion', 'formacion', 'herramientas', 'corporativo'];
+  const officialCategoryOrder = ['calidad', 'seguridad', 'investigacion', 'formacion', 'herramientas'];
+  if (canAccessBoardArea) {
+    officialCategoryOrder.push('corporativo');
+  }
 
   const categoryCounts: Record<string, number> = {};
   for (const cat of officialCategoryOrder) {
