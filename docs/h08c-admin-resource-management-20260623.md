@@ -107,14 +107,67 @@ Solo un archivo modificado. Cambios autónomos en 3 funciones.
 
 ---
 
-## 5. Deuda conocida
+## 5. H0.8c-FIX2 — Preview DOCX, modo vista admin y estados
 
-- El `resource_type` enum de la DB no incluye `image`, `logo`, `teams_background`, `external_link`. El formulario admin incluye estas opciones pero el INSERT/UPDATE fallaría si se usan. Pendiente migración de extensión del enum.
-- La eliminación física de recursos no está implementada (preferencia de producto: archivar en su lugar).
-- `resource_visibility` no se actualiza al cambiar estado (se crea al insertar y queda fija).
+### 5.1 Preview experimental de DOCX
+
+Dependencia `docx-preview` (v0.3.7) añadida con `dynamic import()`.
+
+Componente `src/components/resources/DocxPreview.tsx`:
+- Descarga el DOCX como ArrayBuffer vía signed URL.
+- Renderiza con `renderAsync` de docx-preview.
+- Muestra loading skeleton mientras carga.
+- Muestra mensaje de error si falla.
+- 170 KB code-split automático (no aumenta el bundle principal).
+
+### 5.2 Modo vista admin
+
+Hook `src/lib/previewRole.ts` con persistencia en localStorage (`acaspex_preview_role`).
+
+Selector visible solo para administradores en `MemberLayout`:
+- Vista: Administrador (por defecto)
+- Vista: Junta Directiva
+- Vista: Socio estándar
+
+Efectos al cambiar el modo:
+- "Vista Junta Directiva": oculta acceso admin, muestra Material Corporativo, etiqueta "Previsualizando como Junta Directiva".
+- "Vista Socio estándar": oculta Material Corporativo, etiqueta "Previsualizando como Socio estándar".
+- RequireBoardOrAdmin respeta el preview role y muestra acceso denegado si vista Socio intenta acceder a Material Corporativo.
+- No modifica permisos reales, RLS, perfiles ni members.
+
+### 5.3 Estados de recurso mejorados
+
+En `AdminResourcesPage`, las acciones ahora son:
+
+| Estado | Acciones |
+|--------|----------|
+| Published | Archivar |
+| Archived | Publicar de nuevo (principal) + Restaurar borrador |
+| Draft | Publicar (principal) + Archivar |
+
+### 5.4 Archivos H0.8c-FIX2
+
+```
+package.json — docx-preview dependencia
+pnpm-lock.yaml — lockfile actualizado
+src/components/resources/DocxPreview.tsx — componente de preview DOCX
+src/lib/previewRole.ts — hook de modo vista admin
+src/components/layout/MemberLayout.tsx — selector de preview role
+src/components/RequireBoardOrAdmin.tsx — gate respeta preview role
+src/routes/placeholderPages.tsx — DocxPreview integrado, estados mejorados
+```
 
 ---
 
-## 6. Estado
+## 6. Deuda conocida
+
+- `resource_visibility` no se actualiza al cambiar estado (se crea al insertar y queda fija).
+- El componente DOCX preview es experimental y puede fallar con documentos complejos.
+- PPTX sigue sin preview (placeholder premium + botón Descargar).
+- La eliminación física de recursos no está implementada (archivar en su lugar).
+
+---
+
+## 7. Estado
 
 Status: pending_review

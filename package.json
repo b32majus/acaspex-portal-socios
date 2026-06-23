@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "latest",
     "class-variance-authority": "latest",
     "clsx": "latest",
+    "docx-preview": "^0.3.7",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",

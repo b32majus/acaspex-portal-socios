@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8b-FIX3 (enum resource_type ampliado, preview por formato)  
+Estado de referencia: tras H0.8c-FIX2 (DOCX preview, modo vista admin, estados mejorados)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `a87ac6b — feat: connect admin resources to real data`
+Último commit: `4855ccd — fix: align resource types and preview behavior`
 
 ---
 
@@ -147,6 +147,7 @@ h08b_fix1_permission_grants_applied
 h08b_fix2_real_resource_detail_preview_ready_for_validation
 h08b_fix3_resource_types_and_preview_behavior_ready_for_validation
 h08c_admin_resource_management_ready_for_validation
+h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -220,6 +221,27 @@ Primer recurso real: "Fondo TEAMs ACASPEX" (Sil, PNG, Material Corporativo, 2026
 - El recurso "Fondo TEAMs ACASPEX" (tipo `document`, archivo `.png`) ahora muestra preview en card.
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08c_admin_resource_management_ready_for_validation`.
+
+### H0.8c-FIX2 — DOCX preview, modo vista y estados
+
+**Preview DOCX experimental:**
+- `docx-preview` (dynamic import, code-split → 170 KB)
+- `src/components/resources/DocxPreview.tsx` con loading/error/ready
+- Solo en detalle (no en cards)
+- PPTX mantiene placeholder premium
+
+**Modo vista admin:**
+- Hook `usePreviewRole()` en `src/lib/previewRole.ts` con localStorage
+- Selector en `MemberLayout` solo visible para admin: Administrador / Junta Directiva / Socio estándar
+- Afecta enlaces visibles y rol mostrado sin modificar permisos reales
+- `RequireBoardOrAdmin` respeta el preview role
+
+**Estados mejorados:**
+- Published → Archivar
+- Archived → Publicar de nuevo + Restaurar borrador
+- Draft → Publicar + Archivar
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation`.
 
 Documentos H0.7 creados:
 

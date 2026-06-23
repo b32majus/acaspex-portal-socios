@@ -55,6 +55,7 @@ import { cn } from '../lib/utils';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../lib/authContext';
 import { useIdentity } from '../lib/identityContext';
+import { DocxPreview } from '../components/resources/DocxPreview';
 
 export function LoginPage() {
   const assetBase = import.meta.env.BASE_URL;
@@ -1289,6 +1290,7 @@ export function MemberResourceDetailPage() {
   const { resourceId } = useParams<{ resourceId: string }>();
   const [resource, setResource] = useState<(typeof mockResources)[number] | null>(null);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [docxSignedUrl, setDocxSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const configured = isSupabaseConfigured();
 
@@ -1336,6 +1338,13 @@ export function MemberResourceDetailPage() {
               .from('acaspex-resource-files')
               .createSignedUrl(fp, 300);
             if (urlData?.signedUrl && !cancelled) setSignedUrl(urlData.signedUrl);
+          }
+          const isDocx = fp?.match(/\.docx?$/i);
+          if (fp && supabase && isDocx) {
+            const { data: docxData } = await supabase.storage
+              .from('acaspex-resource-files')
+              .createSignedUrl(fp, 3600);
+            if (docxData?.signedUrl && !cancelled) setDocxSignedUrl(docxData.signedUrl);
           }
         } else if (!cancelled) {
           const mock = mockResources.find((r) => r.id === resourceId);
@@ -1488,17 +1497,52 @@ export function MemberResourceDetailPage() {
         </section>
       )}
 
-      {isOfficeResource(resource) && resource.filePath && (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
-            <div>
-              <p className="text-sm font-medium text-amber-900">Vista previa no disponible para este tipo de archivo.</p>
-              <p className="mt-1 text-sm text-amber-800/80">Puedes descargarlo para abrirlo en Word, PowerPoint u otra aplicación compatible.</p>
-            </div>
-          </div>
-        </section>
-      )}
+      {(() => {
+        const isDocx = resource.filePath?.match(/\.docx?$/i);
+        const isPptx = resource.filePath?.match(/\.pptx?$/i);
+        if (isDocx && docxSignedUrl) {
+          return <DocxPreview signedUrl={docxSignedUrl} />;
+        }
+        if (isDocx) {
+          return (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 w-3/4 rounded bg-slate-100" />
+                <div className="h-4 w-full rounded bg-slate-100" />
+                <div className="h-4 w-5/6 rounded bg-slate-100" />
+              </div>
+              <p className="mt-4 text-center text-sm text-slate-500">Cargando vista previa...</p>
+            </section>
+          );
+        }
+        if (isPptx && resource.filePath) {
+          return (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
+                <div>
+                  <p className="text-sm font-medium text-amber-900">Vista previa no disponible para presentaciones PowerPoint.</p>
+                  <p className="mt-1 text-sm text-amber-800/80">Puedes descargarla para abrirla en PowerPoint u otra aplicación compatible.</p>
+                </div>
+              </div>
+            </section>
+          );
+        }
+        if (isOfficeResource(resource) && resource.filePath) {
+          return (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
+                <div>
+                  <p className="text-sm font-medium text-amber-900">Vista previa no disponible para este tipo de archivo.</p>
+                  <p className="mt-1 text-sm text-amber-800/80">Puedes descargarlo para abrirlo en Word, PowerPoint u otra aplicación compatible.</p>
+                </div>
+              </div>
+            </section>
+          );
+        }
+        return null;
+      })()}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap gap-3">
@@ -2981,24 +3025,44 @@ export function AdminResourcesPage() {
                             </button>
                           )}
                           {isReal && resource.status === 'archived' && (
-                            <button
-                              type="button"
-                              onClick={() => handleStatusChange(resource.id, 'draft')}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100"
-                              title="Desarchivar a borrador"
-                            >
-                              Desarchivar
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleStatusChange(resource.id, 'published')}
+                                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
+                                title="Publicar de nuevo"
+                              >
+                                Publicar de nuevo
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStatusChange(resource.id, 'draft')}
+                                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100"
+                                title="Restaurar como borrador"
+                              >
+                                Restaurar borrador
+                              </button>
+                            </>
                           )}
                           {isReal && resource.status === 'draft' && (
-                            <button
-                              type="button"
-                              onClick={() => handleStatusChange(resource.id, 'published')}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
-                              title="Publicar"
-                            >
-                              Publicar
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleStatusChange(resource.id, 'published')}
+                                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
+                                title="Publicar"
+                              >
+                                Publicar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStatusChange(resource.id, 'archived')}
+                                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-50"
+                                title="Archivar"
+                              >
+                                Archivar
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>

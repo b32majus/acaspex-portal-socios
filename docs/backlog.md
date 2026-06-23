@@ -432,6 +432,8 @@ Estado: **implementado, pendiente de validación pública — 2026-06-23.**
 - Card preview corregida: genera signed URL también por extensión de archivo (no solo por tipo).
 - Indicador visual de recurso real (punto verde) en tabla admin.
 
+- H0.8c-FIX2: Preview experimental de DOCX con `docx-preview` (dynamic import). Modo vista admin con selector de rol (Administrador / Junta Directiva / Socio estándar). Estados mejorados: Archivado → Publicar de nuevo + Restaurar borrador. Draft → Publicar + Archivar.
+
 Ver: `docs/h08c-admin-resource-management-20260623.md`.
 
 Pendiente: validación con U1/U2/U3 en web pública.
