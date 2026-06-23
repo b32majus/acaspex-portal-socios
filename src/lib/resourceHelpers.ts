@@ -15,6 +15,7 @@ export const categoryLabel: Record<string, string> = {
   formacion: 'Formación',
   herramientas: 'Herramientas',
   corporativo: 'Material corporativo',
+  proyectos: 'Banco de proyectos',
 };
 
 export const typeLabel: Record<string, string> = {

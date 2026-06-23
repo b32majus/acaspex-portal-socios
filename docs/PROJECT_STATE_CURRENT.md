@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8R2 (refactor extracción de componentes, placeholderPages reducido -27%)  
+Estado de referencia: tras H0.8S (migración sección/subsección, enum resource_section, categorías seed)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `abd6bad — refactor: clean resource module and section model`
+Último commit: `7d1fc53 — refactor: extract resource module components`
 
 ---
 
@@ -150,6 +150,7 @@ h08c_admin_resource_management_ready_for_validation
 h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation
 h08r_resource_module_refactor_ready_for_validation
 h08r2_resource_module_extracted_ready_for_validation
+h08s_resource_sections_model_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -283,6 +284,23 @@ Componentes extraídos de `placeholderPages.tsx`:
 `AppRouter.tsx`: actualizado para importar de los nuevos módulos.
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08r2_resource_module_extracted_ready_for_validation`.
+
+### H0.8S — Migración sección/subsección
+
+**DB (migración 022):**
+- Enum `resource_section`: `knowledge_center`, `project_bank`, `corporate_material`.
+- Columnas `section` en `resources` y `resource_categories`.
+- 3 recursos existentes migrados a `corporate_material`.
+- 11 categorías seed: 5 knowledge_center + 6 project_bank.
+- RLS policies intactas (10 policies en resources/resource_categories/resource_visibility).
+
+**Frontend:**
+- `AdminResourceNewPage`: persiste `section` y `category_id` (resuelto por slug desde DB).
+- `AdminResourcesPage`: lee `section` y deriva label UI.
+- `MaterialCorporativoPage`: filtra por `section = 'corporate_material'`.
+- `MemberResourceDetailPage`: lee `section` para derivar categoría mostrada.
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08s_resource_sections_model_ready_for_validation`.
 
 Documentos H0.7 creados:
 

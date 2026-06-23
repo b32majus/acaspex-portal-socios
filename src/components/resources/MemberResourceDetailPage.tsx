@@ -45,7 +45,7 @@ export function MemberResourceDetailPage() {
       if (configured && supabase && resourceId) {
         const { data, error } = await supabase
           .from('resources')
-          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at')
+          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, section, category_id')
           .eq('id', resourceId)
           .eq('status', 'published')
           .maybeSingle();
@@ -57,7 +57,7 @@ export function MemberResourceDetailPage() {
             title: r.title as string,
             subtitle: (r.subtitle as string) || (r.title as string),
             description: (r.description as string) || '',
-            category: (r.resource_type === 'image' || r.resource_type === 'logo' || r.resource_type === 'teams_background' || r.resource_type === 'document' || r.resource_type === 'presentation' || r.resource_type === 'template' || r.resource_type === 'pdf' || r.resource_type === 'external_link' ? 'corporativo' : 'calidad') as ResourceCategory,
+            category: (r.section === 'corporate_material' ? 'corporativo' : r.section === 'knowledge_center' ? 'calidad' : r.section === 'project_bank' ? 'proyectos' : 'calidad') as ResourceCategory,
             type: (r.resource_type as ResourceType) || 'document',
             status: (r.status as ResourceStatus) || 'published',
             publishedAt: (r.published_at as string) || null,

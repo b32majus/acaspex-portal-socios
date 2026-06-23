@@ -34,12 +34,17 @@ export function AdminResourcesPage() {
       if (configured && supabase) {
         const { data, error } = await supabase
           .from('resources')
-          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, created_at')
+          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, created_at, section, category_id')
           .order('created_at', { ascending: false });
 
         if (!error && data) {
           for (const r of data as Array<Record<string, unknown>>) {
             const fp = r.file_path as string | undefined;
+            const sec = (r.section as string) || '';
+            const derivedCategory = sec === 'corporate_material' ? 'corporativo'
+              : sec === 'knowledge_center' ? 'calidad'
+              : sec === 'project_bank' ? 'proyectos'
+              : 'corporativo';
             const ct = fp?.match(/\.(png|jpg|jpeg|gif|webp)$/i)
               ? 'image/'
               : fp?.match(/\.(pdf)$/i)
@@ -50,7 +55,7 @@ export function AdminResourcesPage() {
               title: r.title as string,
               subtitle: (r.subtitle as string) || (r.title as string),
               description: (r.description as string) || '',
-              category: 'corporativo' as ResourceCategory,
+              category: derivedCategory as ResourceCategory,
               type: (r.resource_type as ResourceType) || 'document',
               status: (r.status as ResourceStatus) || 'draft',
               publishedAt: (r.published_at as string) || null,

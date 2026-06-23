@@ -1,6 +1,6 @@
 export type ResourceType = 'pdf' | 'video' | 'template' | 'link' | 'presentation' | 'image' | 'logo' | 'teams_background' | 'document' | 'external_link';
 
-export type ResourceCategory = 'calidad' | 'seguridad' | 'investigacion' | 'formacion' | 'herramientas' | 'corporativo';
+export type ResourceCategory = 'calidad' | 'seguridad' | 'investigacion' | 'formacion' | 'herramientas' | 'corporativo' | 'proyectos';
 
 export type ResourceStatus = 'draft' | 'published' | 'archived';
 

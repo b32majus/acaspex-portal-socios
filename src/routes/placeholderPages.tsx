@@ -292,8 +292,9 @@ export function MaterialCorporativoPage() {
     if (!configured || !supabase) return;
     supabase
       .from('resources')
-      .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at')
+      .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, section')
       .eq('status', 'published')
+      .eq('section', 'corporate_material')
       .order('published_at', { ascending: false })
       .then(({ data, error }) => {
         if (!error && data) {

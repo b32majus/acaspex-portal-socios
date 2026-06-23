@@ -13,19 +13,19 @@ const sectionLabel: Record<string, string> = {
 
 const subsectionsBySection: Record<string, { value: string; label: string }[]> = {
   knowledge_center: [
-    { value: 'calidad_asistencial', label: 'Calidad Asistencial' },
-    { value: 'seguridad_paciente', label: 'Seguridad del Paciente' },
+    { value: 'calidad-asistencial', label: 'Calidad Asistencial' },
+    { value: 'seguridad-del-paciente', label: 'Seguridad del Paciente' },
     { value: 'investigacion', label: 'Investigación' },
     { value: 'formacion', label: 'Formación' },
     { value: 'herramientas', label: 'Herramientas' },
   ],
   project_bank: [
-    { value: 'seguridad_paciente', label: 'Seguridad del paciente' },
-    { value: 'mejora_procesos', label: 'Mejora de procesos' },
-    { value: 'experiencia_paciente', label: 'Experiencia del paciente' },
-    { value: 'continuidad_asistencial', label: 'Continuidad asistencial' },
+    { value: 'seguridad-del-paciente-proyectos', label: 'Seguridad del paciente' },
+    { value: 'mejora-de-procesos', label: 'Mejora de procesos' },
+    { value: 'experiencia-del-paciente', label: 'Experiencia del paciente' },
+    { value: 'continuidad-asistencial', label: 'Continuidad asistencial' },
     { value: 'humanizacion', label: 'Humanización' },
-    { value: 'gestion_clinica', label: 'Gestión Clínica' },
+    { value: 'gestion-clinica', label: 'Gestión Clínica' },
   ],
   corporate_material: [],
 };
@@ -52,6 +52,17 @@ export function AdminResourceNewPage() {
 
   const configured = isSupabaseConfigured();
   const subsections = subsectionsBySection[section] || [];
+
+  async function getCategoryId(slug: string): Promise<string | null> {
+    if (!slug || !configured || !supabase) return null;
+    const { data } = await supabase
+      .from('resource_categories')
+      .select('id')
+      .eq('slug', slug)
+      .eq('section', section)
+      .maybeSingle();
+    return (data as { id?: string } | null)?.id ?? null;
+  }
 
   async function handleSave() {
     if (!configured) {
@@ -96,6 +107,8 @@ export function AdminResourceNewPage() {
           external_url: externalUrl.trim() || null,
           created_by: session?.user?.id ?? null,
           published_at: status === 'published' ? new Date().toISOString() : null,
+          section,
+          category_id: subsection ? await getCategoryId(subsection) : null,
         })
         .select('id')
         .single();

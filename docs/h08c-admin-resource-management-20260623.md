@@ -185,6 +185,32 @@ Extraídos de `placeholderPages.tsx` a módulos propios:
 
 `AppRouter.tsx`: actualizado para importar los nuevos módulos.
 
+### 5.8 H0.8S — Migración sección/subsección
+
+**DB migration (022):**
+- Enum `resource_section` creado: `knowledge_center`, `project_bank`, `corporate_material`.
+- Columna `section` añadida a `resources` y `resource_categories`.
+- 3 recursos existentes migrados a `corporate_material`.
+- 11 categorías seed (5 knowledge_center + 6 project_bank).
+
+**Frontend:**
+- `AdminResourceNewPage` persiste `section` y `category_id` en INSERT.
+- `category_id` se resuelve por slug desde `resource_categories`.
+- `AdminResourcesPage` lee `section` y deriva la UI del label.
+- `MaterialCorporativoPage` filtra por `section = 'corporate_material'`.
+- `MemberResourceDetailPage` lee `section` para derivar categoría.
+
+**Archivos H0.8S:**
+```
+supabase/migrations/022_acaspex_resource_sections.sql — nueva migración
+src/components/resources/AdminResourceNewPage.tsx — persist section/category_id
+src/components/resources/AdminResourcesPage.tsx — leer section
+src/components/resources/MemberResourceDetailPage.tsx — leer section
+src/routes/placeholderPages.tsx — MaterialCorporativoPage filtra por section
+src/data/mockResources.ts — ResourceCategory + 'proyectos'
+src/lib/resourceHelpers.ts — categoryLabel + 'proyectos'
+```
+
 ---
 
 ## 6. Deuda conocida
