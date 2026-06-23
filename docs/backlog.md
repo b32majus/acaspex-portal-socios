@@ -366,18 +366,18 @@ Rutas públicas: `/login`, `/hazte-socio`.
 
 ### P-H07-005 — Lectura de perfil/socio/rol
 
-Estado: **diseñado — 2026-06-23 (H0.7e). Pendiente de implementación (H0.7f).**
+Estado: **completado — 2026-06-23 (H0.7f, corregido H0.7f.1).**
 
-El identity read model (`docs/h07e-identity-read-model-20260623.md`) define:
-- 10 estados de acceso para el frontend.
-- Cadena `auth.users → profiles → members → role`.
-- Consulta canónica esperada: `profiles LEFT JOIN members WHERE profiles.id = auth.uid() AND profiles.is_active = true`.
-- Matriz de acceso por zonas (5 zonas).
+Implementado en H0.7f:
+- `src/lib/identityContext.tsx` — IdentityProvider + useIdentity hook. Lee `profiles` + `members` vía RLS.
+- 10 estados de acceso resueltos: loading, not_authenticated, authenticated_no_profile, authenticated_no_member, member_inactive, member_expired, member_active, board_member, admin, error.
+- Permisos visuales: `canAccessMemberArea`, `canAccessBoardArea`, `canAccessAdmin`.
+- `src/components/RequireMember.tsx` — gate para área socio (requiere sesión + perfil + socio activo + cuota vigente).
+- `src/components/RequireAdmin.tsx` — gate para área admin (requiere sesión + perfil + rol administrador, sin ficha de socio necesaria).
 
-La implementación H0.7f (hook `useIdentity()`) está pendiente. Requiere:
-- WO separada de implementación.
-- Usuario sintético para validación (P-H07-007).
-- No datos reales.
+Admin sin ficha de socio: tratado como operador admin (`status = 'admin'`, `canAccessAdmin = true`, `canAccessMemberArea = false`).
+
+Limitación: validación funcional completa requiere usuario sintético (P-H07-007).
 
 ### P-H07-006 — Bloqueo real por socio activo/cuota vigente
 

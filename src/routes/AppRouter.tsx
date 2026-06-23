@@ -1,7 +1,8 @@
 import { Navigate, Route, HashRouter as Router, Routes } from 'react-router-dom';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { MemberLayout } from '../components/layout/MemberLayout';
-import { RequireAuth } from '../components/RequireAuth';
+import { RequireMember } from '../components/RequireMember';
+import { RequireAdmin } from '../components/RequireAdmin';
 import {
   AdminDashboardPage,
   AdminMemberDetailPage,
@@ -31,9 +32,9 @@ export function AppRouter() {
         <Route path="/hazte-socio" element={<SignupPage />} />
         <Route
           element={
-            <RequireAuth>
+            <RequireMember>
               <MemberLayout />
-            </RequireAuth>
+            </RequireMember>
           }
         >
           <Route path="/socios" element={<MemberHomePage />} />
@@ -45,9 +46,9 @@ export function AppRouter() {
         </Route>
         <Route
           element={
-            <RequireAuth>
+            <RequireAdmin>
               <AdminLayout />
-            </RequireAuth>
+            </RequireAdmin>
           }
         >
           <Route path="/admin" element={<AdminDashboardPage />} />

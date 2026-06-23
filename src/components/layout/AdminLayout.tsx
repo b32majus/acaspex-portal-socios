@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext';
+import { useIdentity } from '../../lib/identityContext';
 
 const adminLinks = [
   { label: 'Panel', to: '/admin' },
@@ -14,6 +15,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const assetBase = import.meta.env.BASE_URL;
   const { session, signOut } = useAuth();
+  const { role } = useIdentity();
 
   const isActive = (to: string) => {
     if (to === '/admin') return location.pathname === '/admin';
@@ -61,6 +63,9 @@ export function AdminLayout() {
             <div className="px-3 pb-6 md:px-3 md:pb-6">
               <div className="border-t border-slate-100 pt-4">
                 <p className="px-3 text-xs text-slate-400 truncate">{session.user?.email}</p>
+                {role && (
+                  <p className="px-3 text-[10px] text-slate-400 capitalize mt-0.5">{role.replace(/_/g, ' ')}</p>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="mt-2 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"

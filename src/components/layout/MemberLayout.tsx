@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { useRef } from 'react';
 import { useAuth } from '../../lib/authContext';
+import { useIdentity } from '../../lib/identityContext';
 
 const memberLinks = [
   { label: 'Inicio', to: '/socios' },
@@ -15,6 +16,7 @@ export function MemberLayout() {
   const assetBase = import.meta.env.BASE_URL;
   const avatarMenuRef = useRef<HTMLDetailsElement>(null);
   const { session, signOut } = useAuth();
+  const { role, status } = useIdentity();
 
   const userEmail = session?.user?.email ?? null;
   const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : '?';
@@ -44,6 +46,9 @@ export function MemberLayout() {
             <div>
               <h1 className="font-serif text-xl lg:text-2xl font-light tracking-tight text-white">ACASPEX</h1>
               <p className="text-[11px] font-medium uppercase tracking-widest text-teal-200/70">Área de socios</p>
+              {role && (
+                <p className="text-[10px] text-teal-300/60 capitalize">{role.replace(/_/g, ' ')}</p>
+              )}
             </div>
           </div>
           <nav className="flex flex-wrap items-center gap-2">
