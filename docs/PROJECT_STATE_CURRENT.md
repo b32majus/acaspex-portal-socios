@@ -136,20 +136,37 @@ h07_commits_pushed_ready_for_h07f
 h07_doc_cleanup_pushed_ready_for_h07f
 h07f_identity_read_hook_pushed_ready_for_next_step
 h07g_synthetic_users_design_pushed_ready_for_h07h
-h07h_u1_admin_operator_created_authorized_pending_manual_validation
+h07j_pages_supabase_env_configured_ready_for_u1_password_rotation
+h07l_admin_global_access_ready_for_validation
+h07m_identity_profile_member_split_ready_for_public_validation
+h07n_identity_read_grants_applied_ready_for_public_validation
+h07p_demo_junta_socio_created_ready_for_permission_section
+h07q_material_corporativo_unified_and_permissions_validated
 ```
 
-## 9. Estado de staging (post H0.7h)
+## 9. Estado de staging (post H0.7q)
 
-U1 — Administrador operativo sintético creado en staging con autorización explícita de Sil:
+Usuarios demo en staging:
 
-- Auth user: `acaspex.admin.demo@example.com`
-- Profile: `role = administrador`, `is_active = true`, `member_id = null`
-- Método: Auth Admin API + Management API por limitación del Dashboard
-- Validación técnica: correcta
-- Validación funcional manual: pendiente
+| Usuario | Email | Role | Member |
+|---------|-------|------|--------|
+| U1 | `acaspex.admin.demo@example.com` | administrador | null |
+| U2 | `acaspex.junta.demo@example.com` | junta_directiva | active, paid_until 2027-06-23 |
+| U3 | `acaspex.socio.demo@example.com` | socio | active, paid_until 2027-06-23 |
 
-Rollback disponible. Sin datos reales.
+H0.7 cerrado funcionalmente:
+
+- Login público conectado a Supabase staging.
+- Roles demo activos con identidad resuelta (useIdentity).
+- Admin demo: acceso global al portal.
+- Junta demo: área socios + Material Corporativo.
+- Socio demo: área socios estándar.
+- Material Corporativo unificado como sección específica Junta/Admin.
+- Ruta directa protegida por RequireBoardOrAdmin.
+
+## 10. Siguiente fase
+
+H0.8 — Primer flujo real de recursos: subida, previsualización y descarga de Material Corporativo.
 
 Documentos H0.7 creados:
 
