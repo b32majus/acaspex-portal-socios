@@ -52,6 +52,7 @@ import {
 import { cn } from '../lib/utils';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../lib/authContext';
+import { useIdentity } from '../lib/identityContext';
 
 export function LoginPage() {
   const assetBase = import.meta.env.BASE_URL;
@@ -61,6 +62,7 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { session, signOut } = useAuth();
+  const { canAccessMemberArea, canAccessAdmin, accessReason } = useIdentity();
 
   const configured = isSupabaseConfigured();
 
@@ -139,14 +141,30 @@ export function LoginPage() {
             <div>
               <h1 className="font-serif text-2xl lg:text-3xl font-light text-slate-900">Sesión iniciada</h1>
               <p className="mt-1 text-sm text-slate-500">Conectado como {session.user?.email}</p>
+              {accessReason === 'admin_oversight' && (
+                <p className="mt-1 text-xs text-amber-600">Acceso con permisos de administración.</p>
+              )}
             </div>
             <div className="space-y-3">
-              <Link
-                to="/socios"
-                className="block w-full rounded-lg bg-teal-900 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800"
-              >
-                Ir al área de socios
-              </Link>
+              {canAccessAdmin && (
+                <Link
+                  to="/admin"
+                  className="block w-full rounded-lg bg-teal-900 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800"
+                >
+                  Ir al panel de administración
+                </Link>
+              )}
+              {canAccessMemberArea && (
+                <Link
+                  to="/socios"
+                  className="block w-full rounded-lg bg-teal-700 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                >
+                  Ver área de socios
+                </Link>
+              )}
+              {!canAccessMemberArea && !canAccessAdmin && (
+                <p className="text-sm text-slate-500 text-center py-2">Tu cuenta está pendiente de activación o revisión.</p>
+              )}
               <button
                 onClick={handleSignOut}
                 className="block w-full rounded-lg border border-slate-200 bg-white px-5 py-3 text-center text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"

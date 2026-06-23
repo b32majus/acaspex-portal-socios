@@ -22,6 +22,7 @@ export type IdentityState = {
   canAccessMemberArea: boolean
   canAccessBoardArea: boolean
   canAccessAdmin: boolean
+  accessReason: 'member' | 'admin_oversight' | 'none'
   loading: boolean
   error: string | null
 }
@@ -34,6 +35,7 @@ const IdentityContext = createContext<IdentityState>({
   canAccessMemberArea: false,
   canAccessBoardArea: false,
   canAccessAdmin: false,
+  accessReason: 'none',
   loading: true,
   error: null,
 })
@@ -48,6 +50,7 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
     canAccessMemberArea: false,
     canAccessBoardArea: false,
     canAccessAdmin: false,
+    accessReason: 'none',
     loading: true,
     error: null,
   })
@@ -66,6 +69,7 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
         canAccessMemberArea: false,
         canAccessBoardArea: false,
         canAccessAdmin: false,
+        accessReason: 'none',
         loading: false,
         error: null,
       })
@@ -93,6 +97,7 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
             canAccessMemberArea: false,
             canAccessBoardArea: false,
             canAccessAdmin: false,
+            accessReason: 'none',
             loading: false,
             error: profileError ? profileError.message : null,
           })
@@ -108,6 +113,7 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
             canAccessMemberArea: false,
             canAccessBoardArea: false,
             canAccessAdmin: false,
+            accessReason: 'none',
             loading: false,
             error: null,
           })
@@ -130,9 +136,10 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
             role,
             isMemberActive: false,
             isFeeCurrent: false,
-            canAccessMemberArea: false,
-            canAccessBoardArea: false,
+            canAccessMemberArea: isAdmin,
+            canAccessBoardArea: isAdmin,
             canAccessAdmin: isAdmin,
+            accessReason: isAdmin ? 'admin_oversight' : 'none',
             loading: false,
             error: null,
           })
@@ -162,9 +169,10 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
           role,
           isMemberActive: isActive,
           isFeeCurrent: feeCurrent,
-          canAccessMemberArea: memberActive,
-          canAccessBoardArea: (isBoard || isAdmin) && memberActive,
+          canAccessMemberArea: memberActive || isAdmin,
+          canAccessBoardArea: (isBoard || isAdmin) && memberActive || isAdmin,
           canAccessAdmin: isAdmin,
+          accessReason: isAdmin && !memberActive ? 'admin_oversight' : memberActive ? 'member' : 'none',
           loading: false,
           error: null,
         })
@@ -178,6 +186,7 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
           canAccessMemberArea: false,
           canAccessBoardArea: false,
           canAccessAdmin: false,
+          accessReason: 'none',
           loading: false,
           error: err instanceof Error ? err.message : String(err),
         })

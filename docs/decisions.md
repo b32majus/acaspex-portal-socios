@@ -118,6 +118,10 @@ Todas las rutas privadas (`/socios`, `/admin`) están protegidas por sesión med
 
 Las mutaciones remotas en Supabase staging mediante API key o service_role solo pueden ejecutarse con autorización explícita de Sil, alcance cerrado, reporte posterior y sin persistir secretos en repo, logs o documentación. Esta decisión se formaliza tras la creación de U1 en H0.7h.
 
+### D028 — Acceso operativo global del administrador
+
+El rol administrador permite acceso operativo global al portal. Un administrador puede acceder a las áreas privadas del portal, incluida el área de socios, aunque no tenga ficha de socio activa. Este acceso es por supervisión administrativa y no equivale a ser socio activo ni a tener cuota vigente. La distinción se refleja en `accessReason = 'admin_oversight'`.
+
 ## Decisiones pendientes
 
 1. Texto legal/RGPD.

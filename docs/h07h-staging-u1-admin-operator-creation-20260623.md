@@ -68,8 +68,10 @@ No se modificaron migraciones, RLS, policies ni Storage.
 Prueba funcional manual por Sil en `https://b32majus.github.io/acaspex-portal-socios/`:
 - Login con `acaspex.admin.demo@example.com`
 - `/admin` debe ser accesible
-- `/socios` debe ser denegado (admin sin socio)
+- `/socios` debe ser accesible por supervisión administrativa (H0.7l)
 - Logout funcional
+
+**Actualización H0.7l:** el administrador tiene acceso global al portal por supervisión operativa (D028). `canAccessMemberArea = true` para admin aunque no tenga socio vinculado. `accessReason = 'admin_oversight'`. El layout muestra nota de supervisión.
 
 ## 8. Rollback
 

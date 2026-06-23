@@ -16,7 +16,7 @@ export function MemberLayout() {
   const assetBase = import.meta.env.BASE_URL;
   const avatarMenuRef = useRef<HTMLDetailsElement>(null);
   const { session, signOut } = useAuth();
-  const { role, status } = useIdentity();
+  const { role, status, accessReason } = useIdentity();
 
   const userEmail = session?.user?.email ?? null;
   const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : '?';
@@ -48,6 +48,9 @@ export function MemberLayout() {
               <p className="text-[11px] font-medium uppercase tracking-widest text-teal-200/70">Área de socios</p>
               {role && (
                 <p className="text-[10px] text-teal-300/60 capitalize">{role.replace(/_/g, ' ')}</p>
+              )}
+              {accessReason === 'admin_oversight' && (
+                <p className="text-[10px] text-amber-300/70">Supervisión administrativa</p>
               )}
             </div>
           </div>
