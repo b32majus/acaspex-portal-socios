@@ -55,7 +55,8 @@ import { cn } from '../lib/utils';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../lib/authContext';
 import { useIdentity } from '../lib/identityContext';
-import { DocxPreview } from '../components/resources/DocxPreview';
+import { categoryLabel, typeLabel, resourceStatusLabel, resourceStatusBadgeClass, typeIconMap, formatResourceDate, isImageResource, isPdfResource, isOfficeResource, isExternalLinkResource, isPreviewableResource, isDownloadOnlyResource } from '../lib/resourceHelpers';
+import type { ResourceLike } from '../lib/resourceHelpers';
 
 export function LoginPage() {
   const assetBase = import.meta.env.BASE_URL;
@@ -351,40 +352,6 @@ export function MaterialCorporativoPage() {
   );
 }
 
-const categoryLabel: Record<string, string> = {
-  calidad: 'Calidad asistencial',
-  seguridad: 'Seguridad del paciente',
-  investigacion: 'Investigación',
-  formacion: 'Formación',
-  herramientas: 'Herramientas',
-  corporativo: 'Material corporativo',
-};
-
-const typeLabel: Record<string, string> = {
-  pdf: 'PDF',
-  video: 'Vídeo',
-  template: 'Plantilla',
-  link: 'Enlace',
-  presentation: 'Presentación',
-  image: 'Imagen',
-  logo: 'Logo',
-  teams_background: 'Fondo Teams',
-  document: 'Documento',
-  external_link: 'Enlace externo',
-};
-
-const resourceStatusLabel: Record<ResourceStatus, string> = {
-  published: 'Publicado',
-  draft: 'Borrador',
-  archived: 'Archivado',
-};
-
-const resourceStatusBadgeClass: Record<ResourceStatus, string> = {
-  published: 'bg-emerald-100 text-emerald-800',
-  draft: 'bg-amber-100 text-amber-700',
-  archived: 'bg-slate-100 text-slate-600',
-};
-
 const visualToneLabel: Record<string, string> = {
   formacion: 'Formación',
   lean: 'Metodología Lean',
@@ -456,68 +423,6 @@ const visualToneConfig: Record<
   corporativo: { color: 'text-slate-700', bg: 'bg-slate-100', icon: Building2, label: 'Material corporativo' },
   alianzas: { color: 'text-rose-700', bg: 'bg-rose-50', icon: Handshake, label: 'Alianzas' },
 };
-
-const typeIconMap: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
-  pdf: FileText,
-  video: Video,
-  template: ClipboardList,
-  link: Globe,
-  presentation: BookOpen,
-  image: Image,
-  logo: Image,
-  teams_background: Image,
-  document: FileText,
-  external_link: Globe,
-};
-
-function formatResourceDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) {
-    const parts = dateStr.split('T')[0].split('-');
-    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    return dateStr;
-  }
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}/${d.getFullYear()}`;
-}
-
-type ResourceLike = {
-  type?: string;
-  filePath?: string | null;
-  externalUrl?: string | null;
-};
-
-function isImageResource(resource: ResourceLike): boolean {
-  if (!resource.filePath) return false;
-  if (resource.type === 'image' || resource.type === 'logo' || resource.type === 'teams_background') return true;
-  return !!resource.filePath.match(/\.(png|jpg|jpeg|gif|webp)$/i);
-}
-
-function isPdfResource(resource: ResourceLike): boolean {
-  if (resource.type === 'pdf') return true;
-  return !!resource.filePath?.match(/\.pdf$/i);
-}
-
-function isOfficeResource(resource: ResourceLike): boolean {
-  if (!resource.filePath) return false;
-  if (resource.type === 'document' || resource.type === 'template' || resource.type === 'presentation') return true;
-  return !!resource.filePath.match(/\.(docx?|pptx?|xlsx?)$/i);
-}
-
-function isExternalLinkResource(resource: ResourceLike): boolean {
-  return !!(resource.externalUrl && !resource.filePath);
-}
-
-function isPreviewableResource(resource: ResourceLike): boolean {
-  return isImageResource(resource) || isPdfResource(resource);
-}
-
-function isDownloadOnlyResource(resource: ResourceLike): boolean {
-  if (!resource.filePath) return false;
-  return isOfficeResource(resource) || (!isImageResource(resource) && !isPdfResource(resource));
-}
 
 type MockCoverProps = {
   resource: (typeof mockResources)[number];
@@ -1290,7 +1195,6 @@ export function MemberResourceDetailPage() {
   const { resourceId } = useParams<{ resourceId: string }>();
   const [resource, setResource] = useState<(typeof mockResources)[number] | null>(null);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [docxSignedUrl, setDocxSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const configured = isSupabaseConfigured();
 
@@ -1338,13 +1242,6 @@ export function MemberResourceDetailPage() {
               .from('acaspex-resource-files')
               .createSignedUrl(fp, 300);
             if (urlData?.signedUrl && !cancelled) setSignedUrl(urlData.signedUrl);
-          }
-          const isDocx = fp?.match(/\.docx?$/i);
-          if (fp && supabase && isDocx) {
-            const { data: docxData } = await supabase.storage
-              .from('acaspex-resource-files')
-              .createSignedUrl(fp, 3600);
-            if (docxData?.signedUrl && !cancelled) setDocxSignedUrl(docxData.signedUrl);
           }
         } else if (!cancelled) {
           const mock = mockResources.find((r) => r.id === resourceId);
@@ -1497,52 +1394,17 @@ export function MemberResourceDetailPage() {
         </section>
       )}
 
-      {(() => {
-        const isDocx = resource.filePath?.match(/\.docx?$/i);
-        const isPptx = resource.filePath?.match(/\.pptx?$/i);
-        if (isDocx && docxSignedUrl) {
-          return <DocxPreview signedUrl={docxSignedUrl} />;
-        }
-        if (isDocx) {
-          return (
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 w-3/4 rounded bg-slate-100" />
-                <div className="h-4 w-full rounded bg-slate-100" />
-                <div className="h-4 w-5/6 rounded bg-slate-100" />
-              </div>
-              <p className="mt-4 text-center text-sm text-slate-500">Cargando vista previa...</p>
-            </section>
-          );
-        }
-        if (isPptx && resource.filePath) {
-          return (
-            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
-              <div className="flex items-start gap-3">
-                <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
-                <div>
-                  <p className="text-sm font-medium text-amber-900">Vista previa no disponible para presentaciones PowerPoint.</p>
-                  <p className="mt-1 text-sm text-amber-800/80">Puedes descargarla para abrirla en PowerPoint u otra aplicación compatible.</p>
-                </div>
-              </div>
-            </section>
-          );
-        }
-        if (isOfficeResource(resource) && resource.filePath) {
-          return (
-            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
-              <div className="flex items-start gap-3">
-                <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
-                <div>
-                  <p className="text-sm font-medium text-amber-900">Vista previa no disponible para este tipo de archivo.</p>
-                  <p className="mt-1 text-sm text-amber-800/80">Puedes descargarlo para abrirlo en Word, PowerPoint u otra aplicación compatible.</p>
-                </div>
-              </div>
-            </section>
-          );
-        }
-        return null;
-      })()}
+      {isOfficeResource(resource) && resource.filePath && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
+            <div>
+              <p className="text-sm font-medium text-amber-900">Vista previa no disponible para este tipo de archivo.</p>
+              <p className="mt-1 text-sm text-amber-800/80">Puedes descargarlo para abrirlo en Word, PowerPoint u otra aplicación compatible.</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap gap-3">
@@ -3384,7 +3246,8 @@ export function AdminResourceNewPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('corporativo');
+  const [section, setSection] = useState<'corporate_material' | 'knowledge_center' | 'project_bank'>('corporate_material');
+  const [subsection, setSubsection] = useState('');
   const [type, setType] = useState('document');
   const [status, setStatus] = useState<ResourceStatus>('published');
   const [description, setDescription] = useState('');
@@ -3394,6 +3257,39 @@ export function AdminResourceNewPage() {
   const [saving, setSaving] = useState(false);
 
   const configured = isSupabaseConfigured();
+
+  const sectionLabel: Record<string, string> = {
+    corporate_material: 'Material Corporativo',
+    knowledge_center: 'Centro de Conocimiento',
+    project_bank: 'Banco de Proyectos',
+  };
+
+  const subsectionsBySection: Record<string, { value: string; label: string }[]> = {
+    knowledge_center: [
+      { value: 'calidad_asistencial', label: 'Calidad Asistencial' },
+      { value: 'seguridad_paciente', label: 'Seguridad del Paciente' },
+      { value: 'investigacion', label: 'Investigación' },
+      { value: 'formacion', label: 'Formación' },
+      { value: 'herramientas', label: 'Herramientas' },
+    ],
+    project_bank: [
+      { value: 'seguridad_paciente', label: 'Seguridad del paciente' },
+      { value: 'mejora_procesos', label: 'Mejora de procesos' },
+      { value: 'experiencia_paciente', label: 'Experiencia del paciente' },
+      { value: 'continuidad_asistencial', label: 'Continuidad asistencial' },
+      { value: 'humanizacion', label: 'Humanización' },
+      { value: 'gestion_clinica', label: 'Gestión Clínica' },
+    ],
+    corporate_material: [],
+  };
+
+  const sectionVisibility: Record<string, string[]> = {
+    corporate_material: ['administrador', 'junta_directiva'],
+    knowledge_center: ['administrador', 'junta_directiva', 'socio'],
+    project_bank: ['administrador', 'junta_directiva', 'socio'],
+  };
+
+  const subsections = subsectionsBySection[section] || [];
 
   async function handleSave() {
     if (!configured) {
@@ -3413,9 +3309,9 @@ export function AdminResourceNewPage() {
     setFeedback(null);
 
     try {
-      // 1. Upload file to Storage
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
-      const storagePath = `corporativo/2026/${crypto.randomUUID()}-${safeName}`;
+      const sectionPath = section === 'corporate_material' ? 'corporativo' : section;
+      const storagePath = `${sectionPath}/2026/${crypto.randomUUID()}-${safeName}`;
 
       const { error: uploadError } = await supabase!
         .storage
@@ -3427,7 +3323,6 @@ export function AdminResourceNewPage() {
 
       if (uploadError) throw new Error(uploadError.message);
 
-      // 2. Create resource record
       const { data: resource, error: resourceError } = await supabase!
         .from('resources')
         .insert({
@@ -3444,18 +3339,18 @@ export function AdminResourceNewPage() {
         .single();
 
       if (resourceError) {
-        // Cleanup: try to delete uploaded file
         await supabase!.storage.from('acaspex-resource-files').remove([storagePath]);
         throw new Error(resourceError.message);
       }
 
-      // 3. Create visibility for admin and junta
+      const resourceId = (resource as { id: string }).id;
+      const visibilityRecords = sectionVisibility[section].map((role) => ({
+        resource_id: resourceId,
+        role,
+      }));
       const { error: visibilityError } = await supabase!
         .from('resource_visibility')
-        .insert([
-          { resource_id: (resource as { id: string }).id, role: 'administrador' },
-          { resource_id: (resource as { id: string }).id, role: 'junta_directiva' },
-        ]);
+        .insert(visibilityRecords);
 
       if (visibilityError) {
         console.warn('Visibility insert warning:', visibilityError.message);
@@ -3509,21 +3404,47 @@ export function AdminResourceNewPage() {
             />
           </div>
           <div>
-            <label htmlFor="new-category" className="block text-xs font-medium text-slate-500">
+            <label htmlFor="new-section" className="block text-xs font-medium text-slate-500">
               Sección
             </label>
             <select
-              id="new-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              id="new-section"
+              value={section}
+              onChange={(e) => { setSection(e.target.value as typeof section); setSubsection(''); }}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
-              <option value="corporativo">Material Corporativo</option>
-              <option value="calidad">Centro de conocimiento</option>
-              <option value="formacion">Formación</option>
-              <option value="proyectos">Proyectos</option>
+              <option value="corporate_material">Material Corporativo</option>
+              <option value="knowledge_center">Centro de Conocimiento</option>
+              <option value="project_bank">Banco de Proyectos</option>
             </select>
           </div>
+          {subsections.length > 0 && (
+            <div>
+              <label htmlFor="new-subsection" className="block text-xs font-medium text-slate-500">
+                Subsección
+              </label>
+              <select
+                id="new-subsection"
+                value={subsection}
+                onChange={(e) => setSubsection(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+              >
+                {subsections.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {section === 'corporate_material' && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500">
+                Subsección
+              </label>
+              <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
+                Sin subsección — Material Corporativo
+              </div>
+            </div>
+          )}
           <div>
             <label htmlFor="new-type" className="block text-xs font-medium text-slate-500">
               Tipo de material
@@ -3565,9 +3486,9 @@ export function AdminResourceNewPage() {
               Visibilidad
             </label>
             <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-              Junta Directiva + Administración
+              {(sectionVisibility[section] || []).map((r) => r === 'administrador' ? 'Administración' : r === 'junta_directiva' ? 'Junta Directiva' : r === 'socio' ? 'Socios' : r).join(' + ')}
             </div>
-            <p className="mt-1 text-xs text-slate-400">Fijado para Material Corporativo.</p>
+            <p className="mt-1 text-xs text-slate-400">Según la sección seleccionada.</p>
           </div>
           <div>
             <label htmlFor="new-external-url" className="block text-xs font-medium text-slate-500">
@@ -3645,10 +3566,10 @@ export function AdminResourceNewPage() {
             }`}>{feedback.message}</p>
             {feedback.type === 'success' && (
               <Link
-                to="/socios/material-corporativo"
+                to={section === 'corporate_material' ? '/socios/material-corporativo' : '/socios/recursos'}
                 className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800"
               >
-                Ver en Material Corporativo
+                Ver en {sectionLabel[section]}
                 <ChevronRight size={14} />
               </Link>
             )}

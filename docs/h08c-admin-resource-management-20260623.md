@@ -107,54 +107,66 @@ Solo un archivo modificado. Cambios autónomos en 3 funciones.
 
 ---
 
-## 5. H0.8c-FIX2 — Preview DOCX, modo vista admin y estados
+## 5. H0.8R — Refactor del módulo de recursos y modelo sección/subsección
 
-### 5.1 Preview experimental de DOCX
+### 5.1 Rollback DOCX preview
 
-Dependencia `docx-preview` (v0.3.7) añadida con `dynamic import()`.
+La preview experimental de DOCX (`docx-preview`) no funcionó en validación. Eliminada:
+- `docx-preview` quitado de `package.json`.
+- `src/components/resources/DocxPreview.tsx` eliminado.
+- `MemberResourceDetailPage` restaurado a placeholder premium para DOCX/PPTX.
+- Bundle principal reducido en 170 KB (el chunk de docx-preview ya no existe).
 
-Componente `src/components/resources/DocxPreview.tsx`:
-- Descarga el DOCX como ArrayBuffer vía signed URL.
-- Renderiza con `renderAsync` de docx-preview.
-- Muestra loading skeleton mientras carga.
-- Muestra mensaje de error si falla.
-- 170 KB code-split automático (no aumenta el bundle principal).
+### 5.2 Rollback previewRole
 
-### 5.2 Modo vista admin
+El modo vista con selector de rol fue reemplazado por navegación real admin↔portal:
+- `src/lib/previewRole.ts` eliminado.
+- `MemberLayout` restaurado a comportamiento real de identidad.
+- `RequireBoardOrAdmin` restaurado a verificación real de identidad.
+- Añadido botón "Panel admin" (Shield) en `MemberLayout` cuando el usuario es admin.
+- Añadido enlace "Ver portal de socios" (Users) en `AdminLayout`.
 
-Hook `src/lib/previewRole.ts` con persistencia en localStorage (`acaspex_preview_role`).
+### 5.3 Refactor de helpers
 
-Selector visible solo para administradores en `MemberLayout`:
-- Vista: Administrador (por defecto)
-- Vista: Junta Directiva
-- Vista: Socio estándar
+Extraídos a `src/lib/resourceHelpers.ts`:
+- `typeLabel`, `categoryLabel`, `typeIconMap`, `resourceStatusLabel`, `resourceStatusBadgeClass`
+- `formatResourceDate`
+- `isImageResource`, `isPdfResource`, `isOfficeResource`, `isExternalLinkResource`, `isPreviewableResource`, `isDownloadOnlyResource`
+- `ResourceLike` type
 
-Efectos al cambiar el modo:
-- "Vista Junta Directiva": oculta acceso admin, muestra Material Corporativo, etiqueta "Previsualizando como Junta Directiva".
-- "Vista Socio estándar": oculta Material Corporativo, etiqueta "Previsualizando como Socio estándar".
-- RequireBoardOrAdmin respeta el preview role y muestra acceso denegado si vista Socio intenta acceder a Material Corporativo.
-- No modifica permisos reales, RLS, perfiles ni members.
+### 5.4 Formulario con sección/subsección
 
-### 5.3 Estados de recurso mejorados
+Rediseñado `AdminResourceNewPage`:
 
-En `AdminResourcesPage`, las acciones ahora son:
+**Secciones:**
+- Material Corporativo (sin subsección)
+- Centro de Conocimiento → Calidad Asistencial, Seguridad del Paciente, Investigación, Formación, Herramientas
+- Banco de Proyectos → Seguridad del paciente, Mejora de procesos, Experiencia del paciente, Continuidad asistencial, Humanización, Gestión Clínica
 
-| Estado | Acciones |
-|--------|----------|
-| Published | Archivar |
-| Archived | Publicar de nuevo (principal) + Restaurar borrador |
-| Draft | Publicar (principal) + Archivar |
+**Visibilidad por sección:**
+- Material Corporativo → Administración + Junta Directiva
+- Centro de Conocimiento → Administración + Junta Directiva + Socios
+- Banco de Proyectos → Administración + Junta Directiva + Socios
 
-### 5.4 Archivos H0.8c-FIX2
+**Storage path** basado en sección (ya no hardcodeado `corporativo/`).
+
+### 5.5 Inspección DB (Parte D)
+
+Schema actual:
+- `resources`: sin columna `section`. `category_id` (uuid → resource_categories) nullable.
+- `resource_categories`: sin columna `section`. Campos: name, slug, description, sort_order, is_active.
+- `resource_type` enum: pdf, video, presentation, template, link, document, other, image, logo, teams_background, external_link.
+- `resource_status` enum: draft, published, archived.
+
+**Pendiente:** migración para añadir `section` (enum o text) a `resource_categories` y poblarla. Sin migración aplicada en esta WO — frontend usa mapping.
+
+### 5.6 Archivos H0.8R
 
 ```
-package.json — docx-preview dependencia
-pnpm-lock.yaml — lockfile actualizado
-src/components/resources/DocxPreview.tsx — componente de preview DOCX
-src/lib/previewRole.ts — hook de modo vista admin
-src/components/layout/MemberLayout.tsx — selector de preview role
-src/components/RequireBoardOrAdmin.tsx — gate respeta preview role
-src/routes/placeholderPages.tsx — DocxPreview integrado, estados mejorados
+Eliminados: src/components/resources/DocxPreview.tsx, src/lib/previewRole.ts
+Modificados: package.json, pnpm-lock.yaml, placeholderPages.tsx, 
+             RequireBoardOrAdmin.tsx, MemberLayout.tsx, AdminLayout.tsx
+Nuevos: src/lib/resourceHelpers.ts
 ```
 
 ---
@@ -162,9 +174,12 @@ src/routes/placeholderPages.tsx — DocxPreview integrado, estados mejorados
 ## 6. Deuda conocida
 
 - `resource_visibility` no se actualiza al cambiar estado (se crea al insertar y queda fija).
-- El componente DOCX preview es experimental y puede fallar con documentos complejos.
 - PPTX sigue sin preview (placeholder premium + botón Descargar).
+- DOCX sigue sin preview (placeholder premium + botón Descargar).
 - La eliminación física de recursos no está implementada (archivar en su lugar).
+- Falta migración DB para `section` en `resource_categories`. Frontend usa mapping.
+- Pendiente pantalla `/admin/recursos/subsecciones` para gestionar subsecciones de Centro de Conocimiento y Banco de Proyectos.
+- `AdminResourceEditorPage` todavía no refleja el modelo sección/subsección (solo AdminResourceNewPage).
 
 ---
 

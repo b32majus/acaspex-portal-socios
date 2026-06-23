@@ -1,9 +1,8 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Shield } from 'lucide-react';
 import { useRef } from 'react';
 import { useAuth } from '../../lib/authContext';
 import { useIdentity } from '../../lib/identityContext';
-import { usePreviewRole, type PreviewRole } from '../../lib/previewRole';
 
 const memberLinks = [
   { label: 'Inicio', to: '/socios' },
@@ -18,14 +17,7 @@ export function MemberLayout() {
   const avatarMenuRef = useRef<HTMLDetailsElement>(null);
   const { session, signOut } = useAuth();
   const { role, status, accessReason } = useIdentity();
-  const { canAccessBoardArea } = useIdentity();
-  const { previewRole, setPreviewRole } = usePreviewRole();
-
-  const isAdmin = role === 'administrador';
-  const effectiveCanAccessBoard = !isAdmin ? canAccessBoardArea : previewRole !== 'socio';
-  const displayRole = isAdmin && previewRole !== 'administrador'
-    ? `Previsualizando como ${previewRole === 'junta_directiva' ? 'Junta Directiva' : 'Socio estándar'}`
-    : role ? role.replace(/_/g, ' ') : null;
+  const { canAccessBoardArea, canAccessAdmin } = useIdentity();
 
   const userEmail = session?.user?.email ?? null;
   const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : '?';
@@ -55,10 +47,10 @@ export function MemberLayout() {
             <div>
               <h1 className="font-serif text-xl lg:text-2xl font-light tracking-tight text-white">ACASPEX</h1>
               <p className="text-[11px] font-medium uppercase tracking-widest text-teal-200/70">Área de socios</p>
-              {displayRole && (
-                <p className="text-[10px] text-teal-300/60 capitalize">{displayRole}</p>
+              {role && (
+                <p className="text-[10px] text-teal-300/60 capitalize">{role.replace(/_/g, ' ')}</p>
               )}
-              {accessReason === 'admin_oversight' && previewRole === 'administrador' && (
+              {accessReason === 'admin_oversight' && (
                 <p className="text-[10px] text-amber-300/70">Supervisión administrativa</p>
               )}
             </div>
@@ -76,7 +68,7 @@ export function MemberLayout() {
                 </Link>
               );
             })}
-            {effectiveCanAccessBoard && (
+            {canAccessBoardArea && (
               <Link
                 to="/socios/material-corporativo"
                 className={`text-sm font-medium text-white/90 transition-colors hover:text-white px-3 py-1.5${location.pathname === '/socios/material-corporativo' ? ' text-white border-b border-white/40 pb-0.5' : ''}`}
@@ -84,17 +76,14 @@ export function MemberLayout() {
                 Material Corporativo
               </Link>
             )}
-            {isAdmin && (
-              <select
-                value={previewRole}
-                onChange={(e) => setPreviewRole(e.target.value as PreviewRole)}
-                className="ml-2 rounded-lg border border-teal-700/50 bg-teal-800/60 px-2.5 py-1 text-xs text-white/90 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                title="Modo de vista"
+            {canAccessAdmin && (
+              <Link
+                to="/admin"
+                className="ml-2 inline-flex items-center gap-1 rounded-lg border border-teal-600/50 bg-teal-800/60 px-2.5 py-1 text-xs font-medium text-white/90 transition-colors hover:bg-teal-700"
               >
-                <option value="administrador">Vista: Administrador</option>
-                <option value="junta_directiva">Vista: Junta Directiva</option>
-                <option value="socio">Vista: Socio estándar</option>
-              </select>
+                <Shield size={12} />
+                Panel admin
+              </Link>
             )}
             {session ? (
               <details ref={avatarMenuRef} className="relative">

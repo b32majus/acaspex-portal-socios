@@ -1,10 +1,8 @@
 import { Navigate } from 'react-router-dom'
 import { useIdentity } from '../lib/identityContext'
-import { usePreviewRole } from '../lib/previewRole'
 
 export function RequireBoardOrAdmin({ children }: { children: React.ReactNode }) {
   const { status, loading, canAccessBoardArea } = useIdentity()
-  const { previewRole } = usePreviewRole()
 
   if (loading) {
     return (
@@ -18,9 +16,7 @@ export function RequireBoardOrAdmin({ children }: { children: React.ReactNode })
     return <Navigate to="/login" replace />
   }
 
-  const effectiveAccess = canAccessBoardArea && previewRole !== 'socio'
-
-  if (!effectiveAccess) {
+  if (!canAccessBoardArea) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="max-w-sm text-center space-y-4">

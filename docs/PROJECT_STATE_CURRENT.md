@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8c-FIX2 (DOCX preview, modo vista admin, estados mejorados)  
+Estado de referencia: tras H0.8R (refactor recursos, sección/subsección, rollback previews fallidas)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `4855ccd — fix: align resource types and preview behavior`
+Último commit: `79c28d8 — feat: add docx preview and admin view mode`
 
 ---
 
@@ -148,6 +148,7 @@ h08b_fix2_real_resource_detail_preview_ready_for_validation
 h08b_fix3_resource_types_and_preview_behavior_ready_for_validation
 h08c_admin_resource_management_ready_for_validation
 h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation
+h08r_resource_module_refactor_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -242,6 +243,28 @@ Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08c_admin_reso
 - Draft → Publicar + Archivar
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation`.
+
+### H0.8R — Refactor recursos y modelo sección/subsección
+
+**Rollbacks:**
+- `docx-preview` eliminado (no funcionó en validación). DOCX/PPTX vuelven a placeholder premium.
+- `previewRole` eliminado. Reemplazado por navegación real admin↔portal (botones "Panel admin" y "Ver portal de socios").
+
+**Refactor:**
+- Helpers extraídos a `src/lib/resourceHelpers.ts`: `typeLabel`, `categoryLabel`, `typeIconMap`, clasificación de recursos, etc.
+
+**Formulario rediseñado:**
+- Campos: Título, Sección, Subsección, Tipo, Estado, Visibilidad, Enlace externo, Descripción, Archivo.
+- Secciones: Material Corporativo (sin subsección), Centro de Conocimiento, Banco de Proyectos.
+- Subsecciones contextuales según sección.
+- Visibilidad y storage path basados en sección.
+
+**Inspección DB:**
+- `resources` tiene `category_id` (uuid → resource_categories) pero sin `section`.
+- `resource_categories` sin columna `section`.
+- Migración pendiente documentada, no aplicada en esta WO.
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08r_resource_module_refactor_ready_for_validation`.
 
 Documentos H0.7 creados:
 

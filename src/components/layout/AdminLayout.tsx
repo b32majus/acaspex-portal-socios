@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Users } from 'lucide-react';
 import { useAuth } from '../../lib/authContext';
 import { useIdentity } from '../../lib/identityContext';
 
@@ -58,6 +59,13 @@ export function AdminLayout() {
                 </Link>
               );
             })}
+            <Link
+              to="/socios"
+              className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-teal-50 hover:text-teal-700 inline-flex items-center gap-1.5"
+            >
+              <Users size={14} />
+              Ver portal de socios
+            </Link>
           </nav>
           {session && (
             <div className="px-3 pb-6 md:px-3 md:pb-6">

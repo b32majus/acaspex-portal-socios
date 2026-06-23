@@ -428,15 +428,15 @@ Estado: **implementado, pendiente de validación pública — 2026-06-23.**
 
 - AdminResourcesPage conectada a Supabase real (tabla con recursos reales + demo).
 - AdminResourceEditorPage con edición real (UPDATE vía Supabase).
-- Acciones: Archivar, Desarchivar, Publicar desde la tabla admin.
+- Acciones: Archivar, Publicar de nuevo, Restaurar borrador, Publicar.
 - Card preview corregida: genera signed URL también por extensión de archivo (no solo por tipo).
 - Indicador visual de recurso real (punto verde) en tabla admin.
 
-- H0.8c-FIX2: Preview experimental de DOCX con `docx-preview` (dynamic import). Modo vista admin con selector de rol (Administrador / Junta Directiva / Socio estándar). Estados mejorados: Archivado → Publicar de nuevo + Restaurar borrador. Draft → Publicar + Archivar.
+- H0.8R: Refactor del módulo de recursos. Rollback docx-preview y previewRole. Helpers extraídos a `src/lib/resourceHelpers.ts`. Navegación admin↔portal real (sin simulaciones). Formulario rediseñado con sección/subsección. Material Corporativo (sin subsección), Centro de Conocimiento y Banco de Proyectos (con subsecciones). Visibilidad por sección.
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`.
 
-Pendiente: validación con U1/U2/U3 en web pública.
+Pendiente: validación con U1/U2/U3 en web pública. Migración DB para `section` en `resource_categories`.
 
 Estos usuarios son necesarios para validar la sección Material Corporativo (H0.7q).
 
