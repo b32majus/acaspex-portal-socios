@@ -421,6 +421,20 @@ Primer recurso real creado por Sil: "Fondo TEAMs ACASPEX" (PNG, Material Corpora
 
 Pendiente: validación con U1/U2/U3 en web pública.
 
+### H0.8c — Panel admin real de gestión de recursos
+
+Estado: **implementado, pendiente de validación pública — 2026-06-23.**
+
+- AdminResourcesPage conectada a Supabase real (tabla con recursos reales + demo).
+- AdminResourceEditorPage con edición real (UPDATE vía Supabase).
+- Acciones: Archivar, Desarchivar, Publicar desde la tabla admin.
+- Card preview corregida: genera signed URL también por extensión de archivo (no solo por tipo).
+- Indicador visual de recurso real (punto verde) en tabla admin.
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`.
+
+Pendiente: validación con U1/U2/U3 en web pública.
+
 Estos usuarios son necesarios para validar la sección Material Corporativo (H0.7q).
 
 No crear usuarios reales ni seeds sin WO explícita.

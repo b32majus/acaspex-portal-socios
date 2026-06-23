@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8b-FIX2 (detail page real, image preview, tipos ampliados)  
+Estado de referencia: tras H0.8c (panel admin real, card preview corregida, edición/archivado)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `4340465 — feat: read real resources in corporate material page`
+Último commit: `163f1ac — fix: support real resource detail and image previews`
 
 ---
 
@@ -145,6 +145,7 @@ h07q_material_corporativo_unified_and_permissions_validated
 h08a_resource_flow_designed_ready_for_first_upload
 h08b_fix1_permission_grants_applied
 h08b_fix2_real_resource_detail_preview_ready_for_validation
+h08c_admin_resource_management_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -189,6 +190,25 @@ Ver: `docs/h08a-resource-flow-design-20260623.md`. Estado: `h08a_resource_flow_d
 Ver: `docs/h08b-admin-resource-upload-flow-20260623.md`. Estado: `h08b_fix2_real_resource_detail_preview_ready_for_validation`.
 
 Primer recurso real: "Fondo TEAMs ACASPEX" (Sil, PNG, Material Corporativo, 2026-06-23).
+
+### H0.8c — Panel admin real y preview en cards
+
+**AdminResourcesPage** — conectada a Supabase:
+- Tabla con recursos reales (punto verde) + demo.
+- Columnas: Título, Sección, Tipo, Estado, Visibilidad, Fecha, Acciones.
+- Acciones contextuales: Archivar (published), Desarchivar (archived), Publicar (draft).
+
+**AdminResourceEditorPage** — edición real:
+- Carga recurso desde Supabase, formulario editable.
+- UPDATE de title, description, resource_type, status, external_url.
+- Muestra file_path (solo lectura). Aviso para sustitución de archivo.
+- Recursos demo: warning + sin guardado.
+
+**Card preview corregida:**
+- `ResourceCardImage` ahora genera signed URL si el archivo tiene extensión de imagen (.png, .jpg, etc.), aunque el tipo no sea `image`.
+- El recurso "Fondo TEAMs ACASPEX" (tipo `document`, archivo `.png`) ahora muestra preview en card.
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08c_admin_resource_management_ready_for_validation`.
 
 Documentos H0.7 creados:
 
@@ -331,8 +351,9 @@ Lectura mínima obligatoria antes de seguir:
 6. `docs/work-order-splitting-policy.md`
 7. `docs/h08a-resource-flow-design-20260623.md`
 8. `docs/h08b-admin-resource-upload-flow-20260623.md`
-9. `docs/PRD.md`
-10. `docs/architecture.md`
+9. `docs/h08c-admin-resource-management-20260623.md`
+10. `docs/PRD.md`
+11. `docs/architecture.md`
 
 Leer también, solo si la tarea lo requiere:
 

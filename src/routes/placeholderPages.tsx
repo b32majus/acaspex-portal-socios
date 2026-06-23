@@ -642,7 +642,7 @@ function ResourceCardImage({ resource }: { resource: (typeof mockResources)[numb
   const hasImageExt = resource.filePath?.match(/\.(png|jpg|jpeg|gif|webp)$/i);
 
   useEffect(() => {
-    if (!isImageType || !resource.filePath || !supabase) return;
+    if ((!isImageType && !hasImageExt) || !resource.filePath || !supabase) return;
     supabase.storage
       .from('acaspex-resource-files')
       .createSignedUrl(resource.filePath, 300)
@@ -2641,16 +2641,129 @@ export function AdminMemberDetailPage() {
 
 export function AdminResourcesPage() {
   const navigate = useNavigate();
-  const publishedCount = mockResources.filter((r) => r.status === 'published').length;
-  const draftCount = mockResources.filter((r) => r.status === 'draft').length;
-  const archivedCount = mockResources.filter((r) => r.status === 'archived').length;
+  const [resources, setResources] = useState<(typeof mockResources)[number][]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const configured = isSupabaseConfigured();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      const all: (typeof mockResources)[number][] = [];
+
+      if (configured && supabase) {
+        const { data, error } = await supabase
+          .from('resources')
+          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, created_at')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          for (const r of data as Array<Record<string, unknown>>) {
+            const fp = r.file_path as string | undefined;
+            const ct = fp?.match(/\.(png|jpg|jpeg|gif|webp)$/i)
+              ? 'image/'
+              : fp?.match(/\.(pdf)$/i)
+              ? 'application/pdf'
+              : '';
+            all.push({
+              id: r.id as string,
+              title: r.title as string,
+              subtitle: (r.subtitle as string) || (r.title as string),
+              description: (r.description as string) || '',
+              category: 'corporativo' as ResourceCategory,
+              type: (r.resource_type as ResourceType) || 'document',
+              status: (r.status as ResourceStatus) || 'draft',
+              publishedAt: (r.published_at as string) || null,
+              filePath: fp || '',
+              externalUrl: (r.external_url as string) || '',
+              estimatedReadMinutes: null,
+              coverStyle: 'corporativo' as ResourceCoverStyle,
+              visualTone: 'corporativo' as 'corporativo',
+              featured: false,
+              fileLabel: ct || (fp ? 'Archivo' : null),
+            } as (typeof mockResources)[number]);
+          }
+        }
+      }
+
+      for (const m of mockResources) {
+        if (!all.find((r) => r.id === m.id)) all.push(m);
+      }
+
+      if (!cancelled) {
+        setResources(all);
+        setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [configured]);
+
+  const publishedCount = resources.filter((r) => r.status === 'published').length;
+  const draftCount = resources.filter((r) => r.status === 'draft').length;
+  const archivedCount = resources.filter((r) => r.status === 'archived').length;
+
+  async function handleStatusChange(resourceId: string, newStatus: ResourceStatus) {
+    if (!configured || !supabase) return;
+    const isSupabaseResource = resourceId.length === 36 && resourceId.includes('-');
+    if (!isSupabaseResource) return;
+
+    setActionFeedback(null);
+    const update: Record<string, unknown> = { status: newStatus };
+    if (newStatus === 'published') update.published_at = new Date().toISOString();
+    if (newStatus === 'archived') update.archived_at = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('resources')
+      .update(update)
+      .eq('id', resourceId);
+
+    if (error) {
+      setActionFeedback({ type: 'error', message: 'Error al cambiar estado: ' + error.message });
+      return;
+    }
+
+    setResources((prev) =>
+      prev.map((r) =>
+        r.id === resourceId ? { ...r, status: newStatus, publishedAt: newStatus === 'published' ? new Date().toISOString() : r.publishedAt } : r
+      )
+    );
+    setActionFeedback({ type: 'success', message: `Recurso ${newStatus === 'published' ? 'publicado' : newStatus === 'archived' ? 'archivado' : 'pasado a borrador'}.` });
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 rounded bg-slate-200" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="h-20 rounded-lg bg-slate-100" />
+            <div className="h-20 rounded-lg bg-slate-100" />
+            <div className="h-20 rounded-lg bg-slate-100" />
+          </div>
+          <div className="h-64 rounded-2xl bg-slate-100" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {actionFeedback && (
+        <div className={`rounded-lg border p-3 text-sm ${
+          actionFeedback.type === 'success' ? 'border-emerald-100 bg-emerald-50/60 text-emerald-800' : 'border-red-100 bg-red-50/60 text-red-800'
+        }`}>
+          {actionFeedback.message}
+        </div>
+      )}
+
       <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-light text-slate-900">Recursos</h1>
-          <p className="mt-1 text-sm text-slate-500">Gestión mock del Centro de Conocimiento.</p>
+          <p className="mt-1 text-sm text-slate-500">Gestión de recursos del portal.</p>
         </div>
         <div>
           <button
@@ -2680,49 +2793,92 @@ export function AdminResourcesPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[48rem] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
-                <th className="pb-3 font-medium">Título</th>
-                <th className="pb-3 font-medium">Categoría</th>
-                <th className="pb-3 font-medium">Tipo</th>
-                <th className="pb-3 font-medium">Estado</th>
-                <th className="pb-3 font-medium">Fecha</th>
-                <th className="pb-3 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {mockResources.map((resource) => {
-                const statusBadge = resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600';
-                return (
-                  <tr key={resource.id} className="hover:bg-slate-50/60">
-                    <td className="py-3 font-medium text-slate-900">{resource.title}</td>
-                    <td className="py-3 text-slate-600">{categoryLabel[resource.category] ?? resource.category}</td>
-                    <td className="py-3 text-slate-600">{typeLabel[resource.type] ?? resource.type}</td>
-                    <td className="py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
-                        {resourceStatusLabel[resource.status] ?? resource.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-slate-600">
-                      {resource.publishedAt ? resource.publishedAt.split('-').reverse().join('/') : '—'}
-                    </td>
-                    <td className="py-3 text-right">
-                      <Link
-                        to={`/admin/recursos/${resource.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-50"
-                      >
-                        Editar
-                        <ChevronRight size={13} />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {resources.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-500">No hay recursos todavía.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[56rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                  <th className="pb-3 font-medium">Título</th>
+                  <th className="pb-3 font-medium">Sección</th>
+                  <th className="pb-3 font-medium">Tipo</th>
+                  <th className="pb-3 font-medium">Estado</th>
+                  <th className="pb-3 font-medium">Visibilidad</th>
+                  <th className="pb-3 font-medium">Fecha</th>
+                  <th className="pb-3 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {resources.map((resource) => {
+                  const statusBadge = resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600';
+                  const isReal = resource.id.length === 36 && resource.id.includes('-');
+                  const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
+                  return (
+                    <tr key={resource.id} className="hover:bg-slate-50/60">
+                      <td className="py-3 font-medium text-slate-900">
+                        {resource.title}
+                        {isReal && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" title="Recurso real" />}
+                      </td>
+                      <td className="py-3 text-slate-600">{categoryLabel[resource.category] ?? resource.category}</td>
+                      <td className="py-3 text-slate-600">{typeLabel[resource.type] ?? resource.type}</td>
+                      <td className="py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
+                          {resourceStatusLabel[resource.status] ?? resource.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-slate-600">{visibilityLabel}</td>
+                      <td className="py-3 text-slate-600 text-xs">
+                        {formatResourceDate(resource.publishedAt ?? (resource as unknown as { createdAt?: string }).createdAt ?? null) }
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            to={`/admin/recursos/${resource.id}`}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-50"
+                          >
+                            Editar
+                            <ChevronRight size={13} />
+                          </Link>
+                          {isReal && resource.status === 'published' && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(resource.id, 'archived')}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-50"
+                              title="Archivar"
+                            >
+                              Archivar
+                            </button>
+                          )}
+                          {isReal && resource.status === 'archived' && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(resource.id, 'draft')}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100"
+                              title="Desarchivar a borrador"
+                            >
+                              Desarchivar
+                            </button>
+                          )}
+                          {isReal && resource.status === 'draft' && (
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(resource.id, 'published')}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
+                              title="Publicar"
+                            >
+                              Publicar
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
@@ -2730,16 +2886,128 @@ export function AdminResourcesPage() {
 
 export function AdminResourceEditorPage() {
   const { resourceId } = useParams<{ resourceId: string }>();
-  const resource = mockResources.find((r) => r.id === resourceId);
+  const navigate = useNavigate();
+  const [resource, setResource] = useState<(typeof mockResources)[number] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState<ResourceType>('document');
+  const [status, setStatus] = useState<ResourceStatus>('draft');
+  const [description, setDescription] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const configured = isSupabaseConfigured();
 
-  const [title, setTitle] = useState(resource?.title ?? '');
-  const [subtitle, setSubtitle] = useState(resource?.subtitle ?? '');
-  const [category, setCategory] = useState(resource?.category ?? 'calidad');
-  const [type, setType] = useState(resource?.type ?? 'pdf');
-  const [status, setStatus] = useState<ResourceStatus>(resource?.status ?? 'draft');
-  const [description, setDescription] = useState(resource?.description ?? '');
-  const [externalUrl, setExternalUrl] = useState(resource?.externalUrl ?? '');
-  const [mockMessage, setMockMessage] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      let found: (typeof mockResources)[number] | null = null;
+
+      if (configured && supabase && resourceId) {
+        const { data, error } = await supabase
+          .from('resources')
+          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, archived_at, created_at')
+          .eq('id', resourceId)
+          .maybeSingle();
+
+        if (!error && data && !cancelled) {
+          const r = data as Record<string, unknown>;
+          found = {
+            id: r.id as string,
+            title: r.title as string,
+            subtitle: (r.subtitle as string) || '',
+            description: (r.description as string) || '',
+            category: 'corporativo' as ResourceCategory,
+            type: (r.resource_type as ResourceType) || 'document',
+            status: (r.status as ResourceStatus) || 'draft',
+            publishedAt: (r.published_at as string) || null,
+            filePath: (r.file_path as string) || '',
+            externalUrl: (r.external_url as string) || '',
+            estimatedReadMinutes: null,
+            coverStyle: 'corporativo' as ResourceCoverStyle,
+            visualTone: 'corporativo' as 'corporativo',
+            featured: false,
+            fileLabel: null,
+          } as (typeof mockResources)[number];
+        }
+      }
+
+      if (!found) {
+        found = mockResources.find((r) => r.id === resourceId) || null;
+      }
+
+      if (!cancelled) {
+        setResource(found);
+        if (found) {
+          setTitle(found.title);
+          setType(found.type as ResourceType);
+          setStatus(found.status);
+          setDescription(found.description || '');
+          setExternalUrl(found.externalUrl || '');
+        }
+        setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [configured, resourceId]);
+
+  async function handleSave() {
+    if (!configured || !supabase || !resource) return;
+    const isReal = resource.id.length === 36 && resource.id.includes('-');
+    if (!isReal) {
+      setFeedback({ type: 'info', message: 'Los recursos demo no se pueden guardar en Supabase.' });
+      return;
+    }
+
+    setSaving(true);
+    setFeedback(null);
+
+    const update: Record<string, unknown> = {
+      title: title.trim(),
+      description: description.trim() || null,
+      resource_type: type,
+      status,
+      external_url: externalUrl.trim() || null,
+    };
+
+    if (status === 'published' && resource.status !== 'published') {
+      update.published_at = new Date().toISOString();
+    }
+    if (status === 'archived' && resource.status !== 'archived') {
+      update.archived_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('resources')
+      .update(update)
+      .eq('id', resource.id);
+
+    if (error) {
+      setFeedback({ type: 'error', message: 'Error al guardar: ' + error.message });
+      setSaving(false);
+      return;
+    }
+
+    setResource({ ...resource, title: title.trim(), description: description.trim() || '', type, status, externalUrl: externalUrl.trim() || '' });
+    setFeedback({ type: 'success', message: 'Recurso actualizado correctamente.' });
+    setSaving(false);
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 w-32 rounded bg-slate-200" />
+          <div className="h-32 rounded-2xl bg-slate-100" />
+          <div className="h-64 rounded-2xl bg-slate-100" />
+        </div>
+      </div>
+    );
+  }
 
   if (!resource) {
     return (
@@ -2761,6 +3029,7 @@ export function AdminResourceEditorPage() {
     );
   }
 
+  const isReal = resource.id.length === 36 && resource.id.includes('-');
   const statusBadge = resourceStatusBadgeClass[status] ?? 'bg-slate-100 text-slate-600';
 
   return (
@@ -2776,9 +3045,9 @@ export function AdminResourceEditorPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-teal-700">Recurso</p>
+            <p className="text-xs font-medium uppercase tracking-widest text-teal-700">Recurso{isReal ? ' real' : ' demo'}</p>
             <h1 className="mt-2 font-serif text-3xl font-light text-slate-900">{resource.title}</h1>
-            <p className="mt-1 text-sm text-slate-500">{resource.subtitle}</p>
+            {resource.subtitle && <p className="mt-1 text-sm text-slate-500">{resource.subtitle}</p>}
           </div>
           <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statusBadge}`}>
             {resourceStatusLabel[status] ?? status}
@@ -2786,64 +3055,31 @@ export function AdminResourceEditorPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h2 className="font-serif text-xl text-slate-900">Detalles del recurso</h2>
-        <dl className="mt-6 grid gap-6 sm:grid-cols-2">
-          <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Título</dt>
-            <dd className="mt-0.5 text-sm text-slate-900">{resource.title}</dd>
-          </div>
-          <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría</dt>
-            <dd className="mt-0.5 text-sm text-slate-700">{categoryLabel[resource.category] ?? resource.category}</dd>
-          </div>
-          <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo</dt>
-            <dd className="mt-0.5 text-sm text-slate-700">{typeLabel[resource.type] ?? resource.type}</dd>
-          </div>
-          <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Estado</dt>
-            <dd className="mt-0.5">
-              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600'}`}>
-                {resourceStatusLabel[resource.status] ?? resource.status}
-              </span>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Fecha de publicación</dt>
-            <dd className="mt-0.5 text-sm text-slate-700">
-              {resource.publishedAt ? resource.publishedAt.split('-').reverse().join('/') : '—'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Nivel de acceso</dt>
-            <dd className="mt-0.5">
-              <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
-                Socios
-              </span>
-            </dd>
-          </div>
-        </dl>
-
-        <div className="mt-6 border-t border-slate-100 pt-6">
-          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Descripción</dt>
-          <dd className="mt-0.5 text-sm leading-relaxed text-slate-700">{resource.description}</dd>
+      {feedback && (
+        <div className={`rounded-lg border p-4 text-sm ${
+          feedback.type === 'success' ? 'border-emerald-100 bg-emerald-50/60 text-emerald-800' :
+          feedback.type === 'error' ? 'border-red-100 bg-red-50/60 text-red-800' :
+          'border-amber-100 bg-amber-50/60 text-amber-800'
+        }`}>
+          {feedback.message}
         </div>
-      </section>
+      )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+      {!isReal && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-start gap-3">
             <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
-            <p className="text-sm font-medium text-amber-800">Gestión mock — sin guardado real</p>
+            <p className="text-sm font-medium text-amber-800">Este es un recurso demo. La edición no se guarda en Supabase.</p>
           </div>
         </div>
+      )}
 
-        <h2 className="font-serif text-xl text-slate-900">Edición mock</h2>
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="font-serif text-xl text-slate-900">Edición</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor="resource-title" className="block text-xs font-medium text-slate-500">
-              Título
+              Título *
             </label>
             <input
               id="resource-title"
@@ -2854,37 +3090,8 @@ export function AdminResourceEditorPage() {
             />
           </div>
           <div>
-            <label htmlFor="resource-subtitle" className="block text-xs font-medium text-slate-500">
-              Subtítulo
-            </label>
-            <input
-              id="resource-subtitle"
-              type="text"
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-            />
-          </div>
-          <div>
-            <label htmlFor="resource-category" className="block text-xs font-medium text-slate-500">
-              Categoría
-            </label>
-            <select
-              id="resource-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as ResourceCategory)}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-            >
-              {Object.entries(categoryLabel).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label htmlFor="resource-type" className="block text-xs font-medium text-slate-500">
-              Tipo
+              Tipo de material
             </label>
             <select
               id="resource-type"
@@ -2892,11 +3099,15 @@ export function AdminResourceEditorPage() {
               onChange={(e) => setType(e.target.value as ResourceType)}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
-              {Object.entries(typeLabel).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
+              <option value="image">Imagen</option>
+              <option value="logo">Logo</option>
+              <option value="teams_background">Fondo Teams</option>
+              <option value="pdf">PDF</option>
+              <option value="document">Documento</option>
+              <option value="presentation">Presentación</option>
+              <option value="template">Plantilla</option>
+              <option value="external_link">Enlace externo</option>
+              <option value="other">Otro</option>
             </select>
           </div>
           <div>
@@ -2939,44 +3150,37 @@ export function AdminResourceEditorPage() {
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />
           </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="resource-file" className="block text-xs font-medium text-slate-500">
-              Archivo mock
-            </label>
-            <input
-              id="resource-file"
-              type="file"
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 opacity-60 cursor-not-allowed"
-            />
-            <p className="mt-1 text-xs text-slate-400">La subida de archivos está deshabilitada en la versión mock.</p>
-          </div>
+          {resource.filePath && (
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-500">
+                Archivo
+              </label>
+              <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                <code className="text-xs">{resource.filePath}</code>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">Para sustituir el archivo, crea un nuevo recurso.</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => setMockMessage('Borrador guardado (mock — sin guardado real)')}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            onClick={handleSave}
+            disabled={saving || !title.trim()}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Edit size={15} />
-            Guardar borrador
+            {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
           <button
             type="button"
-            onClick={() => setMockMessage('Recurso publicado (mock — sin guardado real)')}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            onClick={() => navigate('/admin/recursos')}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
-            <Upload size={15} />
-            Publicar
+            Cancelar
           </button>
         </div>
-
-        {mockMessage && (
-          <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
-            <p className="text-sm text-emerald-800/80">{mockMessage}</p>
-          </div>
-        )}
       </section>
     </div>
   );
