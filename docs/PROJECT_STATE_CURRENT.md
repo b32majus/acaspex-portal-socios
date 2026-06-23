@@ -4,7 +4,7 @@
 Estado de referencia: tras cierre y push de H0.7 (auth foundation completa)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `8ec8b5b — feat: add auth session, login UI, and route gates`
+Último commit: `836d4b1 — docs: clean project state after h07 auth foundation`
 
 ---
 
@@ -126,6 +126,14 @@ Commits H0.7:
 ```text
 0fba32e — docs: add h07 auth and identity contracts
 8ec8b5b — feat: add auth session, login UI, and route gates
+836d4b1 — docs: clean project state after h07 auth foundation
+```
+
+Estados finales H0.7:
+
+```text
+h07_commits_pushed_ready_for_h07f
+h07_doc_cleanup_pushed_ready_for_h07f
 ```
 
 Documentos H0.7 creados:
