@@ -80,15 +80,16 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
 
     async function loadIdentity() {
       try {
+        // Step 1: Read profile without join to members
         const { data: profile, error: profileError } = await supabase!
           .from('profiles')
-          .select('id, role, is_active, member_id, members(id, status, paid_until)')
+          .select('id, role, is_active, member_id')
           .eq('id', session!.user.id)
-          .single()
+          .maybeSingle()
 
         if (cancelled) return
 
-        if (profileError || !profile) {
+        if (profileError) {
           setState({
             status: 'authenticated_no_profile',
             role: null,
@@ -99,7 +100,23 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
             canAccessAdmin: false,
             accessReason: 'none',
             loading: false,
-            error: profileError ? profileError.message : null,
+            error: profileError.message,
+          })
+          return
+        }
+
+        if (!profile) {
+          setState({
+            status: 'authenticated_no_profile',
+            role: null,
+            isMemberActive: false,
+            isFeeCurrent: false,
+            canAccessMemberArea: false,
+            canAccessBoardArea: false,
+            canAccessAdmin: false,
+            accessReason: 'none',
+            loading: false,
+            error: null,
           })
           return
         }
@@ -120,19 +137,56 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        const role = (profile as Record<string, unknown>).role as string
-        const embeddedMember = (profile as Record<string, unknown>).members
-        const member: { id: string; status: string; paid_until: string | null } | null =
-          Array.isArray(embeddedMember)
-            ? (embeddedMember as Array<{ id: string; status: string; paid_until: string | null }>)[0] ?? null
-            : (embeddedMember as { id: string; status: string; paid_until: string | null } | null)
-
+        const role = profile.role as string
+        const memberId = profile.member_id as string | null
         const isAdmin = role === 'administrador'
         const isBoard = role === 'junta_directiva'
 
-        if (!member) {
+        // Step 2: No member linked
+        if (!memberId) {
           setState({
             status: isAdmin ? 'admin' : 'authenticated_no_member',
+            role,
+            isMemberActive: false,
+            isFeeCurrent: false,
+            canAccessMemberArea: isAdmin,
+            canAccessBoardArea: isAdmin,
+            canAccessAdmin: isAdmin,
+            accessReason: isAdmin ? 'admin_oversight' : 'none',
+            loading: false,
+            error: null,
+          })
+          return
+        }
+
+        // Step 3: Read member separately
+        const { data: member, error: memberError } = await supabase!
+          .from('members')
+          .select('id, status, paid_until')
+          .eq('id', memberId)
+          .maybeSingle()
+
+        if (cancelled) return
+
+        if (memberError) {
+          setState({
+            status: 'authenticated_no_member',
+            role,
+            isMemberActive: false,
+            isFeeCurrent: false,
+            canAccessMemberArea: isAdmin,
+            canAccessBoardArea: isAdmin,
+            canAccessAdmin: isAdmin,
+            accessReason: isAdmin ? 'admin_oversight' : 'none',
+            loading: false,
+            error: memberError.message,
+          })
+          return
+        }
+
+        if (!member) {
+          setState({
+            status: 'authenticated_no_member',
             role,
             isMemberActive: false,
             isFeeCurrent: false,

@@ -62,7 +62,13 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { session, signOut } = useAuth();
-  const { canAccessMemberArea, canAccessAdmin, accessReason } = useIdentity();
+  const {
+    canAccessMemberArea,
+    canAccessAdmin,
+    accessReason,
+    loading: identityLoading,
+    error: identityError,
+  } = useIdentity();
 
   const configured = isSupabaseConfigured();
 
@@ -86,9 +92,8 @@ export function LoginPage() {
       .then(({ error: authError }) => {
         if (authError) {
           setError('No hemos podido iniciar sesión con esos datos. Revisa el correo y la contraseña.');
-        } else {
-          navigate('/socios');
         }
+        // No redirect: AuthProvider + IdentityProvider will update session and permissions.
       })
       .catch(() => {
         setError('No hemos podido iniciar sesión con esos datos. Revisa el correo y la contraseña.');
@@ -145,33 +150,41 @@ export function LoginPage() {
                 <p className="mt-1 text-xs text-amber-600">Acceso con permisos de administración.</p>
               )}
             </div>
-            <div className="space-y-3">
-              {canAccessAdmin && (
-                <Link
-                  to="/admin"
-                  className="block w-full rounded-lg bg-teal-900 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800"
-                >
-                  Ir al panel de administración
-                </Link>
-              )}
-              {canAccessMemberArea && (
-                <Link
-                  to="/socios"
-                  className="block w-full rounded-lg bg-teal-700 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-600"
-                >
-                  Ver área de socios
-                </Link>
-              )}
-              {!canAccessMemberArea && !canAccessAdmin && (
-                <p className="text-sm text-slate-500 text-center py-2">Tu cuenta está pendiente de activación o revisión.</p>
-              )}
-              <button
-                onClick={handleSignOut}
-                className="block w-full rounded-lg border border-slate-200 bg-white px-5 py-3 text-center text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                Cerrar sesión
-              </button>
-            </div>
+            {identityLoading ? (
+              <p className="text-sm text-slate-400 text-center py-2">Comprobando permisos...</p>
+            ) : identityError ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-sm text-amber-800">No hemos podido comprobar los permisos de tu cuenta. Inténtalo de nuevo o contacta con administración.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {canAccessAdmin && (
+                  <Link
+                    to="/admin"
+                    className="block w-full rounded-lg bg-teal-900 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800"
+                  >
+                    Ir al panel de administración
+                  </Link>
+                )}
+                {canAccessMemberArea && (
+                  <Link
+                    to="/socios"
+                    className="block w-full rounded-lg bg-teal-700 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                  >
+                    Ver área de socios
+                  </Link>
+                )}
+                {!canAccessMemberArea && !canAccessAdmin && (
+                  <p className="text-sm text-slate-500 text-center py-2">Tu cuenta está pendiente de activación o revisión.</p>
+                )}
+              </div>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="block w-full rounded-lg border border-slate-200 bg-white px-5 py-3 text-center text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              Cerrar sesión
+            </button>
             <div className="text-center pt-2">
               <p className="text-sm text-slate-500">
                 ¿Aún no eres socio?{' '}
