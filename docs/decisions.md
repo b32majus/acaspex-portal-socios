@@ -122,6 +122,10 @@ Las mutaciones remotas en Supabase staging mediante API key o service_role solo 
 
 El rol administrador permite acceso operativo global al portal. Un administrador puede acceder a las áreas privadas del portal, incluida el área de socios, aunque no tenga ficha de socio activa. Este acceso es por supervisión administrativa y no equivale a ser socio activo ni a tener cuota vigente. La distinción se refleja en `accessReason = 'admin_oversight'`.
 
+### D029 — Material Corporativo como sección de Junta Directiva
+
+La sección "Material Corporativo" agrupa recursos internos de uso institucional de ACASPEX (plantillas, logos, documentos institucionales, materiales de jornadas, presentaciones, actas, recursos de comunicación). Acceso: `administrador` y `junta_directiva`. `socio` no accede. Esta sección permite demostrar de forma visible la diferencia entre roles sin crear una zona compleja de gobierno interno. Implementación en H0.7q.
+
 ## Decisiones pendientes
 
 1. Texto legal/RGPD.

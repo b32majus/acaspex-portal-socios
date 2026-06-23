@@ -397,15 +397,21 @@ El frontend puede aplicar comprobación visual, pero el bloqueo real requiere:
 
 ### P-H07-007 — Usuario sintético/autorizado para pruebas
 
-Estado: **U1 creado en staging — 2026-06-23 (H0.7h).**
+Estado: **U1 creado, U2-U6 pendientes — 2026-06-23 (H0.7h/H0.7n).**
 
 Documentos:
 - Diseño: `docs/h07g-staging-synthetic-users-design-20260623.md`
 - Creación U1: `docs/h07h-staging-u1-admin-operator-creation-20260623.md`
+- Diagnóstico U1: `docs/h07k-u1-identity-diagnosis-20260623.md`
+- Grants: `docs/h07n-identity-read-grants-20260623.md`
 
-U1 (admin operativo sin socio) creado con autorización explícita de Sil. Método: Auth Admin API + Management API por limitación del Dashboard. Verificación técnica correcta. Validación funcional manual pendiente.
+U1 (admin operativo sin socio) creado, verificado técnicamente. Pendiente validación funcional pública (depende de GitHub Pages deploy + H0.7n grants).
 
-Pendientes U2-U6 según fases del diseño.
+Según D029 (H0.7p addendum), próximos usuarios:
+- U2 — Junta directiva demo (`acaspex.junta.demo@example.com`)
+- U3 — Socio activo demo (`acaspex.socio.demo@example.com`)
+
+Estos usuarios son necesarios para validar la sección Material Corporativo (H0.7q).
 
 No crear usuarios reales ni seeds sin WO explícita.
 
