@@ -1,7 +1,8 @@
 ---
 title: H0.8c — Panel admin real de gestión de recursos + preview en cards
-status: pending_review
+status: validated
 created: 2026-06-23
+updated: 2026-06-23
 owner: Sil / Cora
 depends_on:
   - h08b_real_resource_detail_preview
@@ -185,31 +186,21 @@ Extraídos de `placeholderPages.tsx` a módulos propios:
 
 `AppRouter.tsx`: actualizado para importar los nuevos módulos.
 
-### 5.8 H0.8S — Migración sección/subsección
+### 5.8 H0.8S — Migración sección/subsección ✅ VALIDADO
 
-**DB migration (022):**
-- Enum `resource_section` creado: `knowledge_center`, `project_bank`, `corporate_material`.
-- Columna `section` añadida a `resources` y `resource_categories`.
-- 3 recursos existentes migrados a `corporate_material`.
-- 11 categorías seed (5 knowledge_center + 6 project_bank).
+**Estado:** `h08s_resource_sections_model_validated` — 2026-06-23.
 
-**Frontend:**
-- `AdminResourceNewPage` persiste `section` y `category_id` en INSERT.
-- `category_id` se resuelve por slug desde `resource_categories`.
-- `AdminResourcesPage` lee `section` y deriva la UI del label.
-- `MaterialCorporativoPage` filtra por `section = 'corporate_material'`.
-- `MemberResourceDetailPage` lee `section` para derivar categoría.
+Validación de Sil: formulario correcto visualmente, Material Corporativo sin subsección, Centro de Conocimiento y Banco de Proyectos con sus subsecciones, visibilidad U2/U3 correcta.
 
-**Archivos H0.8S:**
+Modelo de recursos cerrado:
+
 ```
-supabase/migrations/022_acaspex_resource_sections.sql — nueva migración
-src/components/resources/AdminResourceNewPage.tsx — persist section/category_id
-src/components/resources/AdminResourcesPage.tsx — leer section
-src/components/resources/MemberResourceDetailPage.tsx — leer section
-src/routes/placeholderPages.tsx — MaterialCorporativoPage filtra por section
-src/data/mockResources.ts — ResourceCategory + 'proyectos'
-src/lib/resourceHelpers.ts — categoryLabel + 'proyectos'
+section = corporate_material → sin subsección → admin/junta
+section = knowledge_center → 5 subsecciones → admin/junta/socios
+section = project_bank → 6 subsecciones → admin/junta/socios
 ```
+
+Próximo bloque: H0.8T — Administración de subsecciones desde panel admin.
 
 ---
 
@@ -219,12 +210,11 @@ src/lib/resourceHelpers.ts — categoryLabel + 'proyectos'
 - PPTX sigue sin preview (placeholder premium + botón Descargar).
 - DOCX sigue sin preview (placeholder premium + botón Descargar).
 - La eliminación física de recursos no está implementada (archivar en su lugar).
-- Falta migración DB para `section` en `resource_categories`. Frontend usa mapping.
-- Pendiente pantalla `/admin/recursos/subsecciones` para gestionar subsecciones de Centro de Conocimiento y Banco de Proyectos.
+- Pendiente pantalla `/admin/recursos/subsecciones` para gestionar subsecciones de Centro de Conocimiento y Banco de Proyectos (H0.8T).
 - `AdminResourceEditorPage` todavía no refleja el modelo sección/subsección (solo AdminResourceNewPage).
 
 ---
 
 ## 7. Estado
 
-Status: pending_review
+Status: validated

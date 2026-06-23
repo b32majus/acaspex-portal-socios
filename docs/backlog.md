@@ -434,7 +434,9 @@ Estado: **implementado, pendiente de validación pública — 2026-06-23.**
 
 - H0.8R: Refactor del módulo de recursos. Rollback docx-preview y previewRole. Helpers extraídos a `src/lib/resourceHelpers.ts`. Navegación admin↔portal real. Formulario rediseñado con sección/subsección.
 - H0.8R2: Extracción de componentes de recursos a módulos propios. placeholderPages: 4881 → 3547 líneas (-27%).
-- H0.8S: Migración DB controlada: enum `resource_section`, columna `section` en resources y resource_categories, seed de 11 categorías, frontend persiste `section` y `category_id`.
+- H0.8S: Migración DB controlada: enum `resource_section`, columna `section` en resources y resource_categories, seed de 11 categorías, frontend persiste `section` y `category_id`. ✅ **Validado por Sil — 2026-06-23.**
+
+Próximo: H0.8T — Administración de subsecciones desde panel admin.
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`.
 

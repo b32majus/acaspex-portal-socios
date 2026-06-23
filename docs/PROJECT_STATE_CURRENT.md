@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8S (migración sección/subsección, enum resource_section, categorías seed)  
+Estado de referencia: tras cierre H0.8S (modelo sección/subsección validado)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `7d1fc53 — refactor: extract resource module components`
+Último commit: `e6f64ba — feat: add resource sections model`
 
 ---
 
@@ -150,7 +150,7 @@ h08c_admin_resource_management_ready_for_validation
 h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation
 h08r_resource_module_refactor_ready_for_validation
 h08r2_resource_module_extracted_ready_for_validation
-h08s_resource_sections_model_ready_for_validation
+h08s_resource_sections_model_validated
 ```
 
 ## 9. Estado de staging (post H0.7q)
