@@ -1,6 +1,7 @@
 import { Navigate, Route, HashRouter as Router, Routes } from 'react-router-dom';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { MemberLayout } from '../components/layout/MemberLayout';
+import { RequireAuth } from '../components/RequireAuth';
 import {
   AdminDashboardPage,
   AdminMemberDetailPage,
@@ -28,7 +29,13 @@ export function AppRouter() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/hazte-socio" element={<SignupPage />} />
-        <Route element={<MemberLayout />}>
+        <Route
+          element={
+            <RequireAuth>
+              <MemberLayout />
+            </RequireAuth>
+          }
+        >
           <Route path="/socios" element={<MemberHomePage />} />
           <Route path="/socios/recursos" element={<MemberLibraryPage />} />
           <Route path="/socios/recursos/:resourceId" element={<MemberResourceDetailPage />} />
@@ -36,7 +43,13 @@ export function AppRouter() {
           <Route path="/socios/proyectos/:projectId" element={<MemberProjectDetailPage />} />
           <Route path="/socios/mi-cuenta" element={<MemberAccountPage />} />
         </Route>
-        <Route element={<AdminLayout />}>
+        <Route
+          element={
+            <RequireAuth>
+              <AdminLayout />
+            </RequireAuth>
+          }
+        >
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/socios" element={<AdminMembersPage />} />
           <Route path="/admin/socios/:memberId" element={<AdminMemberDetailPage />} />

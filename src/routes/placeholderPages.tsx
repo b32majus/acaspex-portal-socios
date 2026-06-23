@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -50,15 +50,56 @@ import {
   type SignupStatus,
 } from '../data/mockSignup';
 import { cn } from '../lib/utils';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { useAuth } from '../lib/authContext';
 
 export function LoginPage() {
   const assetBase = import.meta.env.BASE_URL;
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { session, signOut } = useAuth();
+
+  const configured = isSupabaseConfigured();
+
+  async function handleSignOut() {
+    await signOut();
+  }
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!configured) {
+      setError('El sistema de acceso no está configurado. Contacta con administración.');
+      return;
+    }
+
+    setLoading(true);
+
+    supabase!.auth
+      .signInWithPassword({ email: email.trim(), password })
+      .then(({ error: authError }) => {
+        if (authError) {
+          setError('No hemos podido iniciar sesión con esos datos. Revisa el correo y la contraseña.');
+        } else {
+          navigate('/socios');
+        }
+      })
+      .catch(() => {
+        setError('No hemos podido iniciar sesión con esos datos. Revisa el correo y la contraseña.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }
 
   return (
     <main className="min-h-screen grid grid-cols-1 lg:grid-cols-[2fr_3fr]">
       {/* Panel izquierdo — teal oscuro */}
       <div className="relative hidden flex-col justify-between bg-teal-900 p-10 lg:p-16 text-white overflow-hidden lg:flex">
-        {/* Fondo sutil: Puente de Alcántara */}
         <div
           className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.7]"
           style={{ backgroundImage: `url(${assetBase}assets/acaspex/puente-alcantara.jpg)` }}
@@ -91,56 +132,117 @@ export function LoginPage() {
         </p>
       </div>
 
-      {/* Panel derecho — formulario */}
+      {/* Panel derecho — formulario o sesión activa */}
       <div className="relative flex items-center justify-center p-8 lg:p-16 bg-white">
-        <div className="w-full max-w-sm space-y-6">
-          <div>
-            <h1 className="font-serif text-2xl lg:text-3xl font-light text-slate-900">Acceso socios</h1>
-            <p className="mt-1 text-sm text-slate-500">Introduce tus datos para acceder al portal.</p>
+        {session ? (
+          <div className="w-full max-w-sm space-y-6">
+            <div>
+              <h1 className="font-serif text-2xl lg:text-3xl font-light text-slate-900">Sesión iniciada</h1>
+              <p className="mt-1 text-sm text-slate-500">Conectado como {session.user?.email}</p>
+            </div>
+            <div className="space-y-3">
+              <Link
+                to="/socios"
+                className="block w-full rounded-lg bg-teal-900 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800"
+              >
+                Ir al área de socios
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="block w-full rounded-lg border border-slate-200 bg-white px-5 py-3 text-center text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+            <div className="text-center pt-2">
+              <p className="text-sm text-slate-500">
+                ¿Aún no eres socio?{' '}
+                <Link
+                  to="/hazte-socio"
+                  className="font-medium text-teal-700 hover:text-teal-800 underline underline-offset-2"
+                >
+                  Hazte socio
+                </Link>
+              </p>
+            </div>
           </div>
-
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="login-email" className="block text-sm font-medium text-slate-700">
-                Correo electrónico
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                placeholder="Correo electrónico"
-                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-              />
+        ) : (
+          <div className="w-full max-w-sm space-y-6">
+            <div>
+              <h1 className="font-serif text-2xl lg:text-3xl font-light text-slate-900">Área privada de socios</h1>
+              <p className="mt-1 text-sm text-slate-500">Accede con el correo y la contraseña asociados a tu cuenta de ACASPEX.</p>
             </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="login-password" className="block text-sm font-medium text-slate-700">
-                Contraseña
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                placeholder="Contraseña"
-                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="login-email" className="block text-sm font-medium text-slate-700">
+                  Correo electrónico
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                  placeholder="Correo electrónico"
+                  required
+                  autoComplete="email"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="login-password" className="block text-sm font-medium text-slate-700">
+                  Contraseña
+                </label>
+                <input
+                  id="login-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                  placeholder="Contraseña"
+                  required
+                  autoComplete="current-password"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-sm text-amber-800">{error}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="block w-full rounded-lg bg-teal-900 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Iniciando sesión...' : 'Acceder al portal'}
+              </button>
+            </form>
+
+            <div className="text-center pt-2">
+              <p className="text-sm text-slate-500">
+                ¿Aún no eres socio?{' '}
+                <Link
+                  to="/hazte-socio"
+                  className="font-medium text-teal-700 hover:text-teal-800 underline underline-offset-2"
+                >
+                  Hazte socio
+                </Link>
+              </p>
             </div>
           </div>
+        )}
 
-          <Link
-            to="/socios"
-            className="block w-full rounded-lg bg-teal-900 px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800"
-          >
-            Acceder al portal
-          </Link>
-
-          <Link
-            to="/admin"
-            className="absolute bottom-4 right-4 rounded-full p-2 text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500"
-            title="Acceso administrador"
-            aria-label="Acceso administrador"
-          >
-            <Settings size={16} />
-          </Link>
-        </div>
+        <Link
+          to="/admin"
+          className="absolute bottom-4 right-4 rounded-full p-2 text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500"
+          title="Acceso administrador"
+          aria-label="Acceso administrador"
+        >
+          <Settings size={16} />
+        </Link>
       </div>
     </main>
   );

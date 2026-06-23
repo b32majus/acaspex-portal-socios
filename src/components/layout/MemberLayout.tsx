@@ -1,6 +1,7 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { useRef } from 'react';
+import { useAuth } from '../../lib/authContext';
 
 const memberLinks = [
   { label: 'Inicio', to: '/socios' },
@@ -10,14 +11,25 @@ const memberLinks = [
 
 export function MemberLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const assetBase = import.meta.env.BASE_URL;
   const avatarMenuRef = useRef<HTMLDetailsElement>(null);
+  const { session, signOut } = useAuth();
+
+  const userEmail = session?.user?.email ?? null;
+  const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : '?';
 
   const closeDropdown = () => {
     if (avatarMenuRef.current) {
       avatarMenuRef.current.open = false;
     }
   };
+
+  async function handleSignOut() {
+    closeDropdown();
+    await signOut();
+    navigate('/login');
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -47,17 +59,26 @@ export function MemberLayout() {
                 </Link>
               );
             })}
-            <details ref={avatarMenuRef} className="relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 hover:bg-teal-800/50 rounded-full px-2 py-1">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 text-xs font-medium text-white">L</span>
-                <span className="text-sm text-white/90">Lucía</span>
-                <ChevronDown className="h-4 w-4 text-white/60" />
-              </summary>
-              <div className="absolute right-0 top-full z-10 mt-2 w-44 rounded-xl border border-teal-700/50 bg-teal-900 py-1 shadow-lg">
-                <Link className="block px-4 py-2 text-sm text-white/90 hover:bg-teal-800 hover:text-white" to="/socios/mi-cuenta" onClick={closeDropdown}>Mi cuenta</Link>
-                <Link className="block px-4 py-2 text-sm text-white/60 hover:text-white" to="/login" onClick={closeDropdown}>Salir</Link>
-              </div>
-            </details>
+            {session ? (
+              <details ref={avatarMenuRef} className="relative">
+                <summary className="flex cursor-pointer list-none items-center gap-2 hover:bg-teal-800/50 rounded-full px-2 py-1">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 text-xs font-medium text-white">{userInitial}</span>
+                  <span className="text-sm text-white/90 truncate max-w-[140px]">{userEmail ?? 'Sesión iniciada'}</span>
+                  <ChevronDown className="h-4 w-4 text-white/60 shrink-0" />
+                </summary>
+                <div className="absolute right-0 top-full z-10 mt-2 w-44 rounded-xl border border-teal-700/50 bg-teal-900 py-1 shadow-lg">
+                  <Link className="block px-4 py-2 text-sm text-white/90 hover:bg-teal-800 hover:text-white" to="/socios/mi-cuenta" onClick={closeDropdown}>Mi cuenta</Link>
+                  <button className="block w-full text-left px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-teal-800" onClick={handleSignOut}>Cerrar sesión</button>
+                </div>
+              </details>
+            ) : (
+              <Link
+                to="/login"
+                className="text-sm font-medium text-white/80 transition-colors hover:text-white px-3 py-1.5"
+              >
+                Iniciar sesión
+              </Link>
+            )}
           </nav>
         </div>
       </header>
