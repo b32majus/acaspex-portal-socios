@@ -9,9 +9,6 @@ import {
   AdminMemberDetailPage,
   AdminMembersPage,
   AdminRenewalsPage,
-  AdminResourceEditorPage,
-  AdminResourceNewPage,
-  AdminResourcesPage,
   AdminSignupDetailPage,
   AdminSignupRequestsPage,
   LoginPage,
@@ -21,9 +18,12 @@ import {
   MemberLibraryPage,
   MemberProjectBankPage,
   MemberProjectDetailPage,
-  MemberResourceDetailPage,
   SignupPage,
 } from './placeholderPages';
+import { AdminResourcesPage } from '../components/resources/AdminResourcesPage';
+import { AdminResourceEditorPage } from '../components/resources/AdminResourceEditorPage';
+import { AdminResourceNewPage } from '../components/resources/AdminResourceNewPage';
+import { MemberResourceDetailPage } from '../components/resources/MemberResourceDetailPage';
 
 export function AppRouter() {
   return (

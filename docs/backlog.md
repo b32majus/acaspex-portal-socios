@@ -432,7 +432,8 @@ Estado: **implementado, pendiente de validación pública — 2026-06-23.**
 - Card preview corregida: genera signed URL también por extensión de archivo (no solo por tipo).
 - Indicador visual de recurso real (punto verde) en tabla admin.
 
-- H0.8R: Refactor del módulo de recursos. Rollback docx-preview y previewRole. Helpers extraídos a `src/lib/resourceHelpers.ts`. Navegación admin↔portal real (sin simulaciones). Formulario rediseñado con sección/subsección. Material Corporativo (sin subsección), Centro de Conocimiento y Banco de Proyectos (con subsecciones). Visibilidad por sección.
+- H0.8R: Refactor del módulo de recursos. Rollback docx-preview y previewRole. Helpers extraídos a `src/lib/resourceHelpers.ts`. Navegación admin↔portal real. Formulario rediseñado con sección/subsección.
+- H0.8R2: Extracción de componentes de recursos a módulos propios: MockCover, MemberResourceDetailPage, AdminResourcesPage, AdminResourceEditorPage, AdminResourceNewPage. placeholderPages.tsx: 4881 → 3547 líneas (-27%).
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`.
 

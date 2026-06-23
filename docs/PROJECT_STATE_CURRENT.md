@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8R (refactor recursos, sección/subsección, rollback previews fallidas)  
+Estado de referencia: tras H0.8R2 (refactor extracción de componentes, placeholderPages reducido -27%)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `79c28d8 — feat: add docx preview and admin view mode`
+Último commit: `abd6bad — refactor: clean resource module and section model`
 
 ---
 
@@ -149,6 +149,7 @@ h08b_fix3_resource_types_and_preview_behavior_ready_for_validation
 h08c_admin_resource_management_ready_for_validation
 h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation
 h08r_resource_module_refactor_ready_for_validation
+h08r2_resource_module_extracted_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -265,6 +266,23 @@ Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08c_fix2_docx_
 - Migración pendiente documentada, no aplicada en esta WO.
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08r_resource_module_refactor_ready_for_validation`.
+
+### H0.8R2 — Extracción real del módulo de recursos
+
+Componentes extraídos de `placeholderPages.tsx`:
+
+| Archivo | Líneas |
+|---------|--------|
+| `src/components/resources/MockCover.tsx` | 157 |
+| `src/components/resources/MemberResourceDetailPage.tsx` | 305 |
+| `src/components/resources/AdminResourcesPage.tsx` | 283 |
+| `src/components/resources/AdminResourceEditorPage.tsx` | 318 |
+| `src/components/resources/AdminResourceNewPage.tsx` | 343 |
+
+`placeholderPages.tsx`: 4881 → 3547 líneas (-27%, -1334 líneas).
+`AppRouter.tsx`: actualizado para importar de los nuevos módulos.
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08r2_resource_module_extracted_ready_for_validation`.
 
 Documentos H0.7 creados:
 

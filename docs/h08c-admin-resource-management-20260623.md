@@ -169,6 +169,22 @@ Modificados: package.json, pnpm-lock.yaml, placeholderPages.tsx,
 Nuevos: src/lib/resourceHelpers.ts
 ```
 
+### 5.7 H0.8R2 — Refactor real del módulo de recursos
+
+Extraídos de `placeholderPages.tsx` a módulos propios:
+
+| Archivo | Líneas | Descripción |
+|---------|--------|-------------|
+| `src/components/resources/MockCover.tsx` | 157 | Componente de portada decorativa mock |
+| `src/components/resources/MemberResourceDetailPage.tsx` | 305 | Página de detalle de recurso (Supabase + mocks) |
+| `src/components/resources/AdminResourcesPage.tsx` | 283 | Panel admin de gestión de recursos |
+| `src/components/resources/AdminResourceEditorPage.tsx` | 318 | Editor de recurso (carga/edita/guarda) |
+| `src/components/resources/AdminResourceNewPage.tsx` | 343 | Formulario de subida (sección/subsección) |
+
+`placeholderPages.tsx`: 4881 → 3547 líneas (-1334, -27%).
+
+`AppRouter.tsx`: actualizado para importar los nuevos módulos.
+
 ---
 
 ## 6. Deuda conocida
