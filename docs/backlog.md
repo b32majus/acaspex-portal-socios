@@ -397,21 +397,19 @@ El frontend puede aplicar comprobación visual, pero el bloqueo real requiere:
 
 ### P-H07-007 — Usuario sintético/autorizado para pruebas
 
-Estado: **diseñado — 2026-06-23 (H0.7g). Pendiente de creación en staging.**
+Estado: **U1 creado en staging — 2026-06-23 (H0.7h).**
 
-Documento de diseño: `docs/h07g-staging-synthetic-users-design-20260623.md`.
+Documentos:
+- Diseño: `docs/h07g-staging-synthetic-users-design-20260623.md`
+- Creación U1: `docs/h07h-staging-u1-admin-operator-creation-20260623.md`
 
-Define 6 usuarios sintéticos:
-- U1 — Admin operativo sin ficha de socio
-- U2 — Socio activo con cuota vigente
-- U3 — Socio con cuota vencida
-- U4 — Junta directiva activa
-- U5 — Usuario autenticado sin perfil
-- U6 — Perfil activo sin socio y sin rol admin
+U1 (admin operativo sin socio) creado y verificado técnicamente:
+- Auth user: `acaspex.admin.demo@example.com`
+- Profile: role `administrador`, is_active `true`, member_id `null`
+- Email confirmado. Sin member.
+- Pendiente validación funcional manual por Sil.
 
-Priorización: U1 y U2 son críticos. U3-U6 deseables.
-
-Próxima WO recomendada: H0.7h — Crear U1 en staging (requiere autorización explícita de Sil y acceso al Supabase Dashboard).
+Pendientes U2-U6 según fases del diseño.
 
 No crear usuarios reales ni seeds sin WO explícita.
 
