@@ -7,3 +7,10 @@ dist/
 *.local
 .vite/
 *.tsbuildinfo
+
+# Operational noise
+.herenow/
+.opencode/
+docs/.herenow/
+outbox/
+supabase/.temp/

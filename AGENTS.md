@@ -1,33 +1,11 @@
 # AGENTS — ACASPEX Portal Socios
 
-## Estado
+## Reglas operativas
 
-Scaffold mock inicial. Sin backend real, sin Supabase, sin pagos y sin datos reales.
-
-## Reglas
-
-- Leer `README.md` antes de trabajar.
-- Leer contratos en `docs/` antes de crear rutas, datos o pantallas.
-- No crear work orders amplias.
-- No conectar servicios reales sin autorización explícita.
-- No crear `.env` con secretos.
-- No usar datos reales.
-- No tocar GitHub/deploy/dominio/pagos.
-
-## Contratos clave
-
-```text
-docs/scaffold-contract.md
-docs/ui-routes-contract.md
-docs/mock-data-contract.md
-docs/design-system-contract.md
-docs/screen-spec-member-home.md
-```
-
-## Comandos
-
-```bash
-pnpm install
-pnpm dev
-pnpm build
-```
+- Leer primero `docs/PROJECT_STATE_CURRENT.md`.
+- No leer `docs/review-packs/` ni `outbox/reports/` salvo petición explícita.
+- No tocar datos reales, credenciales, `.env`, secrets, tokens ni Supabase real.
+- No ejecutar `git add .`.
+- No hacer commit ni push sin permiso explícito.
+- Preferir cambios pequeños por slice funcional.
+- Si una decisión parece contradictoria, parar y reportar en vez de redecidir.

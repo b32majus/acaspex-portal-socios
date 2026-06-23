@@ -1,79 +1,36 @@
 # ACASPEX Portal de Socios
 
-Estado: `pending_review / mock-data-ready`
+> Antes de trabajar en este proyecto, leer `docs/PROJECT_STATE_CURRENT.md`. Ese archivo es la fuente de verdad operativa actual. Los review packs, reports y documentos históricos no deben usarse como contexto por defecto.
 
-Proyecto técnico para construir un portal privado mínimo de socios ACASPEX, conectado a Supabase en fases posteriores, con gestión de socios, cuotas, recursos privados y futura integración de pagos.
+Estado: `active / h07-auth-foundation-complete`
 
-## Ejecución local
-
-```bash
-pnpm install
-pnpm dev
-pnpm build
-```
+Portal privado de socios ACASPEX conectado a Supabase staging, con login funcional (email + contraseña), sesión, logout y protección de rutas por sesión.
 
 ## Estado técnico
 
-Scaffold inicial mock con rutas placeholder y datos ficticios tipados. Sin backend real, sin Supabase, sin pagos y sin datos reales.
+Frontend con auth foundation completada en H0.7:
 
-Build validado correctamente tras scaffold y rutas placeholder el 2026-06-20.
+- Login funcional con Supabase Auth (`signInWithPassword`).
+- Session shell: `AuthProvider` + `useAuth` hook + logout.
+- Route gates: `RequireAuth` protege todas las rutas privadas.
+- Cliente Supabase centralizado en `src/lib/supabaseClient.ts`.
+- Build validado.
 
-## Dirección visual activa
+Supabase staging desplegado: 18 migraciones, 9 tablas, RLS activo, helpers security definer.
 
-La referencia visual principal es Propuesta 3, documentada en docs/visual-pivot-propuesta-3-20260621.md.
+Pendiente: lectura de perfil/socio/rol (H0.7f), protección por rol en /admin, bloqueo por cuota vigente.
 
-Propuesta 2 queda como referencia estructural secundaria (portal privado, centro de conocimiento, navegación de recursos, comunidad, material corporativo).
-
-El portal debe reducir el patrón card-heavy hacia una estética más institucional, editorial y premium. Biblioteca evoluciona a Centro de conocimiento. Se incorpora Banco de proyectos como nueva sección.
-
-## Documentos vivos
-
-Leer en este orden al retomar el proyecto:
+## Documentos canónicos activos
 
 ```text
-docs/cora-work-plan.md
-docs/roadmap-phase0-phase1.md
-docs/work-order-splitting-policy.md
-docs/PRD.md
-docs/current-form-analysis.md
-docs/form-transition-strategy.md
-docs/data-model.md
-docs/architecture.md
-docs/security.md
+docs/PROJECT_STATE_CURRENT.md
 docs/decisions.md
 docs/backlog.md
+docs/h07-auth-contract-20260623.md
+docs/h07e-identity-read-model-20260623.md
+docs/work-order-splitting-policy.md
 ```
 
-## Contratos para ejecución mecánica
+## Próximo paso
 
-```text
-docs/scaffold-contract.md
-docs/ui-routes-contract.md
-docs/mock-data-contract.md
-docs/design-system-contract.md
-docs/screen-spec-member-home.md
-docs/screen-spec-member-library.md
-docs/screen-spec-member-resource-detail.md
-docs/screen-spec-member-account.md
-```
-
-## Stack decidido para Fase 1
-
-```text
-Frontend: Vite + React + TypeScript
-UI: Tailwind v4 + shadcn/ui usado de forma sobria
-Backend/Auth/DB/Storage: no conectado en primera fase mock
-Hosting preview: Netlify preview o URL temporal equivalente
-Vídeos futuros: YouTube oculto/enlace externo
-Pagos futuros: transferencia manual ordenada + Stripe Checkout pendiente de decisión
-```
-
-## Próximo paso recomendado
-
-No crear una WO amplia de prototipo completo.
-
-Siguiente WO mecánica recomendada:
-
-```text
-Ejecutar cola nocturna hasta area socio mock: ver docs/overnight-workorder-queue-20260620.md.
-```
+H0.7f — Identity read hook (`useIdentity`): leer perfiles, socios y roles desde Supabase.
