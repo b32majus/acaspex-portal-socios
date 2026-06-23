@@ -3,6 +3,7 @@ import { AdminLayout } from '../components/layout/AdminLayout';
 import { MemberLayout } from '../components/layout/MemberLayout';
 import { RequireMember } from '../components/RequireMember';
 import { RequireAdmin } from '../components/RequireAdmin';
+import { RequireBoardOrAdmin } from '../components/RequireBoardOrAdmin';
 import {
   AdminDashboardPage,
   AdminMemberDetailPage,
@@ -14,6 +15,7 @@ import {
   AdminSignupDetailPage,
   AdminSignupRequestsPage,
   LoginPage,
+  MaterialCorporativoPage,
   MemberAccountPage,
   MemberHomePage,
   MemberLibraryPage,
@@ -43,6 +45,15 @@ export function AppRouter() {
           <Route path="/socios/proyectos" element={<MemberProjectBankPage />} />
           <Route path="/socios/proyectos/:projectId" element={<MemberProjectDetailPage />} />
           <Route path="/socios/mi-cuenta" element={<MemberAccountPage />} />
+        </Route>
+        <Route
+          element={
+            <RequireBoardOrAdmin>
+              <MemberLayout />
+            </RequireBoardOrAdmin>
+          }
+        >
+          <Route path="/socios/material-corporativo" element={<MaterialCorporativoPage />} />
         </Route>
         <Route
           element={

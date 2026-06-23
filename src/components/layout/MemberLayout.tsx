@@ -17,6 +17,7 @@ export function MemberLayout() {
   const avatarMenuRef = useRef<HTMLDetailsElement>(null);
   const { session, signOut } = useAuth();
   const { role, status, accessReason } = useIdentity();
+  const { canAccessBoardArea } = useIdentity();
 
   const userEmail = session?.user?.email ?? null;
   const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : '?';
@@ -67,6 +68,14 @@ export function MemberLayout() {
                 </Link>
               );
             })}
+            {canAccessBoardArea && (
+              <Link
+                to="/socios/material-corporativo"
+                className={`text-sm font-medium text-white/90 transition-colors hover:text-white px-3 py-1.5${location.pathname === '/socios/material-corporativo' ? ' text-white border-b border-white/40 pb-0.5' : ''}`}
+              >
+                Material Corporativo
+              </Link>
+            )}
             {session ? (
               <details ref={avatarMenuRef} className="relative">
                 <summary className="flex cursor-pointer list-none items-center gap-2 hover:bg-teal-800/50 rounded-full px-2 py-1">

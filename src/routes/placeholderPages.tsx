@@ -279,6 +279,43 @@ export function LoginPage() {
   );
 }
 
+export function MaterialCorporativoPage() {
+  const { canAccessBoardArea } = useIdentity();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-serif text-2xl lg:text-3xl font-light text-slate-900">Material Corporativo</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Recursos internos de uso institucional para la Junta Directiva de ACASPEX.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          { label: 'Plantillas corporativas', desc: 'Documentos, cartas y modelos oficiales' },
+          { label: 'Logos e identidad', desc: 'Versiones del logo ACASPEX para distintos usos' },
+          { label: 'Documentos institucionales', desc: 'Estatutos, memorias y documentación oficial' },
+          { label: 'Materiales de jornadas', desc: 'Presentaciones y materiales de eventos' },
+          { label: 'Actas', desc: 'Actas de reuniones de Junta Directiva' },
+          { label: 'Recursos de comunicación', desc: 'Notas de prensa y materiales de difusión' },
+        ].map((item) => (
+          <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-5">
+            <h3 className="font-serif text-base font-medium text-slate-900">{item.label}</h3>
+            <p className="mt-1 text-sm text-slate-500">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {canAccessBoardArea && (
+        <p className="text-xs text-slate-400">
+          Este contenido está disponible para miembros de Junta Directiva y administración.
+        </p>
+      )}
+    </div>
+  );
+}
+
 const categoryLabel: Record<string, string> = {
   calidad: 'Calidad asistencial',
   seguridad: 'Seguridad del paciente',
