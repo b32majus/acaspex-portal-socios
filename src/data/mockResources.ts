@@ -1,4 +1,4 @@
-export type ResourceType = 'pdf' | 'video' | 'template' | 'link' | 'presentation';
+export type ResourceType = 'pdf' | 'video' | 'template' | 'link' | 'presentation' | 'image' | 'logo' | 'teams_background' | 'document' | 'external_link';
 
 export type ResourceCategory = 'calidad' | 'seguridad' | 'investigacion' | 'formacion' | 'herramientas' | 'corporativo';
 
@@ -17,6 +17,7 @@ export type Resource = {
   publishedAt: string | null;
   estimatedReadMinutes: number | null;
   externalUrl: string | null;
+  filePath?: string;
   fileLabel: string | null;
   coverImageUrl?: string | null;
   coverAlt?: string | null;

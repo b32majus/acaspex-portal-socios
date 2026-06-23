@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ClipboardList,
   CreditCard,
+  Download,
   Edit,
   Eye,
   FileText,
@@ -21,6 +22,7 @@ import {
   Handshake,
   Heart,
   IdCard,
+  Image,
   Info,
   Lightbulb,
   Mail,
@@ -40,7 +42,7 @@ import {
 } from 'lucide-react';
 import { mockMembers, mockRenewals, mockSocioDashboard, type MemberStatus, type MembershipType, type ReducedFeeReason, type RenewalItem } from '../data/mockMembers';
 import { mockProjects, projectCategoryLabel, projectStatusBadgeClass, projectStatusLabel, type ProjectCategory } from '../data/mockProjects';
-import { mockResources, type ResourceCategory, type ResourceStatus, type ResourceType } from '../data/mockResources';
+import { mockResources, type ResourceCategory, type ResourceCoverStyle, type ResourceStatus, type ResourceType } from '../data/mockResources';
 import { mockNews } from '../data/mockNews';
 import {
   mockSignupRequests,
@@ -363,6 +365,11 @@ const typeLabel: Record<string, string> = {
   template: 'Plantilla',
   link: 'Enlace',
   presentation: 'Presentación',
+  image: 'Imagen',
+  logo: 'Logo',
+  teams_background: 'Fondo Teams',
+  document: 'Documento',
+  external_link: 'Enlace externo',
 };
 
 const resourceStatusLabel: Record<ResourceStatus, string> = {
@@ -455,7 +462,25 @@ const typeIconMap: Record<string, React.ComponentType<{ size?: number | string; 
   template: ClipboardList,
   link: Globe,
   presentation: BookOpen,
+  image: Image,
+  logo: Image,
+  teams_background: Image,
+  document: FileText,
+  external_link: Globe,
 };
+
+function formatResourceDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) {
+    const parts = dateStr.split('T')[0].split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return dateStr;
+  }
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}/${d.getFullYear()}`;
+}
 
 type MockCoverProps = {
   resource: (typeof mockResources)[number];
@@ -611,6 +636,44 @@ function MockCover({ resource }: MockCoverProps) {
   );
 }
 
+function ResourceCardImage({ resource }: { resource: (typeof mockResources)[number] }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const isImageType = resource.type === 'image' || resource.type === 'logo' || resource.type === 'teams_background';
+  const hasImageExt = resource.filePath?.match(/\.(png|jpg|jpeg|gif|webp)$/i);
+
+  useEffect(() => {
+    if (!isImageType || !resource.filePath || !supabase) return;
+    supabase.storage
+      .from('acaspex-resource-files')
+      .createSignedUrl(resource.filePath, 300)
+      .then(({ data }) => {
+        if (data?.signedUrl) setSignedUrl(data.signedUrl);
+      })
+      .catch(() => {});
+  }, [resource.filePath, isImageType]);
+
+  if (signedUrl) {
+    return (
+      <img
+        src={signedUrl}
+        alt={resource.title}
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    );
+  }
+
+  if (isImageType || hasImageExt) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-100">
+        <Image size={32} className="text-slate-300" />
+      </div>
+    );
+  }
+
+  return <MockCover resource={resource} />;
+}
+
 type ResourceCardProps = {
   resource: (typeof mockResources)[number];
   showPreview?: boolean;
@@ -618,12 +681,13 @@ type ResourceCardProps = {
 
 function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
   const TypeIcon = typeIconMap[resource.type] ?? FileText;
+  const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
 
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
       {showPreview && (
         <div className="relative aspect-[16/10] overflow-hidden">
-          <MockCover resource={resource} />
+          <ResourceCardImage resource={resource} />
         </div>
       )}
       <div className="flex flex-col gap-2.5 p-4">
@@ -644,12 +708,10 @@ function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
         </p>
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-slate-400">
-            {resource.publishedAt
-              ? resource.publishedAt.split('-').reverse().join('/')
-              : '—'}
+            {formatResourceDate(resource.publishedAt)}
           </span>
           <span className="inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-medium text-teal-700">
-            Socios
+            {visibilityLabel}
           </span>
         </div>
         <div className="pt-1">
@@ -1153,10 +1215,85 @@ export function MemberLibraryPage() {
 
 export function MemberResourceDetailPage() {
   const { resourceId } = useParams<{ resourceId: string }>();
-  const resource = mockResources.find((r) => r.id === resourceId);
-  const isAvailable = resource && resource.status === 'published';
+  const [resource, setResource] = useState<(typeof mockResources)[number] | null>(null);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const configured = isSupabaseConfigured();
 
-  if (!isAvailable) {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+
+      if (configured && supabase && resourceId) {
+        const { data, error } = await supabase
+          .from('resources')
+          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at')
+          .eq('id', resourceId)
+          .eq('status', 'published')
+          .maybeSingle();
+
+        if (!error && data && !cancelled) {
+          const r = data as Record<string, unknown>;
+          const mapped = {
+            id: r.id as string,
+            title: r.title as string,
+            subtitle: (r.subtitle as string) || (r.title as string),
+            description: (r.description as string) || '',
+            category: (r.resource_type === 'image' || r.resource_type === 'logo' || r.resource_type === 'teams_background' || r.resource_type === 'document' || r.resource_type === 'presentation' || r.resource_type === 'template' || r.resource_type === 'pdf' || r.resource_type === 'external_link' ? 'corporativo' : 'calidad') as ResourceCategory,
+            type: (r.resource_type as ResourceType) || 'document',
+            status: (r.status as ResourceStatus) || 'published',
+            publishedAt: (r.published_at as string) || null,
+            filePath: (r.file_path as string) || '',
+            externalUrl: (r.external_url as string) || '',
+            estimatedReadMinutes: null as number | null,
+            coverStyle: 'corporativo' as ResourceCoverStyle,
+            visualTone: 'corporativo' as 'corporativo',
+            featured: false,
+            fileLabel: null,
+          } as (typeof mockResources)[number];
+          setResource(mapped);
+
+          const fp = r.file_path as string | undefined;
+          const rt = r.resource_type as string;
+          const isImage = rt === 'image' || rt === 'logo' || rt === 'teams_background';
+          const hasImageExt = fp?.match(/\.(png|jpg|jpeg|gif|webp)$/i);
+          if (fp && supabase && (isImage || hasImageExt)) {
+            const { data: urlData } = await supabase.storage
+              .from('acaspex-resource-files')
+              .createSignedUrl(fp, 300);
+            if (urlData?.signedUrl && !cancelled) setSignedUrl(urlData.signedUrl);
+          }
+        } else if (!cancelled) {
+          const mock = mockResources.find((r) => r.id === resourceId);
+          setResource(mock || null);
+        }
+      } else {
+        const mock = mockResources.find((r) => r.id === resourceId);
+        if (!cancelled) setResource(mock || null);
+      }
+
+      if (!cancelled) setLoading(false);
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [configured, resourceId]);
+
+  if (loading) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 w-48 rounded bg-slate-200" />
+          <div className="h-4 w-96 rounded bg-slate-100" />
+          <div className="aspect-[2/1] rounded-lg bg-slate-100" />
+        </div>
+      </section>
+    );
+  }
+
+  if (!resource) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="space-y-4">
@@ -1175,25 +1312,35 @@ export function MemberResourceDetailPage() {
     );
   }
 
-  const resourceItem = resource!;
-  const TypeIcon = typeIconMap[resourceItem.type] ?? FileText;
+  const TypeIcon = typeIconMap[resource.type] ?? FileText;
+  const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
+  const backPath = resource.category === 'corporativo' ? '/socios/material-corporativo' : '/socios/recursos';
+  const isImageType = resource.type === 'image' || resource.type === 'logo' || resource.type === 'teams_background';
 
   return (
     <div className="space-y-8">
       <Link
-        to="/socios/recursos"
+        to={backPath}
         className="text-sm font-medium text-teal-700 hover:text-teal-800"
       >
-        Volver al centro de conocimiento
+        {resource.category === 'corporativo' ? 'Volver a Material Corporativo' : 'Volver al centro de conocimiento'}
       </Link>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="aspect-[2/1] overflow-hidden">
-          <MockCover resource={resourceItem} />
+        <div className="aspect-[2/1] overflow-hidden bg-slate-100">
+          {signedUrl ? (
+            <img src={signedUrl} alt={resource.title} className="h-full w-full object-contain" />
+          ) : isImageType && resource.filePath ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <Image size={48} className="text-slate-300" />
+            </div>
+          ) : (
+            <MockCover resource={resource} />
+          )}
         </div>
         <div className="p-6 sm:p-8">
-          <h1 className="text-2xl font-semibold text-slate-900">{resourceItem.title}</h1>
-          <p className="mt-1 text-slate-600">{resourceItem.subtitle}</p>
+          <h1 className="text-2xl font-semibold text-slate-900">{resource.title}</h1>
+          <p className="mt-1 text-slate-600">{resource.subtitle}</p>
         </div>
       </section>
 
@@ -1202,66 +1349,82 @@ export function MemberResourceDetailPage() {
           <div>
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría</p>
             <span className="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
-              {categoryLabel[resourceItem.category] ?? resourceItem.category}
+              {categoryLabel[resource.category] ?? resource.category}
             </span>
           </div>
           <div>
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo</p>
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-slate-700">
               <TypeIcon size={14} className="text-slate-400" />
-              {typeLabel[resourceItem.type] ?? resourceItem.type}
+              {typeLabel[resource.type] ?? resource.type}
             </p>
           </div>
           <div>
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Publicado</p>
             <p className="mt-1 text-sm text-slate-700">
-              {resourceItem.publishedAt
-                ? resourceItem.publishedAt.split('-').reverse().join('/')
-                : '—'}
+              {formatResourceDate(resource.publishedAt)}
             </p>
           </div>
           <div>
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Acceso</p>
             <span className="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
-              Socios
+              {visibilityLabel}
             </span>
           </div>
         </div>
-        {resourceItem.estimatedReadMinutes !== null && (
+        {resource.estimatedReadMinutes !== null && (
           <div className="mt-3 border-t border-slate-100 pt-3">
             <p className="text-sm text-slate-600">
               <span className="font-medium text-slate-700">Tiempo estimado:</span>{' '}
-              {resourceItem.estimatedReadMinutes} min
+              {resource.estimatedReadMinutes} min
             </p>
           </div>
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Descripción</h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-700">{resourceItem.description}</p>
-      </section>
+      {resource.description && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Descripción</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-700">{resource.description}</p>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        {resourceItem.externalUrl ? (
-          <a
-            href={resourceItem.externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
-          >
-            Ver recurso
-            <ChevronRight size={14} />
-          </a>
-        ) : (
-          <Link
-            to={`/socios/recursos/${resourceItem.id}`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
-          >
-            Ver recurso
-            <ChevronRight size={14} />
-          </Link>
-        )}
+        <div className="flex flex-wrap gap-3">
+          {resource.externalUrl && (
+            <a
+              href={resource.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            >
+              Abrir recurso
+              <ChevronRight size={14} />
+            </a>
+          )}
+          {resource.filePath && supabase && (
+            <button
+              type="button"
+              onClick={() => {
+                const client = supabase;
+                if (!client) return;
+                client.storage
+                  .from('acaspex-resource-files')
+                  .createSignedUrl(resource.filePath!, 60)
+                  .then(({ data }) => {
+                    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                  });
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              <Download size={14} />
+              Descargar
+            </button>
+          )}
+          {!resource.externalUrl && !resource.filePath && (
+            <p className="text-sm text-slate-500">Este recurso no tiene archivo ni enlace asociado.</p>
+          )}
+        </div>
       </section>
     </div>
   );
@@ -2973,10 +3136,14 @@ export function AdminResourceNewPage() {
               onChange={(e) => setType(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
-              <option value="document">Documento / Plantilla</option>
+              <option value="image">Imagen</option>
+              <option value="logo">Logo</option>
+              <option value="teams_background">Fondo Teams</option>
               <option value="pdf">PDF</option>
+              <option value="document">Documento</option>
               <option value="presentation">Presentación</option>
               <option value="template">Plantilla</option>
+              <option value="external_link">Enlace externo</option>
               <option value="other">Otro</option>
             </select>
           </div>

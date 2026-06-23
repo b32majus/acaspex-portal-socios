@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras cierre y push de H0.7 (auth foundation completa)  
+Estado de referencia: tras H0.8b-FIX2 (detail page real, image preview, tipos ampliados)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `836d4b1 — docs: clean project state after h07 auth foundation`
+Último commit: `4340465 — feat: read real resources in corporate material page`
 
 ---
 
@@ -142,6 +142,9 @@ h07m_identity_profile_member_split_ready_for_public_validation
 h07n_identity_read_grants_applied_ready_for_public_validation
 h07p_demo_junta_socio_created_ready_for_permission_section
 h07q_material_corporativo_unified_and_permissions_validated
+h08a_resource_flow_designed_ready_for_first_upload
+h08b_fix1_permission_grants_applied
+h08b_fix2_real_resource_detail_preview_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -167,6 +170,25 @@ H0.7 cerrado funcionalmente:
 ## 10. Siguiente fase
 
 H0.8 — Primer flujo real de recursos: subida, previsualización y descarga de Material Corporativo.
+
+### H0.8a — Diseño
+
+Ver: `docs/h08a-resource-flow-design-20260623.md`. Estado: `h08a_resource_flow_designed_ready_for_first_upload`.
+
+### H0.8b — Implementación y fixes
+
+**H0.8b-FIX1** — Permisos: GRANT INSERT/UPDATE/DELETE en `resources` y `resource_visibility` para `authenticated`. Migración 020 aplicada en staging.
+
+**H0.8b-FIX2** — Detalle, preview y tipos reales:
+- `MemberResourceDetailPage` consulta Supabase real (fallback a mocks).
+- Preview de imágenes con signed URLs desde Storage.
+- Tipos ampliados: Imagen, Logo, Fondo Teams, Documento, Enlace externo.
+- Etiquetas corregidas: visibilidad (Junta Directiva), fecha (dd/mm/aaaa), tipo (label humano).
+- Botón Descargar para archivos reales.
+
+Ver: `docs/h08b-admin-resource-upload-flow-20260623.md`. Estado: `h08b_fix2_real_resource_detail_preview_ready_for_validation`.
+
+Primer recurso real: "Fondo TEAMs ACASPEX" (Sil, PNG, Material Corporativo, 2026-06-23).
 
 Documentos H0.7 creados:
 
@@ -307,8 +329,10 @@ Lectura mínima obligatoria antes de seguir:
 4. `docs/h07-auth-contract-20260623.md`
 5. `docs/h07e-identity-read-model-20260623.md`
 6. `docs/work-order-splitting-policy.md`
-7. `docs/PRD.md`
-8. `docs/architecture.md`
+7. `docs/h08a-resource-flow-design-20260623.md`
+8. `docs/h08b-admin-resource-upload-flow-20260623.md`
+9. `docs/PRD.md`
+10. `docs/architecture.md`
 
 Leer también, solo si la tarea lo requiere:
 

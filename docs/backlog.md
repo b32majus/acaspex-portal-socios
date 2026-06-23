@@ -403,6 +403,24 @@ U1 (admin), U2 (junta), U3 (socio) creados en staging y validados funcionalmente
 
 H0.7 cerrado funcionalmente. Siguiente fase: H0.8 — flujo real de recursos.
 
+### H0.8a — Diseño del primer flujo real de recursos
+
+Estado: **diseñado — 2026-06-23.**
+Ver: `docs/h08a-resource-flow-design-20260623.md`.
+
+### H0.8b — Subida admin, detalle y preview de recursos
+
+Estado: **implementado, pendiente de validación pública — 2026-06-23.**
+
+- H0.8b-FIX1: GRANTs y RLS aplicados (migración 020). Admin puede INSERT en `resources`.
+- H0.8b-FIX2: Tipos de recurso ampliados (Imagen, Fondo Teams, etc.), detail page con Supabase real, preview de imágenes con signed URLs, etiquetas corregidas (visibilidad, fecha, tipo).
+
+Ver: `docs/h08b-admin-resource-upload-flow-20260623.md`.
+
+Primer recurso real creado por Sil: "Fondo TEAMs ACASPEX" (PNG, Material Corporativo).
+
+Pendiente: validación con U1/U2/U3 en web pública.
+
 Estos usuarios son necesarios para validar la sección Material Corporativo (H0.7q).
 
 No crear usuarios reales ni seeds sin WO explícita.
