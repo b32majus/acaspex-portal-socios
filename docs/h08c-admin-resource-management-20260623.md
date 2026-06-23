@@ -220,6 +220,12 @@ Integración:
 
 Estado: `h08t_resource_subsections_admin_ready_for_validation`. Pendiente de validación de Sil.
 
+### 5.10 H0.8T-CLOSE ✅ VALIDADO
+
+**Estado:** `h08t_resource_subsections_admin_validated` — 2026-06-23.
+
+Validación técnica completa. Build OK, 11 categorías activas, policies verificadas, slugify correcto. Pendiente de validación funcional por Sil en web pública.
+
 ---
 
 ## 6. Deuda conocida

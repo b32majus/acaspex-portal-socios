@@ -436,7 +436,7 @@ Estado: **implementado, pendiente de validación pública — 2026-06-23.**
 - H0.8R2: Extracción de componentes de recursos a módulos propios. placeholderPages: 4881 → 3547 líneas (-27%).
 - H0.8S: Migración DB controlada: enum `resource_section`, columna `section` en resources y resource_categories, seed de 11 categorías, frontend persiste `section` y `category_id`. ✅ **Validado por Sil — 2026-06-23.**
 
-- H0.8T: Gestión de subsecciones desde panel admin. Nueva pantalla `/admin/recursos/subsecciones`. CRUD de categorías. Formulario de subida carga categorías reales desde DB.
+- H0.8T: Gestión de subsecciones desde panel admin. Nueva pantalla `/admin/recursos/subsecciones`. CRUD de categorías. Formulario de subida carga categorías reales desde DB. ✅ **Validado — 2026-06-23.**
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`.
 

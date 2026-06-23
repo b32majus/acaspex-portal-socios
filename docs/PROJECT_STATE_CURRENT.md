@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
-Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8T (gestión de subsecciones desde panel admin)  
+Última actualización: 2026-06-24  
+Estado de referencia: tras cierre H0.8T (gestión subsecciones validada)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `212360a — docs: close resource sections validation`
+Último commit: `2d81a17 — feat: manage resource subsections`
 
 ---
 
@@ -151,7 +151,7 @@ h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation
 h08r_resource_module_refactor_ready_for_validation
 h08r2_resource_module_extracted_ready_for_validation
 h08s_resource_sections_model_validated
-h08t_resource_subsections_admin_ready_for_validation
+h08t_resource_subsections_admin_validated
 ```
 
 ## 9. Estado de staging (post H0.7q)
