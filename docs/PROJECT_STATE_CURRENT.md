@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras cierre H0.8S (modelo sección/subsección validado)  
+Estado de referencia: tras H0.8T (gestión de subsecciones desde panel admin)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `e6f64ba — feat: add resource sections model`
+Último commit: `212360a — docs: close resource sections validation`
 
 ---
 
@@ -151,6 +151,7 @@ h08c_fix2_docx_preview_and_admin_view_mode_ready_for_validation
 h08r_resource_module_refactor_ready_for_validation
 h08r2_resource_module_extracted_ready_for_validation
 h08s_resource_sections_model_validated
+h08t_resource_subsections_admin_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -300,7 +301,16 @@ Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08r2_resource_
 - `MaterialCorporativoPage`: filtra por `section = 'corporate_material'`.
 - `MemberResourceDetailPage`: lee `section` para derivar categoría mostrada.
 
-Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08s_resource_sections_model_ready_for_validation`.
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08s_resource_sections_model_validated`.
+
+### H0.8T — Gestión de subsecciones desde panel admin
+
+- `AdminResourceCategoriesPage` → `/admin/recursos/subsecciones` (listar, crear, editar, activar/desactivar).
+- `AdminResourceNewPage` carga categorías desde DB (ya no hardcodeadas).
+- `AdminResourcesPage` incluye enlace "Gestionar subsecciones".
+- Slug automático desde el nombre. Sin migración adicional (columnas ya existían).
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08t_resource_subsections_admin_ready_for_validation`.
 
 Documentos H0.7 creados:
 

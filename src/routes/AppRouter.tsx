@@ -23,6 +23,7 @@ import {
 import { AdminResourcesPage } from '../components/resources/AdminResourcesPage';
 import { AdminResourceEditorPage } from '../components/resources/AdminResourceEditorPage';
 import { AdminResourceNewPage } from '../components/resources/AdminResourceNewPage';
+import { AdminResourceCategoriesPage } from '../components/resources/AdminResourceCategoriesPage';
 import { MemberResourceDetailPage } from '../components/resources/MemberResourceDetailPage';
 
 export function AppRouter() {
@@ -69,6 +70,7 @@ export function AppRouter() {
           <Route path="/admin/solicitudes/:signupId" element={<AdminSignupDetailPage />} />
           <Route path="/admin/recursos" element={<AdminResourcesPage />} />
           <Route path="/admin/recursos/nuevo" element={<AdminResourceNewPage />} />
+          <Route path="/admin/recursos/subsecciones" element={<AdminResourceCategoriesPage />} />
           <Route path="/admin/recursos/:resourceId" element={<AdminResourceEditorPage />} />
           <Route path="/admin/renovaciones" element={<AdminRenewalsPage />} />
         </Route>

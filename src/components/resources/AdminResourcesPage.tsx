@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Upload } from 'lucide-react';
+import { ChevronRight, Settings, Upload } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import {
   categoryLabel,
@@ -148,7 +148,14 @@ export function AdminResourcesPage() {
           <h1 className="font-serif text-2xl font-light text-slate-900">Recursos</h1>
           <p className="mt-1 text-sm text-slate-500">Gestión de recursos del portal.</p>
         </div>
-        <div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/admin/recursos/subsecciones"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Settings size={15} />
+            Gestionar subsecciones
+          </Link>
           <button
             type="button"
             onClick={() => navigate('/admin/recursos/nuevo')}

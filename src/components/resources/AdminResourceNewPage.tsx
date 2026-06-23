@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/authContext';
 import type { ResourceStatus, ResourceType } from '../../data/mockResources';
@@ -11,30 +11,13 @@ const sectionLabel: Record<string, string> = {
   project_bank: 'Banco de Proyectos',
 };
 
-const subsectionsBySection: Record<string, { value: string; label: string }[]> = {
-  knowledge_center: [
-    { value: 'calidad-asistencial', label: 'Calidad Asistencial' },
-    { value: 'seguridad-del-paciente', label: 'Seguridad del Paciente' },
-    { value: 'investigacion', label: 'Investigación' },
-    { value: 'formacion', label: 'Formación' },
-    { value: 'herramientas', label: 'Herramientas' },
-  ],
-  project_bank: [
-    { value: 'seguridad-del-paciente-proyectos', label: 'Seguridad del paciente' },
-    { value: 'mejora-de-procesos', label: 'Mejora de procesos' },
-    { value: 'experiencia-del-paciente', label: 'Experiencia del paciente' },
-    { value: 'continuidad-asistencial', label: 'Continuidad asistencial' },
-    { value: 'humanizacion', label: 'Humanización' },
-    { value: 'gestion-clinica', label: 'Gestión Clínica' },
-  ],
-  corporate_material: [],
-};
-
 const sectionVisibility: Record<string, string[]> = {
   corporate_material: ['administrador', 'junta_directiva'],
   knowledge_center: ['administrador', 'junta_directiva', 'socio'],
   project_bank: ['administrador', 'junta_directiva', 'socio'],
 };
+
+type CategoryOption = { value: string; label: string };
 
 export function AdminResourceNewPage() {
   const navigate = useNavigate();
@@ -50,8 +33,31 @@ export function AdminResourceNewPage() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [subsections, setSubsections] = useState<CategoryOption[]>([]);
   const configured = isSupabaseConfigured();
-  const subsections = subsectionsBySection[section] || [];
+
+  useEffect(() => {
+    if (!configured || !supabase) { setSubsections([]); return; }
+    if (section === 'corporate_material') { setSubsections([]); return; }
+    supabase
+      .from('resource_categories')
+      .select('slug, name')
+      .eq('section', section)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setSubsections(
+            (data as Array<{ slug: string; name: string }>).map((c) => ({
+              value: c.slug,
+              label: c.name,
+            }))
+          );
+        } else {
+          setSubsections([]);
+        }
+      });
+  }, [configured, section]);
 
   async function getCategoryId(slug: string): Promise<string | null> {
     if (!slug || !configured || !supabase) return null;
@@ -204,10 +210,20 @@ export function AdminResourceNewPage() {
                 onChange={(e) => setSubsection(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
               >
+                <option value="">Seleccionar subsección</option>
                 {subsections.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
+            </div>
+          )}
+          {section !== 'corporate_material' && subsections.length === 0 && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500">Subsección</label>
+              <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 flex items-start gap-2">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                <span>No hay subsecciones activas para esta sección. Crea una desde Gestión de subsecciones.</span>
+              </div>
             </div>
           )}
           {section === 'corporate_material' && (

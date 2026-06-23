@@ -202,6 +202,24 @@ section = project_bank → 6 subsecciones → admin/junta/socios
 
 Próximo bloque: H0.8T — Administración de subsecciones desde panel admin.
 
+### 5.9 H0.8T — Gestión de subsecciones desde panel admin
+
+**Nueva pantalla:** `/admin/recursos/subsecciones` → `AdminResourceCategoriesPage`
+
+Funcionalidades:
+- Listado de subsecciones agrupado por sección (Centro de Conocimiento / Banco de Proyectos).
+- Crear nueva subsección con slug automático desde el nombre.
+- Editar nombre, descripción y orden.
+- Activar / desactivar subsección.
+- Material Corporativo sin subsecciones (nota informativa).
+
+Integración:
+- `AdminResourceNewPage` carga categorías activas desde `resource_categories` (ya no hardcodeadas).
+- `AdminResourcesPage` incluye enlace "Gestionar subsecciones".
+- `AppRouter` incluye ruta `/admin/recursos/subsecciones`.
+
+Estado: `h08t_resource_subsections_admin_ready_for_validation`. Pendiente de validación de Sil.
+
 ---
 
 ## 6. Deuda conocida
