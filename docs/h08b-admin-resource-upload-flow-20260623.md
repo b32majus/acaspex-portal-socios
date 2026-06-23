@@ -134,7 +134,81 @@ Este recurso se usó como referencia para validar el flujo completo de detalle y
 
 ---
 
-## 5. Deuda conocida
+## 5. H0.8b-FIX3 — Tipos alineados y preview por formato
+
+### 5.1 Enum `resource_type` ampliado en DB
+
+Bug detectado al crear recurso "Logo ACASPEX Transparente":
+
+```
+invalid input value for enum resource_type: "logo"
+```
+
+El enum de la DB solo aceptaba `pdf, video, presentation, template, link, document, other`. El frontend había añadido `image, logo, teams_background, external_link` que la DB rechazaba.
+
+Migración aplicada (`021_acaspex_resource_type_enum_values.sql`):
+
+```sql
+alter type public.resource_type add value if not exists 'image';
+alter type public.resource_type add value if not exists 'logo';
+alter type public.resource_type add value if not exists 'teams_background';
+alter type public.resource_type add value if not exists 'external_link';
+```
+
+Verificado en staging:
+
+```
+pdf, video, presentation, template, link, document, other, image, logo, teams_background, external_link
+```
+
+Test de aceptación (rollback): insertar registros con los 4 nuevos tipos → OK, sin error de enum.
+
+### 5.2 Preview por formato (DOCX/PPTX como descargables)
+
+AnaT detectó que un DOCX subía correctamente pero la app intentaba previsualizarlo como si fuera imagen/PDF.
+
+Nuevos helpers de clasificación:
+
+| Helper | Criterio |
+|--------|----------|
+| `isImageResource` | tipo es image/logo/teams_background O extensión .png/.jpg/.jpeg/.gif/.webp |
+| `isPdfResource` | tipo es pdf O extensión .pdf |
+| `isOfficeResource` | tipo es document/template/presentation O extensión .docx/.doc/.pptx/.ppt |
+| `isExternalLinkResource` | tiene external_url pero no file_path |
+| `isPreviewableResource` | image O pdf |
+| `isDownloadOnlyResource` | office O no previsualizable |
+
+### 5.3 Comportamiento por tipo
+
+| Tipo | Card | Detalle | Botones |
+|------|------|---------|---------|
+| Imagen / Logo / Fondo Teams | Preview real (signed URL) | Preview grande | Ver recurso, Descargar |
+| PDF | Placeholder PDF (rosa) | Placeholder PDF | Abrir PDF, Descargar |
+| DOCX/PPTX | Placeholder Word/PPT + "Documento descargable" | Placeholder + aviso "Vista previa no disponible" | Descargar archivo |
+| Enlace externo | Placeholder "Enlace externo" | Placeholder "Enlace externo" | Abrir recurso |
+| Sin archivo/enlace | MockCover decorativo | MockCover | Mensaje "Sin archivo ni enlace" |
+
+### 5.4 Verificación de archivos huérfanos
+
+Bucket `acaspex-resource-files` revisado:
+
+```
+corporativo/2026/512dc4b3-...-MODELO-FIRMAS-ALUMNOS.docx (Ana's test)
+corporativo/2026/33020380-...-Fondo-TEAMs-ACASPEX.PNG  (Sil's first resource)
+```
+
+No se encontraron archivos huérfanos del intento fallido de Logo. El flujo `AdminResourceNewPage` ya tiene bloque de limpieza (`storage.remove([storagePath])` cuando el INSERT falla) y funcionó correctamente.
+
+### 5.5 Archivos modificados en H0.8b-FIX3
+
+```
+src/routes/placeholderPages.tsx — helpers de clasificación, ResourceCardImage refactorizado, MemberResourceDetailPage con preview/notice/buttons
+supabase/migrations/20260623000021_021_acaspex_resource_type_enum_values.sql — nueva migración
+```
+
+---
+
+## 6. Deuda conocida
 
 - La tabla `resources` no tiene columna `category`. La categoría se infiere del contexto (Material Corporativo, Centro de Conocimiento, etc.). En el futuro puede añadirse si se necesita filtrar por categoría en Supabase directamente.
 - `ResourceCategory` para recursos Supabase se asigna según `resource_type`, lo que es frágil si un mismo tipo pertenece a varias categorías.

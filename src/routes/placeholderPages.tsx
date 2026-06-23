@@ -482,6 +482,42 @@ function formatResourceDate(dateStr: string | null | undefined): string {
   return `${day}/${month}/${d.getFullYear()}`;
 }
 
+type ResourceLike = {
+  type?: string;
+  filePath?: string | null;
+  externalUrl?: string | null;
+};
+
+function isImageResource(resource: ResourceLike): boolean {
+  if (!resource.filePath) return false;
+  if (resource.type === 'image' || resource.type === 'logo' || resource.type === 'teams_background') return true;
+  return !!resource.filePath.match(/\.(png|jpg|jpeg|gif|webp)$/i);
+}
+
+function isPdfResource(resource: ResourceLike): boolean {
+  if (resource.type === 'pdf') return true;
+  return !!resource.filePath?.match(/\.pdf$/i);
+}
+
+function isOfficeResource(resource: ResourceLike): boolean {
+  if (!resource.filePath) return false;
+  if (resource.type === 'document' || resource.type === 'template' || resource.type === 'presentation') return true;
+  return !!resource.filePath.match(/\.(docx?|pptx?|xlsx?)$/i);
+}
+
+function isExternalLinkResource(resource: ResourceLike): boolean {
+  return !!(resource.externalUrl && !resource.filePath);
+}
+
+function isPreviewableResource(resource: ResourceLike): boolean {
+  return isImageResource(resource) || isPdfResource(resource);
+}
+
+function isDownloadOnlyResource(resource: ResourceLike): boolean {
+  if (!resource.filePath) return false;
+  return isOfficeResource(resource) || (!isImageResource(resource) && !isPdfResource(resource));
+}
+
 type MockCoverProps = {
   resource: (typeof mockResources)[number];
 };
@@ -638,11 +674,12 @@ function MockCover({ resource }: MockCoverProps) {
 
 function ResourceCardImage({ resource }: { resource: (typeof mockResources)[number] }) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const isImageType = resource.type === 'image' || resource.type === 'logo' || resource.type === 'teams_background';
-  const hasImageExt = resource.filePath?.match(/\.(png|jpg|jpeg|gif|webp)$/i);
+  const isImage = isImageResource(resource);
+  const isPdf = isPdfResource(resource);
+  const isOffice = isOfficeResource(resource);
 
   useEffect(() => {
-    if ((!isImageType && !hasImageExt) || !resource.filePath || !supabase) return;
+    if (!isImage || !resource.filePath || !supabase) return;
     supabase.storage
       .from('acaspex-resource-files')
       .createSignedUrl(resource.filePath, 300)
@@ -650,9 +687,9 @@ function ResourceCardImage({ resource }: { resource: (typeof mockResources)[numb
         if (data?.signedUrl) setSignedUrl(data.signedUrl);
       })
       .catch(() => {});
-  }, [resource.filePath, isImageType]);
+  }, [resource.filePath, isImage]);
 
-  if (signedUrl) {
+  if (isImage && signedUrl) {
     return (
       <img
         src={signedUrl}
@@ -663,10 +700,45 @@ function ResourceCardImage({ resource }: { resource: (typeof mockResources)[numb
     );
   }
 
-  if (isImageType || hasImageExt) {
+  if (isImage) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-slate-100">
         <Image size={32} className="text-slate-300" />
+      </div>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-rose-50">
+        <FileText size={32} className="text-rose-300" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-600/80">PDF</span>
+      </div>
+    );
+  }
+
+  if (isOffice) {
+    const ext = resource.filePath?.split('.').pop()?.toLowerCase() ?? '';
+    const isWord = ext === 'docx' || ext === 'doc';
+    const isPpt = ext === 'pptx' || ext === 'ppt';
+    const label = isWord ? 'Word' : isPpt ? 'PowerPoint' : 'Documento';
+    const tone = isWord ? 'bg-blue-50' : isPpt ? 'bg-amber-50' : 'bg-slate-50';
+    const iconColor = isWord ? 'text-blue-400' : isPpt ? 'text-amber-500' : 'text-slate-400';
+    const badgeColor = isWord ? 'text-blue-700/80' : isPpt ? 'text-amber-700/80' : 'text-slate-600/80';
+    return (
+      <div className={`flex h-full w-full flex-col items-center justify-center gap-2 ${tone}`}>
+        {isWord ? <FileText size={32} className={iconColor} /> : isPpt ? <BookOpen size={32} className={iconColor} /> : <FileText size={32} className={iconColor} />}
+        <span className={`text-[10px] font-semibold uppercase tracking-wider ${badgeColor}`}>{label}</span>
+        <span className="text-[9px] text-slate-500">Documento descargable</span>
+      </div>
+    );
+  }
+
+  if (isExternalLinkResource(resource)) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-sky-50">
+        <Globe size={32} className="text-sky-400" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-700/80">Enlace externo</span>
       </div>
     );
   }
@@ -1257,9 +1329,9 @@ export function MemberResourceDetailPage() {
 
           const fp = r.file_path as string | undefined;
           const rt = r.resource_type as string;
-          const isImage = rt === 'image' || rt === 'logo' || rt === 'teams_background';
-          const hasImageExt = fp?.match(/\.(png|jpg|jpeg|gif|webp)$/i);
-          if (fp && supabase && (isImage || hasImageExt)) {
+          const isImageByType = rt === 'image' || rt === 'logo' || rt === 'teams_background';
+          const isImageByExt = !!fp?.match(/\.(png|jpg|jpeg|gif|webp)$/i);
+          if (fp && supabase && (isImageByType || isImageByExt)) {
             const { data: urlData } = await supabase.storage
               .from('acaspex-resource-files')
               .createSignedUrl(fp, 300);
@@ -1315,7 +1387,6 @@ export function MemberResourceDetailPage() {
   const TypeIcon = typeIconMap[resource.type] ?? FileText;
   const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
   const backPath = resource.category === 'corporativo' ? '/socios/material-corporativo' : '/socios/recursos';
-  const isImageType = resource.type === 'image' || resource.type === 'logo' || resource.type === 'teams_background';
 
   return (
     <div className="space-y-8">
@@ -1328,11 +1399,39 @@ export function MemberResourceDetailPage() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="aspect-[2/1] overflow-hidden bg-slate-100">
-          {signedUrl ? (
+          {isImageResource(resource) && signedUrl ? (
             <img src={signedUrl} alt={resource.title} className="h-full w-full object-contain" />
-          ) : isImageType && resource.filePath ? (
+          ) : isImageResource(resource) ? (
             <div className="flex h-full w-full items-center justify-center">
               <Image size={48} className="text-slate-300" />
+            </div>
+          ) : isPdfResource(resource) ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-rose-50">
+              <FileText size={48} className="text-rose-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-rose-700/80">Documento PDF</span>
+              <span className="text-[11px] text-slate-500">Usa "Abrir recurso" para previsualizarlo</span>
+            </div>
+          ) : isOfficeResource(resource) ? (
+            (() => {
+              const ext = resource.filePath?.split('.').pop()?.toLowerCase() ?? '';
+              const isWord = ext === 'docx' || ext === 'doc';
+              const isPpt = ext === 'pptx' || ext === 'ppt';
+              const label = isWord ? 'Documento Word' : isPpt ? 'Presentación PowerPoint' : 'Documento';
+              const icon = isWord ? FileText : isPpt ? BookOpen : FileText;
+              const tone = isWord ? 'text-blue-400' : isPpt ? 'text-amber-500' : 'text-slate-400';
+              const Icon = icon;
+              return (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-slate-50">
+                  <Icon size={48} className={tone} />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-600/80">{label}</span>
+                </div>
+              );
+            })()
+          ) : isExternalLinkResource(resource) ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-sky-50">
+              <Globe size={48} className="text-sky-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-sky-700/80">Enlace externo</span>
+              <span className="text-[11px] text-slate-500">Usa "Abrir recurso" para visitarlo</span>
             </div>
           ) : (
             <MockCover resource={resource} />
@@ -1389,9 +1488,21 @@ export function MemberResourceDetailPage() {
         </section>
       )}
 
+      {isOfficeResource(resource) && resource.filePath && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
+            <div>
+              <p className="text-sm font-medium text-amber-900">Vista previa no disponible para este tipo de archivo.</p>
+              <p className="mt-1 text-sm text-amber-800/80">Puedes descargarlo para abrirlo en Word, PowerPoint u otra aplicación compatible.</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap gap-3">
-          {resource.externalUrl && (
+          {isExternalLinkResource(resource) && resource.externalUrl && (
             <a
               href={resource.externalUrl}
               target="_blank"
@@ -1401,6 +1512,25 @@ export function MemberResourceDetailPage() {
               Abrir recurso
               <ChevronRight size={14} />
             </a>
+          )}
+          {(isImageResource(resource) || isPdfResource(resource)) && resource.filePath && supabase && (
+            <button
+              type="button"
+              onClick={() => {
+                const client = supabase;
+                if (!client) return;
+                client.storage
+                  .from('acaspex-resource-files')
+                  .createSignedUrl(resource.filePath!, 300)
+                  .then(({ data }) => {
+                    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                  });
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            >
+              <ChevronRight size={14} />
+              {isPdfResource(resource) ? 'Abrir PDF' : 'Ver recurso'}
+            </button>
           )}
           {resource.filePath && supabase && (
             <button
@@ -1418,7 +1548,7 @@ export function MemberResourceDetailPage() {
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
             >
               <Download size={14} />
-              Descargar
+              {isOfficeResource(resource) ? 'Descargar archivo' : 'Descargar'}
             </button>
           )}
           {!resource.externalUrl && !resource.filePath && (

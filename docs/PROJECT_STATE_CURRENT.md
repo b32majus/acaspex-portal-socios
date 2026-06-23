@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-23  
-Estado de referencia: tras H0.8c (panel admin real, card preview corregida, edición/archivado)  
+Estado de referencia: tras H0.8b-FIX3 (enum resource_type ampliado, preview por formato)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `163f1ac — fix: support real resource detail and image previews`
+Último commit: `a87ac6b — feat: connect admin resources to real data`
 
 ---
 
@@ -145,6 +145,7 @@ h07q_material_corporativo_unified_and_permissions_validated
 h08a_resource_flow_designed_ready_for_first_upload
 h08b_fix1_permission_grants_applied
 h08b_fix2_real_resource_detail_preview_ready_for_validation
+h08b_fix3_resource_types_and_preview_behavior_ready_for_validation
 h08c_admin_resource_management_ready_for_validation
 ```
 
@@ -187,7 +188,17 @@ Ver: `docs/h08a-resource-flow-design-20260623.md`. Estado: `h08a_resource_flow_d
 - Etiquetas corregidas: visibilidad (Junta Directiva), fecha (dd/mm/aaaa), tipo (label humano).
 - Botón Descargar para archivos reales.
 
-Ver: `docs/h08b-admin-resource-upload-flow-20260623.md`. Estado: `h08b_fix2_real_resource_detail_preview_ready_for_validation`.
+**H0.8b-FIX3** — Enum `resource_type` y preview por formato:
+- Migración 021 añadida al DB enum: `image`, `logo`, `teams_background`, `external_link`.
+- Antes el INSERT con tipo `logo` fallaba con `invalid input value for enum resource_type: "logo"`.
+- Helpers de clasificación: `isImageResource`, `isPdfResource`, `isOfficeResource`, `isExternalLinkResource`, `isPreviewableResource`, `isDownloadOnlyResource`.
+- DOCX/PPTX ahora muestran placeholder "Documento descargable" + aviso "Vista previa no disponible" en detalle.
+- PDF con placeholder y botón "Abrir PDF".
+- Imágenes: preview real con signed URL.
+- Enlace externo: placeholder + botón "Abrir recurso".
+- Verificado: sin archivos huérfanos del intento fallido de Logo (limpieza automática funcionó).
+
+Ver: `docs/h08b-admin-resource-upload-flow-20260623.md`. Estado: `h08b_fix3_resource_types_and_preview_behavior_ready_for_validation`.
 
 Primer recurso real: "Fondo TEAMs ACASPEX" (Sil, PNG, Material Corporativo, 2026-06-23).
 

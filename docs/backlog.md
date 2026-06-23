@@ -414,6 +414,7 @@ Estado: **implementado, pendiente de validación pública — 2026-06-23.**
 
 - H0.8b-FIX1: GRANTs y RLS aplicados (migración 020). Admin puede INSERT en `resources`.
 - H0.8b-FIX2: Tipos de recurso ampliados (Imagen, Fondo Teams, etc.), detail page con Supabase real, preview de imágenes con signed URLs, etiquetas corregidas (visibilidad, fecha, tipo).
+- H0.8b-FIX3: enum `resource_type` ampliado en DB (migración 021) con `image`, `logo`, `teams_background`, `external_link`. Preview por formato con helpers de clasificación: DOCX/PPTX como descargables sin preview, PDF con placeholder, imágenes con preview real.
 
 Ver: `docs/h08b-admin-resource-upload-flow-20260623.md`.
 
