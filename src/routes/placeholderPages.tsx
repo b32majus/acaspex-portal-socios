@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -280,8 +280,44 @@ export function LoginPage() {
 }
 
 export function MaterialCorporativoPage() {
-  const publishedCorporativos = mockResources
-    .filter((r) => r.status === 'published' && r.category === 'corporativo')
+  const [supabaseResources, setSupabaseResources] = useState<typeof mockResources>([]);
+  const configured = isSupabaseConfigured();
+
+  useEffect(() => {
+    if (!configured || !supabase) return;
+    supabase
+      .from('resources')
+      .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) {
+          const mapped = (data as Array<Record<string, unknown>>).map((r) => ({
+            id: r.id as string,
+            title: r.title as string,
+            subtitle: (r.subtitle as string) || (r.title as string),
+            description: (r.description as string) || '',
+            category: 'corporativo' as ResourceCategory,
+            type: (r.resource_type as ResourceType) || 'other',
+            status: (r.status as ResourceStatus) || 'published',
+            publishedAt: (r.published_at as string) || new Date().toISOString().split('T')[0],
+            filePath: (r.file_path as string) || '',
+            externalUrl: (r.external_url as string) || '',
+            featured: false,
+            coverStyle: 'corporativo' as 'corporativo',
+            visualTone: 'corporativo' as 'corporativo',
+            estimatedReadMinutes: null,
+          }));
+          setSupabaseResources(mapped as unknown as typeof mockResources);
+        }
+      });
+  }, [configured]);
+
+  const mockCorporativos = mockResources
+    .filter((r) => r.status === 'published' && r.category === 'corporativo');
+
+  const publishedCorporativos = [...supabaseResources, ...mockCorporativos]
+    .filter((r, i, arr) => arr.findIndex((x) => x.id === r.id) === i)
     .sort((a, b) => (b.publishedAt!).localeCompare(a.publishedAt!));
 
   return (
