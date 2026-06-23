@@ -134,7 +134,22 @@ Estados finales H0.7:
 ```text
 h07_commits_pushed_ready_for_h07f
 h07_doc_cleanup_pushed_ready_for_h07f
+h07f_identity_read_hook_pushed_ready_for_next_step
+h07g_synthetic_users_design_pushed_ready_for_h07h
+h07h_u1_admin_operator_created_authorized_pending_manual_validation
 ```
+
+## 9. Estado de staging (post H0.7h)
+
+U1 — Administrador operativo sintético creado en staging con autorización explícita de Sil:
+
+- Auth user: `acaspex.admin.demo@example.com`
+- Profile: `role = administrador`, `is_active = true`, `member_id = null`
+- Método: Auth Admin API + Management API por limitación del Dashboard
+- Validación técnica: correcta
+- Validación funcional manual: pendiente
+
+Rollback disponible. Sin datos reales.
 
 Documentos H0.7 creados:
 

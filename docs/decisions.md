@@ -114,6 +114,10 @@ En el MVP se permite la existencia de administradores operativos sin ficha de so
 
 Todas las rutas privadas (`/socios`, `/admin`) están protegidas por sesión mediante `RequireAuth`. `/admin` requiere además rol `administrador` (protección por rol pendiente en H0.7g).
 
+### D027 — Mutaciones remotas solo con autorización explícita
+
+Las mutaciones remotas en Supabase staging mediante API key o service_role solo pueden ejecutarse con autorización explícita de Sil, alcance cerrado, reporte posterior y sin persistir secretos en repo, logs o documentación. Esta decisión se formaliza tras la creación de U1 en H0.7h.
+
 ## Decisiones pendientes
 
 1. Texto legal/RGPD.

@@ -12,9 +12,11 @@ depends_on:
 
 ## 1. Veredicto
 
-**Veredicto:** `h07h_u1_admin_operator_created_and_validated`
+**Veredicto:** `h07h_u1_admin_operator_created_authorized_pending_manual_validation`
 
-U1 (administrador operativo sin ficha de socio) creado y verificado.
+Sil autorizó explícitamente la ejecución de H0.7h para crear U1 en Supabase staging.
+
+U1 (administrador operativo sin ficha de socio) creado y verificado técnicamente. Pendiente validación funcional manual por Sil.
 
 ## 2. Usuario creado
 
@@ -53,8 +55,11 @@ Resultado: 1 fila, role = administrador, is_active = true, member_id = null. ✅
 
 ## 6. Método de creación
 
+La creación se realizó vía Auth Admin API + Management API SQL porque no fue posible completar el flujo desde Supabase Dashboard. La API key fue facilitada por Sil para esta acción concreta. No se documentó ni commiteó la clave.
+
 - Auth user: creado vía Auth Admin API (`POST /auth/v1/admin/users`) con service_role.
 - Profile: creado vía Management API (`POST /v1/projects/{ref}/database/query`) tras `GRANT INSERT ON public.profiles TO service_role`.
+- GRANT necesario porque `service_role` no tenía INSERT sobre profiles en el esquema actual.
 
 No se modificaron migraciones, RLS, policies ni Storage.
 

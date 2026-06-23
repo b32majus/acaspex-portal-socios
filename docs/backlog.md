@@ -403,11 +403,7 @@ Documentos:
 - Diseño: `docs/h07g-staging-synthetic-users-design-20260623.md`
 - Creación U1: `docs/h07h-staging-u1-admin-operator-creation-20260623.md`
 
-U1 (admin operativo sin socio) creado y verificado técnicamente:
-- Auth user: `acaspex.admin.demo@example.com`
-- Profile: role `administrador`, is_active `true`, member_id `null`
-- Email confirmado. Sin member.
-- Pendiente validación funcional manual por Sil.
+U1 (admin operativo sin socio) creado con autorización explícita de Sil. Método: Auth Admin API + Management API por limitación del Dashboard. Verificación técnica correcta. Validación funcional manual pendiente.
 
 Pendientes U2-U6 según fases del diseño.
 
