@@ -280,7 +280,9 @@ export function LoginPage() {
 }
 
 export function MaterialCorporativoPage() {
-  const { canAccessBoardArea } = useIdentity();
+  const publishedCorporativos = mockResources
+    .filter((r) => r.status === 'published' && r.category === 'corporativo')
+    .sort((a, b) => (b.publishedAt!).localeCompare(a.publishedAt!));
 
   return (
     <div className="space-y-6">
@@ -291,27 +293,21 @@ export function MaterialCorporativoPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { label: 'Plantillas corporativas', desc: 'Documentos, cartas y modelos oficiales' },
-          { label: 'Logos e identidad', desc: 'Versiones del logo ACASPEX para distintos usos' },
-          { label: 'Documentos institucionales', desc: 'Estatutos, memorias y documentación oficial' },
-          { label: 'Materiales de jornadas', desc: 'Presentaciones y materiales de eventos' },
-          { label: 'Actas', desc: 'Actas de reuniones de Junta Directiva' },
-          { label: 'Recursos de comunicación', desc: 'Notas de prensa y materiales de difusión' },
-        ].map((item) => (
-          <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-5">
-            <h3 className="font-serif text-base font-medium text-slate-900">{item.label}</h3>
-            <p className="mt-1 text-sm text-slate-500">{item.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {canAccessBoardArea && (
-        <p className="text-xs text-slate-400">
-          Este contenido está disponible para miembros de Junta Directiva y administración.
-        </p>
+      {publishedCorporativos.length === 0 ? (
+        <div className="rounded-xl border border-slate-100 bg-white p-5">
+          <p className="text-sm text-slate-600">Próximamente: Material Corporativo</p>
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {publishedCorporativos.map((resource) => (
+            <ResourceCard key={resource.id} resource={resource} />
+          ))}
+        </div>
       )}
+
+      <p className="text-xs text-slate-400 pt-2">
+        Este contenido está disponible para miembros de Junta Directiva y administración.
+      </p>
     </div>
   );
 }
@@ -943,7 +939,6 @@ export function MemberHomePage() {
 }
 
 export function MemberLibraryPage() {
-  const { canAccessBoardArea } = useIdentity();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const publishedResources = mockResources
@@ -953,9 +948,6 @@ export function MemberLibraryPage() {
   const featuredResources = publishedResources.filter((r) => r.featured === true);
 
   const officialCategoryOrder = ['calidad', 'seguridad', 'investigacion', 'formacion', 'herramientas'];
-  if (canAccessBoardArea) {
-    officialCategoryOrder.push('corporativo');
-  }
 
   const categoryCounts: Record<string, number> = {};
   for (const cat of officialCategoryOrder) {
