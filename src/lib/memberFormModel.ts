@@ -46,7 +46,7 @@ export function createEmptyMemberFormState(): MemberFormState {
     jobTitle: '',
     organization: '',
     qualitySafetyLink: '',
-    memberProfile: '',
+    memberProfile: 'general',
     status: 'pending_review',
     communicationConsent: false,
     privacyAcceptedAt: '',
@@ -149,7 +149,7 @@ export function mapMemberRowToForm(row: MemberRow): MemberFormState {
     feeAmount: row.fee_amount || 50,
     membershipStart: row.membership_start || '',
     paidUntil: row.paid_until || '',
-    notes: '',
+    notes: ((row as Record<string, unknown>).notes as string) || '',
     legacyMemberNumber: row.legacy_member_number || '',
     legacySource: row.legacy_source || '',
     legacyImportBatch: row.legacy_import_batch || '',
@@ -159,6 +159,8 @@ export function mapMemberRowToForm(row: MemberRow): MemberFormState {
 export function mapFormToMemberInsertPayload(form: MemberFormState): Record<string, unknown> {
   const email = form.email.trim();
   const documentNumber = form.documentNumber.trim();
+  const memberProfile = (form.memberProfile || 'general') as MemberProfile;
+  const feeAmount = getFeeAmountForMemberProfile(memberProfile);
 
   return {
     member_number: form.memberNumber.trim() || null,
@@ -182,9 +184,9 @@ export function mapFormToMemberInsertPayload(form: MemberFormState): Record<stri
     job_title: form.jobTitle.trim() || null,
     organization: form.organization || null,
     quality_safety_link: form.qualitySafetyLink.trim() || null,
-    member_profile: form.memberProfile || null,
+    member_profile: memberProfile,
     status: form.status,
-    fee_amount: form.feeAmount || null,
+    fee_amount: feeAmount,
     membership_start: form.membershipStart || null,
     paid_until: form.paidUntil || null,
     notes: form.notes.trim() || null,
@@ -199,6 +201,8 @@ export function mapFormToMemberInsertPayload(form: MemberFormState): Record<stri
 export function mapFormToMemberUpdatePayload(form: MemberFormState): Record<string, unknown> {
   const email = form.email.trim();
   const documentNumber = form.documentNumber.trim();
+  const memberProfile = (form.memberProfile || 'general') as MemberProfile;
+  const feeAmount = getFeeAmountForMemberProfile(memberProfile);
 
   return {
     member_number: form.memberNumber.trim() || null,
@@ -222,9 +226,9 @@ export function mapFormToMemberUpdatePayload(form: MemberFormState): Record<stri
     job_title: form.jobTitle.trim() || null,
     organization: form.organization || null,
     quality_safety_link: form.qualitySafetyLink.trim() || null,
-    member_profile: form.memberProfile || null,
+    member_profile: memberProfile,
     status: form.status,
-    fee_amount: form.feeAmount || null,
+    fee_amount: feeAmount,
     notes: form.notes.trim() || null,
     communication_consent: form.communicationConsent,
   };

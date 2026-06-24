@@ -1,4 +1,5 @@
 import type { MemberFormState } from '../../lib/memberFormModel';
+import { getFeeAmountForMemberProfile } from '../../lib/memberFormModel';
 import {
   documentTypeOptions,
   professionalCategoryOptions,
@@ -16,15 +17,6 @@ export type MemberFormProps = {
   onSubmit: () => void;
   onCancel?: () => void;
 };
-
-function f(set: Partial<MemberFormState>) {
-  return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const target = e.target;
-    const name = target.name as keyof MemberFormState;
-    const value = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value;
-    return { ...set, [name]: value };
-  };
-}
 
 export function MemberForm({ value: v, mode, submitting, error, onChange, onSubmit, onCancel }: MemberFormProps) {
   const set = (partial: Partial<MemberFormState>) => onChange({ ...v, ...partial });
@@ -143,7 +135,10 @@ export function MemberForm({ value: v, mode, submitting, error, onChange, onSubm
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-xs font-medium text-slate-500">Perfil / Cuota</label>
-            <select name="memberProfile" value={v.memberProfile} onChange={(e) => set({ memberProfile: e.target.value as typeof v.memberProfile })} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
+            <select name="memberProfile" value={v.memberProfile} onChange={(e) => {
+              const memberProfile = e.target.value as typeof v.memberProfile;
+              set({ memberProfile, feeAmount: getFeeAmountForMemberProfile(memberProfile) });
+            }} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
               {memberProfileOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
