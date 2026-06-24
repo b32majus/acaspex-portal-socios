@@ -217,7 +217,7 @@ export function MemberResourceDetailPage() {
           <div>
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría</p>
             <span className="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
-              {categoryLabel[resource.category] ?? resource.category}
+              {(resource as typeof resource & { categoryName?: string | null }).categoryName || (categoryLabel[resource.category] ?? resource.category)}
             </span>
           </div>
           <div>
