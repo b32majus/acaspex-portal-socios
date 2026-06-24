@@ -588,4 +588,14 @@ Deuda aceptada:
 
 Siguiente bloque recomendado:
 
-- `H0.9 — Alta y gestión de socios por parte del administrador.`
+- `H0.9A — Auditoría de gestión de socios por parte del administrador.`
+
+### H0.8U — Correcciones finales del módulo de recursos ✅ VALIDADO
+
+Estado: validated — 2026-06-24.
+
+15 commits. Subsecciones Material Corporativo (Materiales, Actas y documentos). Portadas opcionales con subida/pegado. PDF.js miniaturas. Visor PDF embebido. Sustitución de archivos. Eliminación definitiva de archivados. Tipo auto-detectado. Cards/detalle con subsección corporativa real.
+
+Migraciones: 028 (subsecciones corporativas), 029 (cover_image_path + helper update), 030 (resources_delete_admin_archived).
+
+Cierre: `4af438d` en main, pusheado a origin.

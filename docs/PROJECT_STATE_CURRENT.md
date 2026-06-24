@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-24  
-Estado de referencia: cierre validado H0.8T — administración de subsecciones e iconos  
+Estado de referencia: cierre validado H0.8U — correcciones finales del módulo de recursos  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: pendiente de commit H0.8T-CLOSE
+Último commit: `4af438d` — fix: show corporate subsection in resource detail
 
 ---
 
@@ -206,6 +206,49 @@ Commits asociados al bloque:
 - `f70b038` — `feat: add visual icon picker for resource categories`
 
 
+### H0.8U — Correcciones finales del módulo de recursos ✅ VALIDADO
+
+Estado: cierre validado H0.8U — 2026-06-24.
+
+Subsecciones Material Corporativo: Materiales, Actas y documentos gestionables en admin.
+Portadas opcionales: subida por archivo o pegado de portapapeles para Word/PPTX.
+PDF: visor embebido en detalle, miniaturas automáticas en cards con PDF.js.
+Archivos: sustitución desde editor admin con rollback.
+Eliminación definitiva: solo archivados, con confirmación, cascade en DB.
+Tipo de recurso: auto-detectado desde archivo en alta y edición.
+Preview Office: icono limpio sin mensaje de error.
+Cards corporativas: muestran subsección real (Materiales / Actas y documentos).
+
+Decisiones cerradas:
+- `cover_image_path` como columna para portada editorial.
+- PDF.js integrado con dynamic import (estable, code-split 421 KB).
+- Delete policy RLS `resources_delete_admin_archived` (admin-only, solo archivados).
+- Tipo de recurso no editable manualmente desde FIX2.
+
+Deuda aceptada:
+- PDF.js v6 requiere worker ESM. Compatible con navegadores modernos.
+- Clipart paste no funciona en Safari (limitación del navegador).
+
+Commits del bloque:
+- `6c5ba39` — `fix: clean resource detail previews`
+- `467ef4c` — `feat: add corporate material subsections`
+- `2ba7539` — `feat: allow admin resource file replacement`
+- `fc87648` — `feat: add optional resource cover images`
+- `4f20986` — `feat: embed pdf resource preview`
+- `692688c` — `feat: render pdf card thumbnails with pdfjs-dist`
+- `6e8bfd8` — `feat: allow archived resource deletion`
+- `0f46be0` — `fix: rely on cascade when deleting archived resources`
+- `938a9b8` — `fix: allow deleting archived resources from admin list`
+- `57ea77a` — `fix: expose corporate material subsections in admin`
+- `2e28ee7` — `fix: show corporate resource subsection labels`
+- `0920954` — `fix: detect resource type from uploaded file`
+- `70f5b19` — `fix: render pdf thumbnails after loading`
+- `83cb29c` — `fix: keep corporate context when showing subsection labels`
+- `4af438d` — `fix: show corporate subsection in resource detail`
+
+Migraciones nuevas: 028 (subsecciones corporativas), 029 (cover_image_path), 030 (delete policy).
+
+
 ## 9. Estado de staging (post H0.7q)
 
 Usuarios demo en staging:
@@ -228,7 +271,7 @@ H0.7 cerrado funcionalmente:
 
 ## 10. Siguiente fase
 
-H0.9 — Alta y gestión de socios por parte del administrador.
+H0.9A — Auditoría de gestión de socios por parte del administrador.
 
 ### H0.8a — Diseño
 
@@ -583,22 +626,7 @@ Regla de seguridad:
 
 ## 8. Siguiente fase
 
-H0.7f — Identity read hook (`useIdentity`):
-
-- Leer `profiles` y `members` del usuario autenticado.
-- Resolver estado de acceso (10 estados definidos en el identity read model).
-- Aplicar gates visuales según zona (socio, junta, admin).
-- Requiere usuario sintético de prueba (WO separada).
-
-Deuda pendiente:
-
-- P-H07-005 — Lectura de perfil/socio/rol (diseñado, falta implementar).
-- P-H07-006 — Bloqueo real por socio activo/cuota vigente (deuda RLS).
-- P-H07-007 — Usuario sintético/autorizado para pruebas.
-- P-H07-009 — Edición posterior de socios y roles.
-- P-H07-010 — Gobernanza admin/junta sin superadmin.
-
----
+H0.9A — Auditoría de gestión de socios por parte del administrador.
 
 ## 9. Estado de este documento
 
