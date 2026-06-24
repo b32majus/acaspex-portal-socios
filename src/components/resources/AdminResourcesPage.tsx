@@ -53,7 +53,7 @@ export function AdminResourcesPage() {
             all.push({
               id: r.id as string,
               title: r.title as string,
-              subtitle: (r.subtitle as string) || (r.title as string),
+              subtitle: (r.subtitle as string) || (r.description as string) || '',
               description: (r.description as string) || '',
               category: derivedCategory as ResourceCategory,
               type: (r.resource_type as ResourceType) || 'document',

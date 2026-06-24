@@ -7,7 +7,6 @@ import {
   FileText,
   Globe,
   Image,
-  Info,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import {
@@ -55,7 +54,7 @@ export function MemberResourceDetailPage() {
           const mapped = {
             id: r.id as string,
             title: r.title as string,
-            subtitle: (r.subtitle as string) || (r.title as string),
+            subtitle: (r.subtitle as string) || (r.description as string) || '',
             description: (r.description as string) || '',
             category: (r.section === 'corporate_material' ? 'corporativo' : r.section === 'knowledge_center' ? 'calidad' : r.section === 'project_bank' ? 'proyectos' : 'calidad') as ResourceCategory,
             type: (r.resource_type as ResourceType) || 'document',
@@ -233,12 +232,17 @@ export function MemberResourceDetailPage() {
       )}
 
       {isOfficeResource(resource) && resource.filePath && (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Info size={18} className="mt-0.5 shrink-0 text-amber-700" />
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            {(() => {
+              const ext = resource.filePath?.split('.').pop()?.toLowerCase() ?? '';
+              const isPpt = ext === 'pptx' || ext === 'ppt';
+              const Icon = isPpt ? BookOpen : FileText;
+              return <Icon size={32} className={isPpt ? 'text-amber-500' : 'text-blue-500'} />;
+            })()}
             <div>
-              <p className="text-sm font-medium text-amber-900">Vista previa no disponible para este tipo de archivo.</p>
-              <p className="mt-1 text-sm text-amber-800/80">Puedes descargarlo para abrirlo en Word, PowerPoint u otra aplicación compatible.</p>
+              <h2 className="text-lg font-semibold text-slate-900">Documento descargable</h2>
+              <p className="text-sm text-slate-600">Descarga el archivo para abrirlo en tu aplicación de escritorio.</p>
             </div>
           </div>
         </section>

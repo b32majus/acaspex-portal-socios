@@ -302,7 +302,7 @@ export function MaterialCorporativoPage() {
           const mapped = (data as Array<Record<string, unknown>>).map((r) => ({
             id: r.id as string,
             title: r.title as string,
-            subtitle: (r.subtitle as string) || (r.title as string),
+            subtitle: (r.subtitle as string) || (r.description as string) || '',
             description: (r.description as string) || '',
             category: 'corporativo' as ResourceCategory,
             type: (r.resource_type as ResourceType) || 'other',
@@ -897,7 +897,7 @@ export function MemberLibraryPage() {
           return {
             id: r.id as string,
             title: r.title as string,
-            subtitle: (r.subtitle as string) || (r.title as string),
+            subtitle: (r.subtitle as string) || (r.description as string) || '',
             description: (r.description as string) || '',
             category: (category?.slug || r.category_id || 'sin-subseccion') as ResourceCategory,
             categoryName: category?.name || 'Sin subsección',
