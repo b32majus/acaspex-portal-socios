@@ -96,7 +96,7 @@ export function AdminResourceEditorPage() {
   }, [configured, resourceId]);
 
   useEffect(() => {
-    if (!configured || section === 'corporate_material') {
+    if (!configured) {
       setSubsections([]);
       return;
     }
@@ -121,7 +121,7 @@ export function AdminResourceEditorPage() {
       resource_type: type,
       status,
       external_url: externalUrl.trim() || null,
-      category_id: section === 'corporate_material' ? null : (categoryId || null),
+      category_id: categoryId || null,
     };
 
     if (status === 'published' && resource.status !== 'published') {
@@ -283,7 +283,7 @@ export function AdminResourceEditorPage() {
               {resourceSectionLabel[section]}
             </div>
           </div>
-          {section !== 'corporate_material' && (
+          {subsections.length > 0 ? (
             <div>
               <label htmlFor="resource-subsection" className="block text-xs font-medium text-slate-500">
                 Subsección
@@ -303,14 +303,13 @@ export function AdminResourceEditorPage() {
               </select>
               <p className="mt-1 text-xs text-slate-400">Solo se ofrecen activas, manteniendo la actual si está inactiva.</p>
             </div>
-          )}
-          {section === 'corporate_material' && (
+          ) : (
             <div>
               <label className="block text-xs font-medium text-slate-500">
                 Subsección
               </label>
               <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
-                Sin subsección — Material Corporativo
+                Sección sin subsecciones
               </div>
             </div>
           )}

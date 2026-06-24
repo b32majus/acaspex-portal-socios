@@ -86,7 +86,7 @@ export function getResourceCategoryIcon(iconKey?: string | null) {
 }
 
 export async function fetchActiveResourceCategories(section: ResourceSection): Promise<ResourceCategoryOption[]> {
-  if (!isSupabaseConfigured() || !supabase || section === 'corporate_material') return [];
+  if (!isSupabaseConfigured() || !supabase) return [];
 
   const { data, error } = await supabase
     .from('resource_categories')
@@ -104,7 +104,7 @@ export async function fetchEditableResourceCategories(
   section: ResourceSection,
   currentCategoryId?: string | null,
 ): Promise<ResourceCategoryOption[]> {
-  if (!isSupabaseConfigured() || !supabase || section === 'corporate_material') return [];
+  if (!isSupabaseConfigured() || !supabase) return [];
 
   const { data, error } = await supabase
     .from('resource_categories')

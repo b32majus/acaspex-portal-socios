@@ -30,7 +30,7 @@ export function AdminResourceNewPage() {
   const configured = isSupabaseConfigured();
 
   useEffect(() => {
-    if (!configured || section === 'corporate_material') { setSubsections([]); return; }
+    if (!configured) { setSubsections([]); return; }
     fetchActiveResourceCategories(section).then(setSubsections);
   }, [configured, section]);
 
@@ -78,7 +78,7 @@ export function AdminResourceNewPage() {
           created_by: session?.user?.id ?? null,
           published_at: status === 'published' ? new Date().toISOString() : null,
           section,
-          category_id: section === 'corporate_material' ? null : (subsection || null),
+          category_id: subsection || null,
         })
         .select('id')
         .single();
@@ -181,22 +181,12 @@ export function AdminResourceNewPage() {
               </select>
             </div>
           )}
-          {section !== 'corporate_material' && subsections.length === 0 && (
+          {subsections.length === 0 && (
             <div>
               <label className="block text-xs font-medium text-slate-500">Subsección</label>
               <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 flex items-start gap-2">
                 <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                 <span>No hay subsecciones activas para esta sección. Crea una desde Subsecciones.</span>
-              </div>
-            </div>
-          )}
-          {section === 'corporate_material' && (
-            <div>
-              <label className="block text-xs font-medium text-slate-500">
-                Subsección
-              </label>
-              <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
-                Sin subsección — Material Corporativo
               </div>
             </div>
           )}
