@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Upload } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Trash2, Upload } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import {
   categoryLabel,
@@ -22,6 +22,8 @@ export function AdminResourcesPage() {
   const [resources, setResources] = useState<(typeof mockResources)[number][]>([]);
   const [loading, setLoading] = useState(true);
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const configured = isSupabaseConfigured();
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function AdminResourcesPage() {
       if (configured && supabase) {
         const { data, error } = await supabase
           .from('resources')
-          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, created_at, section, category_id')
+          .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, created_at, section, category_id')
           .order('created_at', { ascending: false });
 
         if (!error && data) {
@@ -60,6 +62,7 @@ export function AdminResourcesPage() {
               status: (r.status as ResourceStatus) || 'draft',
               publishedAt: (r.published_at as string) || null,
               filePath: fp || '',
+              coverImagePath: (r.cover_image_path as string) || '',
               externalUrl: (r.external_url as string) || '',
               estimatedReadMinutes: null,
               coverStyle: 'corporativo' as ResourceCoverStyle,
@@ -115,6 +118,40 @@ export function AdminResourcesPage() {
       )
     );
     setActionFeedback({ type: 'success', message: `Recurso ${newStatus === 'published' ? 'publicado' : newStatus === 'archived' ? 'archivado' : 'pasado a borrador'}.` });
+  }
+
+  async function handleDelete(resourceId: string) {
+    if (!configured || !supabase) return;
+    setDeleting(true);
+    setActionFeedback(null);
+
+    const resource = resources.find((r) => r.id === resourceId);
+    const oldFilePath = resource?.filePath || '';
+    const oldCoverPath = (resource as typeof resource & { coverImagePath?: string })?.coverImagePath || '';
+
+    const { error } = await supabase
+      .from('resources')
+      .delete()
+      .eq('id', resourceId);
+
+    if (error) {
+      setActionFeedback({ type: 'error', message: 'Error al eliminar: ' + error.message });
+      setDeleting(false);
+      setConfirmDeleteId(null);
+      return;
+    }
+
+    const toRemove: string[] = [];
+    if (oldFilePath) toRemove.push(oldFilePath);
+    if (oldCoverPath) toRemove.push(oldCoverPath);
+    if (toRemove.length > 0) {
+      await supabase.storage.from('acaspex-resource-files').remove(toRemove);
+    }
+
+    setResources((prev) => prev.filter((r) => r.id !== resourceId));
+    setDeleting(false);
+    setConfirmDeleteId(null);
+    setActionFeedback({ type: 'success', message: 'Recurso eliminado definitivamente.' });
   }
 
   if (loading) {
@@ -243,14 +280,36 @@ export function AdminResourcesPage() {
                               >
                                 Publicar de nuevo
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(resource.id, 'draft')}
-                                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100"
-                                title="Restaurar como borrador"
-                              >
-                                Restaurar borrador
-                              </button>
+                              {confirmDeleteId === resource.id ? (
+                                <span className="inline-flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(resource.id)}
+                                    disabled={deleting}
+                                    className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                                  >
+                                    {deleting ? 'Eliminando...' : 'Confirmar'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    disabled={deleting}
+                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(resource.id)}
+                                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
+                                  title="Eliminar definitivamente"
+                                >
+                                  <Trash2 size={12} />
+                                  Eliminar
+                                </button>
+                              )}
                             </>
                           )}
                           {isReal && resource.status === 'draft' && (
