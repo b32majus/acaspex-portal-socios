@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Edit, Info } from 'lucide-react';
+import { ChevronLeft, Edit, Info, Upload } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchEditableResourceCategories, resourceSectionLabel, type ResourceCategoryOption, type ResourceSection } from '../../lib/resourceCategories';
 import {
@@ -29,6 +29,8 @@ export function AdminResourceEditorPage() {
   const [section, setSection] = useState<ResourceSection>('corporate_material');
   const [categoryId, setCategoryId] = useState<string>('');
   const [subsections, setSubsections] = useState<ResourceCategoryOption[]>([]);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replaceWarning, setReplaceWarning] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const configured = isSupabaseConfigured();
@@ -114,37 +116,89 @@ export function AdminResourceEditorPage() {
 
     setSaving(true);
     setFeedback(null);
+    setReplaceWarning(null);
 
-    const update: Record<string, unknown> = {
-      title: title.trim(),
-      description: description.trim() || null,
-      resource_type: type,
-      status,
-      external_url: externalUrl.trim() || null,
-      category_id: categoryId || null,
-    };
+    let newFilePath: string | null = null;
+    const oldFilePath = resource.filePath;
 
-    if (status === 'published' && resource.status !== 'published') {
-      update.published_at = new Date().toISOString();
-    }
-    if (status === 'archived' && resource.status !== 'archived') {
-      update.archived_at = new Date().toISOString();
-    }
+    try {
+      if (replaceFile) {
+        const safeName = replaceFile.name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+        const sectionPath = section === 'corporate_material' ? 'corporativo' : section;
+        const storagePath = `${sectionPath}/2026/${crypto.randomUUID()}-${safeName}`;
 
-    const { error } = await supabase
-      .from('resources')
-      .update(update)
-      .eq('id', resource.id);
+        const { error: uploadError } = await supabase.storage
+          .from('acaspex-resource-files')
+          .upload(storagePath, replaceFile, {
+            contentType: replaceFile.type,
+            upsert: false,
+          });
 
-    if (error) {
-      setFeedback({ type: 'error', message: 'Error al guardar: ' + error.message });
+        if (uploadError) throw new Error('Error al subir archivo: ' + uploadError.message);
+        newFilePath = storagePath;
+      }
+
+      const update: Record<string, unknown> = {
+        title: title.trim(),
+        description: description.trim() || null,
+        resource_type: type,
+        status,
+        external_url: externalUrl.trim() || null,
+        category_id: categoryId || null,
+      };
+
+      if (newFilePath) {
+        update.file_path = newFilePath;
+      }
+
+      if (status === 'published' && resource.status !== 'published') {
+        update.published_at = new Date().toISOString();
+      }
+      if (status === 'archived' && resource.status !== 'archived') {
+        update.archived_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('resources')
+        .update(update)
+        .eq('id', resource.id);
+
+      if (error) {
+        if (newFilePath) {
+          await supabase.storage.from('acaspex-resource-files').remove([newFilePath]);
+        }
+        throw new Error('Error al actualizar: ' + error.message);
+      }
+
+      if (newFilePath && oldFilePath) {
+        const { error: deleteError } = await supabase.storage
+          .from('acaspex-resource-files')
+          .remove([oldFilePath]);
+        if (deleteError) {
+          setReplaceWarning('El archivo anterior no se pudo eliminar: ' + deleteError.message);
+        }
+      }
+
+      setResource({
+        ...resource,
+        title: title.trim(),
+        description: description.trim() || '',
+        type,
+        status,
+        externalUrl: externalUrl.trim() || '',
+        filePath: newFilePath || resource.filePath,
+        category: (categoryId || resource.category) as ResourceCategory,
+      });
+      setReplaceFile(null);
+      setFeedback({ type: 'success', message: 'Recurso actualizado correctamente.' });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Error al guardar el recurso.',
+      });
+    } finally {
       setSaving(false);
-      return;
     }
-
-    setResource({ ...resource, title: title.trim(), description: description.trim() || '', type, status, externalUrl: externalUrl.trim() || '', category: (categoryId || resource.category) as ResourceCategory });
-    setFeedback({ type: 'success', message: 'Recurso actualizado correctamente.' });
-    setSaving(false);
   }
 
   if (loading) {
@@ -338,17 +392,50 @@ export function AdminResourceEditorPage() {
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />
           </div>
-          {resource.filePath && (
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-500">
-                Archivo
-              </label>
-              <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                <code className="text-xs">{resource.filePath}</code>
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-slate-500">
+              Archivo
+            </label>
+            {resource.filePath ? (
+              <div className="mt-1 space-y-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                  <code className="text-xs">{resource.filePath}</code>
+                </div>
+                <p className="text-xs text-slate-500">Puedes sustituir el archivo actual seleccionando uno nuevo.</p>
+                <div>
+                  <input
+                    id="resource-replace-file"
+                    type="file"
+                    onChange={(e) => { setReplaceFile(e.target.files?.[0] ?? null); setReplaceWarning(null); }}
+                    accept=".png,.jpg,.jpeg,.pdf,.docx,.pptx"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded-md file:border-0 file:bg-teal-50 file:px-3 file:py-1 file:text-xs file:font-medium file:text-teal-700"
+                  />
+                  {replaceFile && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Upload size={14} className="text-teal-600" />
+                      <span className="text-xs text-teal-700">
+                        Nuevo: {replaceFile.name} ({(replaceFile.size / 1024).toFixed(0)} KB)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setReplaceFile(null)}
+                        className="text-xs text-slate-400 hover:text-slate-600"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
+                  {replaceWarning && (
+                    <p className="mt-1 text-xs text-amber-600">{replaceWarning}</p>
+                  )}
+                </div>
               </div>
-              <p className="mt-1 text-xs text-slate-400">Para sustituir el archivo, crea un nuevo recurso.</p>
-            </div>
-          )}
+            ) : (
+              <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
+                Sin archivo asociado
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
