@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Edit, ImageIcon, Info, Upload, X } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, Edit, ImageIcon, Info, Trash2, Upload, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchEditableResourceCategories, resourceSectionLabel, type ResourceCategoryOption, type ResourceSection } from '../../lib/resourceCategories';
 import {
@@ -38,6 +38,8 @@ export function AdminResourceEditorPage() {
   const [coverPath, setCoverPath] = useState<string>('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const configured = isSupabaseConfigured();
 
   useEffect(() => {
@@ -263,6 +265,54 @@ export function AdminResourceEditorPage() {
       });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!configured || !supabase || !resource) return;
+
+    setDeleting(true);
+    setFeedback(null);
+    setReplaceWarning(null);
+
+    const oldFilePath = resource.filePath;
+    const oldCoverPath = coverPath;
+
+    try {
+      const { error: visibilityError } = await supabase
+        .from('resource_visibility')
+        .delete()
+        .eq('resource_id', resource.id);
+
+      if (visibilityError) throw new Error('Error al eliminar visibilidad: ' + visibilityError.message);
+
+      const { error: resourceError } = await supabase
+        .from('resources')
+        .delete()
+        .eq('id', resource.id);
+
+      if (resourceError) throw new Error('Error al eliminar recurso: ' + resourceError.message);
+
+      const toRemove: string[] = [];
+      if (oldFilePath) toRemove.push(oldFilePath);
+      if (oldCoverPath) toRemove.push(oldCoverPath);
+      if (toRemove.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('acaspex-resource-files')
+          .remove(toRemove);
+        if (storageError) {
+          console.warn('Storage cleanup warning:', storageError.message);
+        }
+      }
+
+      navigate('/admin/recursos');
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Error al eliminar el recurso.',
+      });
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   }
 
@@ -616,6 +666,49 @@ export function AdminResourceEditorPage() {
           >
             Cancelar
           </button>
+          {isReal && status === 'archived' && (
+            <div className="w-full border-t border-slate-100 pt-4 mt-2">
+              {confirmDelete ? (
+                <div className="rounded-lg border border-red-200 bg-red-50/60 p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-600" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">¿Seguro que quieres eliminar definitivamente este recurso?</p>
+                      <p className="mt-1 text-xs text-red-700/80">Esta acción borrará el archivo asociado, la portada si existe y no se podrá deshacer.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 size={15} />
+                      {deleting ? 'Eliminando...' : 'Eliminar definitivamente'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      disabled={deleting}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                >
+                  <Trash2 size={15} />
+                  Eliminar recurso
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </div>
