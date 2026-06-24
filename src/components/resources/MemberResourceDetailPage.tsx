@@ -76,7 +76,9 @@ export function MemberResourceDetailPage() {
           const rt = r.resource_type as string;
           const isImageByType = rt === 'image' || rt === 'logo' || rt === 'teams_background';
           const isImageByExt = !!fp?.match(/\.(png|jpg|jpeg|gif|webp)$/i);
-          if (fp && supabase && (isImageByType || isImageByExt)) {
+          const isPdfByType = rt === 'pdf';
+          const isPdfByExt = !!fp?.match(/\.pdf$/i);
+          if (fp && supabase && (isImageByType || isImageByExt || isPdfByType || isPdfByExt)) {
             const { data: urlData } = await supabase.storage
               .from('acaspex-resource-files')
               .createSignedUrl(fp, 300);
@@ -159,11 +161,19 @@ export function MemberResourceDetailPage() {
               <Image size={48} className="text-slate-300" />
             </div>
           ) : isPdfResource(resource) ? (
+            signedUrl ? (
+              <iframe
+                src={signedUrl}
+                title={resource.title}
+                className="h-full w-full"
+                style={{ border: 'none' }}
+              />
+            ) : (
             <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-rose-50">
               <FileText size={48} className="text-rose-400" />
               <span className="text-xs font-semibold uppercase tracking-wider text-rose-700/80">Documento PDF</span>
-              <span className="text-[11px] text-slate-500">Usa "Abrir recurso" para previsualizarlo</span>
             </div>
+          )
           ) : isOfficeResource(resource) ? (
             coverImageUrl ? (
               <img src={coverImageUrl} alt={resource.title} className="h-full w-full object-contain" />
