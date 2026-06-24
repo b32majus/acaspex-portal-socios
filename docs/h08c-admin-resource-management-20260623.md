@@ -226,6 +226,49 @@ Estado: `h08t_resource_subsections_admin_ready_for_validation`. Pendiente de val
 
 Validación técnica completa. Build OK, 11 categorías activas, policies verificadas, slugify correcto. Pendiente de validación funcional por Sil en web pública.
 
+### 5.11 H0.8T-FIX1 — Corrección de permisos, navegación y orden
+
+**Estado:** `h08t_resource_subsections_admin_fix_ready_for_validation` — 2026-06-24.
+
+Problemas detectados por Sil tras primera validación:
+1. "Gestionar subsecciones" como botón dentro de Recursos → movido a sidebar admin como entrada propia.
+2. Crear subsección fallaba: `permission denied for table resource_categories` → GRANT INSERT, UPDATE aplicado (migración 024).
+3. Activar/desactivar subsección fallaba por el mismo motivo → mismo fix.
+4. Campo Orden manual poco práctico → eliminado, auto-cálculo al crear + botones Subir/Bajar.
+
+**Parte A — Navegación:**
+- `AdminLayout`: entrada "Subsecciones" añadida al sidebar (después de "Recursos").
+- `AdminLayout.isActive()`: corregido para que "Recursos" no se active al estar en `/admin/recursos/subsecciones`.
+- `AdminResourcesPage`: botón "Gestionar subsecciones" eliminado.
+
+**Parte B — Permisos:**
+- Migración `024`: `GRANT INSERT, UPDATE ON public.resource_categories TO authenticated`.
+- SELECT ya existía (migración 020). Policies RLS ya existían.
+- Sin DELETE (por decisión).
+
+**Parte C — Orden:**
+- Crear: auto-cálculo `max(sort_order) + 1` dentro de la misma sección.
+- Campo manual eliminado del formulario de creación.
+- Botones Subir (ArrowUp) / Bajar (ArrowDown) en tabla: intercambian `sort_order` con la subsección adyacente.
+- Sin drag & drop (mejora futura).
+
+### 5.12 Decisión: no crear nuevas secciones principales
+
+Las secciones principales actuales son:
+- Centro de Conocimiento
+- Banco de Proyectos
+- Material Corporativo
+
+Crear una nueva sección principal requiere una fase específica porque afecta a navegación, rutas, permisos, modelo de datos y presentación pública. No se implementa en H0.8T-FIX1.
+
+Futuro bloque: H0.9 — Modelo dinámico de secciones principales.
+
+### Archivos modificados H0.8T-FIX1
+- `src/components/layout/AdminLayout.tsx` — navegación sidebar
+- `src/components/resources/AdminResourcesPage.tsx` — eliminar botón subsecciones
+- `src/components/resources/AdminResourceCategoriesPage.tsx` — reescritura completa (orden, permisos)
+- `supabase/migrations/20260623000024_024_acaspex_resource_categories_admin_write_grants.sql` — GRANTs
+
 ---
 
 ## 6. Deuda conocida
@@ -234,7 +277,6 @@ Validación técnica completa. Build OK, 11 categorías activas, policies verifi
 - PPTX sigue sin preview (placeholder premium + botón Descargar).
 - DOCX sigue sin preview (placeholder premium + botón Descargar).
 - La eliminación física de recursos no está implementada (archivar en su lugar).
-- Pendiente pantalla `/admin/recursos/subsecciones` para gestionar subsecciones de Centro de Conocimiento y Banco de Proyectos (H0.8T).
 - `AdminResourceEditorPage` todavía no refleja el modelo sección/subsección (solo AdminResourceNewPage).
 
 ---

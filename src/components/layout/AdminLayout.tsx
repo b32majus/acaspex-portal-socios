@@ -8,6 +8,7 @@ const adminLinks = [
   { label: 'Socios', to: '/admin/socios' },
   { label: 'Solicitudes', to: '/admin/solicitudes' },
   { label: 'Recursos', to: '/admin/recursos' },
+  { label: 'Subsecciones', to: '/admin/recursos/subsecciones' },
   { label: 'Renovaciones', to: '/admin/renovaciones' },
 ];
 
@@ -20,6 +21,7 @@ export function AdminLayout() {
 
   const isActive = (to: string) => {
     if (to === '/admin') return location.pathname === '/admin';
+    if (to === '/admin/recursos' && location.pathname.startsWith('/admin/recursos/subsecciones')) return false;
     return location.pathname.startsWith(to);
   };
 

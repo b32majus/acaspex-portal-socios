@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-24  
-Estado de referencia: tras cierre H0.8T (gestión subsecciones validada)  
+Estado de referencia: tras cierre H0.8T-FIX1 (corrección permisos, navegación y orden subsecciones)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `2d81a17 — feat: manage resource subsections`
+Último commit: `a3c967b — fix: allow admins to create resources + H0.8T-FIX1 in-flight`
 
 ---
 
@@ -152,6 +152,7 @@ h08r_resource_module_refactor_ready_for_validation
 h08r2_resource_module_extracted_ready_for_validation
 h08s_resource_sections_model_validated
 h08t_resource_subsections_admin_validated
+h08t_fix1_resource_subsections_admin_fix_ready_for_validation
 ```
 
 ## 9. Estado de staging (post H0.7q)
@@ -311,6 +312,17 @@ Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08s_resource_s
 - Slug automático desde el nombre. Sin migración adicional (columnas ya existían).
 
 Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08t_resource_subsections_admin_ready_for_validation`.
+
+### H0.8T-FIX1 — Corrección de permisos, navegación y orden de subsecciones
+
+Problemas corregidos:
+- "Gestionar subsecciones" movido de botón en Recursos a entrada propia en sidebar admin.
+- GRANT INSERT, UPDATE en `resource_categories` para `authenticated` (migración 024).
+- Campo Orden eliminado del formulario de creación. Auto-cálculo `max + 1` por sección.
+- Botones Subir/Bajar para reordenación visual en la tabla.
+- Decisión: no crear nuevas secciones principales dinámicas por ahora (requiere H0.9).
+
+Estado: `h08t_fix1_resource_subsections_admin_fix_ready_for_validation`.
 
 Documentos H0.7 creados:
 

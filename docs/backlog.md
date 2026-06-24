@@ -442,6 +442,18 @@ Ver: `docs/h08c-admin-resource-management-20260623.md`.
 
 Pendiente: validación con U1/U2/U3 en web pública. Migración DB para `section` en `resource_categories`.
 
+### H0.8T-FIX1 — Corrección de permisos, navegación y orden de subsecciones
+
+Estado: **implementado con build OK, pendiente de validación pública — 2026-06-24.**
+
+Correcciones:
+- Sidebar admin: entrada "Subsecciones" propia. Botón eliminado de Recursos.
+- Permisos: GRANT INSERT, UPDATE en `resource_categories` (migración 024).
+- Orden: auto-cálculo al crear + botones Subir/Bajar. Campo manual eliminado.
+- Decisión: no crear nuevas secciones principales dinámicas (→ H0.9).
+
+Ver: `docs/h08c-admin-resource-management-20260623.md`. Estado: `h08t_fix1_resource_subsections_admin_fix_ready_for_validation`.
+
 Estos usuarios son necesarios para validar la sección Material Corporativo (H0.7q).
 
 No crear usuarios reales ni seeds sin WO explícita.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, ChevronLeft, Edit, Plus, XCircle } from 'lucide-react';
+import { ArrowDown, ArrowUp, CheckCircle, ChevronLeft, Edit, Plus, XCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 
 type Category = {
@@ -40,15 +40,16 @@ export function AdminResourceCategoriesPage() {
   const [newSection, setNewSection] = useState('knowledge_center');
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newOrder, setNewOrder] = useState(10);
   const [creating, setCreating] = useState(false);
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
-  const [editOrder, setEditOrder] = useState(0);
   const [saving, setSaving] = useState(false);
+
+  // Reorder state
+  const [reordering, setReordering] = useState(false);
 
   async function loadCategories() {
     if (!configured || !supabase) return;
@@ -73,6 +74,10 @@ export function AdminResourceCategoriesPage() {
     setFeedback(null);
 
     const slug = slugify(newName.trim());
+    const sameSection = categories.filter((c) => c.section === newSection);
+    const nextOrder = sameSection.length > 0
+      ? Math.max(...sameSection.map((c) => c.sort_order)) + 1
+      : 1;
 
     const { error } = await supabase
       .from('resource_categories')
@@ -81,7 +86,7 @@ export function AdminResourceCategoriesPage() {
         name: newName.trim(),
         slug,
         description: newDesc.trim() || null,
-        sort_order: newOrder,
+        sort_order: nextOrder,
         is_active: true,
       });
 
@@ -92,7 +97,6 @@ export function AdminResourceCategoriesPage() {
       setShowCreate(false);
       setNewName('');
       setNewDesc('');
-      setNewOrder(10);
       loadCategories();
     }
     setCreating(false);
@@ -118,7 +122,6 @@ export function AdminResourceCategoriesPage() {
     setEditingId(cat.id);
     setEditName(cat.name);
     setEditDesc(cat.description || '');
-    setEditOrder(cat.sort_order);
   }
 
   function cancelEdit() {
@@ -139,7 +142,6 @@ export function AdminResourceCategoriesPage() {
         name: editName.trim(),
         slug,
         description: editDesc.trim() || null,
-        sort_order: editOrder,
       })
       .eq('id', catId);
 
@@ -151,6 +153,56 @@ export function AdminResourceCategoriesPage() {
       loadCategories();
     }
     setSaving(false);
+  }
+
+  async function handleMoveUp(cat: Category) {
+    if (!configured || !supabase || reordering) return;
+    setFeedback(null);
+    const sameSection = categories.filter((c) => c.section === cat.section);
+    const idx = sameSection.findIndex((c) => c.id === cat.id);
+    if (idx <= 0) return;
+
+    const prev = sameSection[idx - 1];
+    setReordering(true);
+
+    const updates = [
+      supabase.from('resource_categories').update({ sort_order: cat.sort_order }).eq('id', prev.id),
+      supabase.from('resource_categories').update({ sort_order: prev.sort_order }).eq('id', cat.id),
+    ];
+
+    const results = await Promise.all(updates);
+    const errors = results.filter((r) => r.error);
+    if (errors.length > 0) {
+      setFeedback({ type: 'error', message: 'Error al reordenar: ' + errors[0].error!.message });
+    } else {
+      loadCategories();
+    }
+    setReordering(false);
+  }
+
+  async function handleMoveDown(cat: Category) {
+    if (!configured || !supabase || reordering) return;
+    setFeedback(null);
+    const sameSection = categories.filter((c) => c.section === cat.section);
+    const idx = sameSection.findIndex((c) => c.id === cat.id);
+    if (idx >= sameSection.length - 1) return;
+
+    const next = sameSection[idx + 1];
+    setReordering(true);
+
+    const updates = [
+      supabase.from('resource_categories').update({ sort_order: cat.sort_order }).eq('id', next.id),
+      supabase.from('resource_categories').update({ sort_order: next.sort_order }).eq('id', cat.id),
+    ];
+
+    const results = await Promise.all(updates);
+    const errors = results.filter((r) => r.error);
+    if (errors.length > 0) {
+      setFeedback({ type: 'error', message: 'Error al reordenar: ' + errors[0].error!.message });
+    } else {
+      loadCategories();
+    }
+    setReordering(false);
   }
 
   if (loading) {
@@ -220,10 +272,6 @@ export function AdminResourceCategoriesPage() {
               <label className="block text-xs font-medium text-slate-500">Descripción</label>
               <input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500">Orden</label>
-              <input type="number" value={newOrder} onChange={(e) => setNewOrder(Number(e.target.value))} min={0} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600" />
-            </div>
           </div>
           <div className="mt-4 flex gap-3">
             <button onClick={handleCreate} disabled={creating || !newName.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60">
@@ -258,6 +306,11 @@ export function AdminResourceCategoriesPage() {
                   <tbody className="divide-y divide-slate-100">
                     {secCats.map((cat) => {
                       const isEditing = editingId === cat.id;
+                      const sameSection = categories.filter((c) => c.section === cat.section);
+                      const idx = sameSection.findIndex((c) => c.id === cat.id);
+                      const isFirst = idx === 0;
+                      const isLast = idx === sameSection.length - 1;
+
                       return (
                         <tr key={cat.id} className="hover:bg-slate-50/60">
                           <td className="py-2.5">
@@ -269,11 +322,7 @@ export function AdminResourceCategoriesPage() {
                           </td>
                           <td className="py-2.5 text-xs text-slate-500 font-mono">{cat.slug}</td>
                           <td className="py-2.5">
-                            {isEditing ? (
-                              <input type="number" value={editOrder} onChange={(e) => setEditOrder(Number(e.target.value))} min={0} className="w-16 rounded border border-slate-200 px-2 py-1 text-sm" />
-                            ) : (
-                              <span className="text-slate-600">{cat.sort_order}</span>
-                            )}
+                            <span className="text-slate-600">{cat.sort_order}</span>
                           </td>
                           <td className="py-2.5">
                             <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${cat.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
@@ -290,6 +339,22 @@ export function AdminResourceCategoriesPage() {
                                 </>
                               ) : (
                                 <>
+                                  <button
+                                    onClick={() => handleMoveUp(cat)}
+                                    disabled={reordering || isFirst}
+                                    className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                                    title="Subir"
+                                  >
+                                    <ArrowUp size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleMoveDown(cat)}
+                                    disabled={reordering || isLast}
+                                    className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                                    title="Bajar"
+                                  >
+                                    <ArrowDown size={12} />
+                                  </button>
                                   <button onClick={() => startEdit(cat)} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-teal-700 hover:bg-teal-50">
                                     <Edit size={12} /> Editar
                                   </button>
