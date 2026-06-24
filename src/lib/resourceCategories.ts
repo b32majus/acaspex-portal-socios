@@ -50,7 +50,7 @@ export type ResourceCategoryIconOption = {
   icon: ComponentType<{ size?: number | string; className?: string }>;
 };
 
-export const managedResourceSections: ResourceSection[] = ['knowledge_center', 'project_bank'];
+export const managedResourceSections: ResourceSection[] = ['knowledge_center', 'project_bank', 'corporate_material'];
 
 export const resourceSectionLabel: Record<ResourceSection, string> = {
   corporate_material: 'Material Corporativo',

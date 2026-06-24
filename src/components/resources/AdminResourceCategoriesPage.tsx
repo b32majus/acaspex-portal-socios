@@ -19,9 +19,10 @@ type Category = {
 const sectionLabel: Record<string, string> = {
   knowledge_center: 'Centro de Conocimiento',
   project_bank: 'Banco de Proyectos',
+  corporate_material: 'Material Corporativo',
 };
 
-const sections = ['knowledge_center', 'project_bank'] as const;
+const sections = ['knowledge_center', 'project_bank', 'corporate_material'] as const;
 
 const duplicateCategoryMessage = 'Ya existe una subsección con ese nombre en esta sección. Elige otro nombre o edita la existente.';
 
@@ -61,7 +62,7 @@ export function AdminResourceCategoriesPage() {
     const { data } = await supabase
       .from('resource_categories')
       .select('id, section, slug, name, description, icon_key, sort_order, is_active')
-      .in('section', ['knowledge_center', 'project_bank'])
+      .in('section', ['knowledge_center', 'project_bank', 'corporate_material'])
       .order('section', { ascending: true })
       .order('sort_order', { ascending: true });
 
@@ -282,8 +283,7 @@ export function AdminResourceCategoriesPage() {
       <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-light text-slate-900">Subsecciones</h1>
-          <p className="mt-1 text-sm text-slate-500">Gestiona las subsecciones de Centro de Conocimiento y Banco de Proyectos.</p>
-          <p className="mt-1 text-xs text-slate-400">Material Corporativo no tiene subsecciones por ahora.</p>
+          <p className="mt-1 text-sm text-slate-500">Gestiona las subsecciones de Centro de Conocimiento, Banco de Proyectos y Material Corporativo.</p>
         </div>
         <button
           type="button"
@@ -310,6 +310,7 @@ export function AdminResourceCategoriesPage() {
               <select value={newSection} onChange={(e) => setNewSection(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
                 <option value="knowledge_center">Centro de Conocimiento</option>
                 <option value="project_bank">Banco de Proyectos</option>
+                <option value="corporate_material">Material Corporativo</option>
               </select>
             </div>
             <div>
