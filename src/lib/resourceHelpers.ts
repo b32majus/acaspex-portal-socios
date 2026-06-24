@@ -104,3 +104,23 @@ export function isDownloadOnlyResource(resource: ResourceLike): boolean {
   if (!resource.filePath) return false;
   return isOfficeResource(resource) || (!isImageResource(resource) && !isPdfResource(resource));
 }
+
+export function detectResourceTypeFromFile(file: File | null, fallback: ResourceType = 'document'): ResourceType {
+  if (!file) return fallback;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const typeMap: Record<string, ResourceType> = {
+    pdf: 'pdf',
+    png: 'image',
+    jpg: 'image',
+    jpeg: 'image',
+    webp: 'image',
+    gif: 'image',
+    doc: 'document',
+    docx: 'document',
+    ppt: 'presentation',
+    pptx: 'presentation',
+    xls: 'document',
+    xlsx: 'document',
+  };
+  return typeMap[ext] ?? fallback;
+}

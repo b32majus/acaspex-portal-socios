@@ -6,6 +6,7 @@ import { fetchEditableResourceCategories, resourceSectionLabel, type ResourceCat
 import {
   resourceStatusBadgeClass,
   resourceStatusLabel,
+  detectResourceTypeFromFile,
   typeLabel,
 } from '../../lib/resourceHelpers';
 import {
@@ -402,25 +403,13 @@ export function AdminResourceEditorPage() {
             />
           </div>
           <div>
-            <label htmlFor="resource-type" className="block text-xs font-medium text-slate-500">
+            <label className="block text-xs font-medium text-slate-500">
               Tipo de material
             </label>
-            <select
-              id="resource-type"
-              value={type}
-              onChange={(e) => setType(e.target.value as ResourceType)}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-            >
-              <option value="image">Imagen</option>
-              <option value="logo">Logo</option>
-              <option value="teams_background">Fondo Teams</option>
-              <option value="pdf">PDF</option>
-              <option value="document">Documento</option>
-              <option value="presentation">Presentación</option>
-              <option value="template">Plantilla</option>
-              <option value="external_link">Enlace externo</option>
-              <option value="other">Otro</option>
-            </select>
+            <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              {typeLabel[type] ?? type}
+            </div>
+            <p className="mt-1 text-xs text-slate-400">Se detecta automáticamente al sustituir el archivo.</p>
           </div>
           <div>
             <label htmlFor="resource-status" className="block text-xs font-medium text-slate-500">
@@ -514,7 +503,12 @@ export function AdminResourceEditorPage() {
                   <input
                     id="resource-replace-file"
                     type="file"
-                    onChange={(e) => { setReplaceFile(e.target.files?.[0] ?? null); setReplaceWarning(null); }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setReplaceFile(f);
+                      setReplaceWarning(null);
+                      if (f) setType(detectResourceTypeFromFile(f, type));
+                    }}
                     accept=".png,.jpg,.jpeg,.pdf,.docx,.pptx"
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded-md file:border-0 file:bg-teal-50 file:px-3 file:py-1 file:text-xs file:font-medium file:text-teal-700"
                   />

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronLeft, ChevronRight, ImageIcon, Upload, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchActiveResourceCategories, resourceSectionLabel, type ResourceCategoryOption } from '../../lib/resourceCategories';
+import { detectResourceTypeFromFile, typeLabel } from '../../lib/resourceHelpers';
 import { useAuth } from '../../lib/authContext';
 import type { ResourceStatus, ResourceType } from '../../data/mockResources';
 
@@ -214,25 +215,13 @@ export function AdminResourceNewPage() {
             </div>
           )}
           <div>
-            <label htmlFor="new-type" className="block text-xs font-medium text-slate-500">
+            <label className="block text-xs font-medium text-slate-500">
               Tipo de material
             </label>
-            <select
-              id="new-type"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-            >
-              <option value="image">Imagen</option>
-              <option value="logo">Logo</option>
-              <option value="teams_background">Fondo Teams</option>
-              <option value="pdf">PDF</option>
-              <option value="document">Documento</option>
-              <option value="presentation">Presentación</option>
-              <option value="template">Plantilla</option>
-              <option value="external_link">Enlace externo</option>
-              <option value="other">Otro</option>
-            </select>
+            <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              Tipo detectado: {typeLabel[type] ?? type}
+            </div>
+            <p className="mt-1 text-xs text-slate-400">Se detecta automáticamente desde el archivo.</p>
           </div>
           <div>
             <label htmlFor="new-status" className="block text-xs font-medium text-slate-500">
@@ -290,8 +279,12 @@ export function AdminResourceNewPage() {
             <input
               id="new-file"
               type="file"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               accept=".png,.jpg,.jpeg,.pdf,.docx,.pptx"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                setFile(f);
+                if (f) setType(detectResourceTypeFromFile(f, 'document'));
+              }}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded-md file:border-0 file:bg-teal-50 file:px-3 file:py-1 file:text-xs file:font-medium file:text-teal-700"
             />
             {file && (
