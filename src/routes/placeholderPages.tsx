@@ -307,7 +307,7 @@ export function MaterialCorporativoPage() {
             title: r.title as string,
             subtitle: (r.subtitle as string) || (r.description as string) || '',
             description: (r.description as string) || '',
-            category: (rc?.slug || 'corporativo') as ResourceCategory,
+            category: 'corporativo' as ResourceCategory,
             categoryName: rc?.name || 'Material Corporativo',
             type: (r.resource_type as ResourceType) || 'other',
             status: (r.status as ResourceStatus) || 'published',
