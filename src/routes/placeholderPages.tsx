@@ -60,6 +60,7 @@ import { categoryLabel, typeLabel, resourceStatusLabel, resourceStatusBadgeClass
 import type { ResourceLike } from '../lib/resourceHelpers';
 import { MockCover } from '../components/resources/MockCover';
 import PdfCoverPreview from '../components/resources/PdfCoverPreview';
+import { documentTypeOptions, professionalCategoryOptions, organizationOptions } from '../lib/memberFormOptions';
 
 export function LoginPage() {
   const assetBase = import.meta.env.BASE_URL;
@@ -2746,7 +2747,7 @@ export function AdminSignupDetailPage() {
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Documento</dt>
               <dd className="mt-0.5 text-slate-700">
-                {documentTypeLabel[request.documentType]} · {request.documentNumber}
+                {(documentTypeOptions.find(o => o.value === request.documentType)?.label ?? request.documentType)} · {request.documentNumber}
               </dd>
             </div>
             <div>
@@ -3034,51 +3035,6 @@ const signupReducedFeeReasonLabel: Record<NonNullable<SignupReducedFeeReason>, s
   retired: 'Profesional jubilado',
 };
 
-const documentTypeLabel: Record<SignupDocumentType, string> = {
-  dni: 'DNI',
-  nie: 'NIE',
-  passport: 'Pasaporte',
-};
-
-const professionalCategoryOptions = [
-  { value: '', label: 'Selecciona una categoría' },
-  { value: 'Enfermero/a', label: 'Enfermero/a' },
-  { value: 'Enfermero/a Especialista', label: 'Enfermero/a Especialista' },
-  { value: 'Farmacéutico/a', label: 'Farmacéutico/a' },
-  { value: 'Fisioterapeuta', label: 'Fisioterapeuta' },
-  { value: 'Logopeda', label: 'Logopeda' },
-  { value: 'Médico/a', label: 'Médico/a' },
-  { value: 'Odontólogo/a', label: 'Odontólogo/a' },
-  { value: 'Personal Administrativo', label: 'Personal Administrativo' },
-  { value: 'Psicólogo/a', label: 'Psicólogo/a' },
-  { value: 'Residente Formación Sanitaria Especializada', label: 'Residente Formación Sanitaria Especializada' },
-  { value: 'Técnico en Cuidados Auxiliares de Enfermería', label: 'Técnico en Cuidados Auxiliares de Enfermería' },
-  { value: 'Técnico Especialista', label: 'Técnico Especialista' },
-  { value: 'Terapeuta Ocupacional', label: 'Terapeuta Ocupacional' },
-  { value: 'Trabajador/a Social', label: 'Trabajador/a Social' },
-  { value: 'Veterinario/a', label: 'Veterinario/a' },
-  { value: 'Otras', label: 'Otras' },
-];
-
-const organizationOptions = [
-  { value: '', label: 'Selecciona una organización' },
-  { value: 'Área de Salud de Badajoz', label: 'Área de Salud de Badajoz' },
-  { value: 'Área de Salud de Cáceres', label: 'Área de Salud de Cáceres' },
-  { value: 'Área de Salud de Coria', label: 'Área de Salud de Coria' },
-  { value: 'Área de Salud de Don Benito-Villanueva de la Serena', label: 'Área de Salud de Don Benito-Villanueva de la Serena' },
-  { value: 'Área de Salud de Llerena-Zafra', label: 'Área de Salud de Llerena-Zafra' },
-  { value: 'Área de Salud de Mérida', label: 'Área de Salud de Mérida' },
-  { value: 'Área de Salud de Navalmoral de la Mata', label: 'Área de Salud de Navalmoral de la Mata' },
-  { value: 'Área de Salud de Plasencia', label: 'Área de Salud de Plasencia' },
-  { value: 'Mutuas Colaboradoras con la Seguridad Social', label: 'Mutuas Colaboradoras con la Seguridad Social' },
-  { value: 'Organización de Pacientes', label: 'Organización de Pacientes' },
-  { value: 'Sector Privado', label: 'Sector Privado' },
-  { value: 'SEPAD', label: 'SEPAD' },
-  { value: 'Servicios Centrales SES', label: 'Servicios Centrales SES' },
-  { value: 'Universidad de Extremadura', label: 'Universidad de Extremadura' },
-  { value: 'Otras', label: 'Otras' },
-];
-
 type SignupFormState = {
   firstName: string;
   lastName1: string;
@@ -3271,9 +3227,7 @@ export function SignupPage() {
                   required
                   className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
                 >
-                  <option value="dni">{documentTypeLabel.dni}</option>
-                  <option value="nie">{documentTypeLabel.nie}</option>
-                  <option value="passport">{documentTypeLabel.passport}</option>
+                  {documentTypeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               <div>
