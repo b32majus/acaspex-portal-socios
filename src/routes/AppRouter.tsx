@@ -25,6 +25,7 @@ import { AdminResourceCategoriesPage } from '../components/resources/AdminResour
 import { MemberResourceDetailPage } from '../components/resources/MemberResourceDetailPage';
 import { AdminMembersPage } from '../components/members/AdminMembersPage';
 import { AdminMemberDetailPage } from '../components/members/AdminMemberDetailPage';
+import { AdminMemberNewPage } from '../components/members/AdminMemberNewPage';
 
 export function AppRouter() {
   return (
@@ -65,6 +66,7 @@ export function AppRouter() {
         >
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/socios" element={<AdminMembersPage />} />
+          <Route path="/admin/socios/nuevo" element={<AdminMemberNewPage />} />
           <Route path="/admin/socios/:memberId" element={<AdminMemberDetailPage />} />
           <Route path="/admin/solicitudes" element={<AdminSignupRequestsPage />} />
           <Route path="/admin/solicitudes/:signupId" element={<AdminSignupDetailPage />} />

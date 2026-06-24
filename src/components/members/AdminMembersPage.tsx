@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Filter, Search } from 'lucide-react';
+import { ChevronRight, Filter, Plus, Search } from 'lucide-react';
 import { fetchAdminMembers } from '../../lib/memberQueries';
 import { mapMemberRowToForm, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, professionalCategoryOptions, organizationOptions } from '../../lib/memberFormOptions';
@@ -72,8 +72,18 @@ export function AdminMembersPage() {
   return (
     <div className="space-y-6">
       <section>
-        <h1 className="font-serif text-2xl font-light text-slate-900">Socios</h1>
-        <p className="mt-1 text-sm text-slate-500">Gestión del registro de socios.</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="font-serif text-2xl font-light text-slate-900">Socios</h1>
+            <p className="mt-1 text-sm text-slate-500">Gestión del registro de socios.</p>
+          </div>
+          <Link
+            to="/admin/socios/nuevo"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+          >
+            <Plus size={15} /> Nuevo socio
+          </Link>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
