@@ -293,7 +293,7 @@ export function MaterialCorporativoPage() {
     if (!configured || !supabase) return;
     supabase
       .from('resources')
-      .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, section')
+      .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, section')
       .eq('status', 'published')
       .eq('section', 'corporate_material')
       .order('published_at', { ascending: false })
@@ -309,6 +309,7 @@ export function MaterialCorporativoPage() {
             status: (r.status as ResourceStatus) || 'published',
             publishedAt: (r.published_at as string) || new Date().toISOString().split('T')[0],
             filePath: (r.file_path as string) || '',
+            coverImagePath: (r.cover_image_path as string) || '',
             externalUrl: (r.external_url as string) || '',
             featured: false,
             coverStyle: 'corporativo' as 'corporativo',
@@ -429,9 +430,23 @@ const visualToneConfig: Record<
 
 function ResourceCardImage({ resource }: { resource: (typeof mockResources)[number] }) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const isImage = isImageResource(resource);
   const isPdf = isPdfResource(resource);
   const isOffice = isOfficeResource(resource);
+  const coverPath = (resource as typeof resource & { coverImagePath?: string }).coverImagePath || '';
+
+  useEffect(() => {
+    if (coverPath && supabase) {
+      supabase.storage
+        .from('acaspex-resource-files')
+        .createSignedUrl(coverPath, 300)
+        .then(({ data }) => {
+          if (data?.signedUrl) setCoverUrl(data.signedUrl);
+        })
+        .catch(() => {});
+    }
+  }, [coverPath]);
 
   useEffect(() => {
     if (!isImage || !resource.filePath || !supabase) return;
@@ -443,6 +458,17 @@ function ResourceCardImage({ resource }: { resource: (typeof mockResources)[numb
       })
       .catch(() => {});
   }, [resource.filePath, isImage]);
+
+  if (coverUrl) {
+    return (
+      <img
+        src={coverUrl}
+        alt={resource.title}
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    );
+  }
 
   if (isImage && signedUrl) {
     return (
@@ -882,7 +908,7 @@ export function MemberLibraryPage() {
 
     supabase
       .from('resources')
-      .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, section, category_id, resource_categories(id, slug, name)')
+      .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, section, category_id, resource_categories(id, slug, name)')
       .eq('status', 'published')
       .eq('section', 'knowledge_center')
       .order('published_at', { ascending: false })
@@ -905,6 +931,7 @@ export function MemberLibraryPage() {
             status: (r.status as ResourceStatus) || 'published',
             publishedAt: (r.published_at as string) || new Date().toISOString().split('T')[0],
             filePath: (r.file_path as string) || '',
+            coverImagePath: (r.cover_image_path as string) || '',
             externalUrl: (r.external_url as string) || '',
             featured: false,
             coverStyle: 'documento' as ResourceCoverStyle,

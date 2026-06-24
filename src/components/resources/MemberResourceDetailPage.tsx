@@ -32,6 +32,7 @@ export function MemberResourceDetailPage() {
   const { resourceId } = useParams<{ resourceId: string }>();
   const [resource, setResource] = useState<(typeof mockResources)[number] | null>(null);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const configured = isSupabaseConfigured();
 
@@ -44,7 +45,7 @@ export function MemberResourceDetailPage() {
       if (configured && supabase && resourceId) {
         const { data, error } = await supabase
           .from('resources')
-          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, section, category_id')
+          .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, section, category_id')
           .eq('id', resourceId)
           .eq('status', 'published')
           .maybeSingle();
@@ -61,6 +62,7 @@ export function MemberResourceDetailPage() {
             status: (r.status as ResourceStatus) || 'published',
             publishedAt: (r.published_at as string) || null,
             filePath: (r.file_path as string) || '',
+            coverImagePath: (r.cover_image_path as string) || '',
             externalUrl: (r.external_url as string) || '',
             estimatedReadMinutes: null as number | null,
             coverStyle: 'corporativo' as ResourceCoverStyle,
@@ -79,6 +81,14 @@ export function MemberResourceDetailPage() {
               .from('acaspex-resource-files')
               .createSignedUrl(fp, 300);
             if (urlData?.signedUrl && !cancelled) setSignedUrl(urlData.signedUrl);
+          }
+
+          const cip = r.cover_image_path as string | undefined;
+          if (cip && supabase && !cancelled) {
+            const { data: coverData } = await supabase.storage
+              .from('acaspex-resource-files')
+              .createSignedUrl(cip, 300);
+            if (coverData?.signedUrl && !cancelled) setCoverImageUrl(coverData.signedUrl);
           }
         } else if (!cancelled) {
           const mock = mockResources.find((r) => r.id === resourceId);
@@ -155,6 +165,9 @@ export function MemberResourceDetailPage() {
               <span className="text-[11px] text-slate-500">Usa "Abrir recurso" para previsualizarlo</span>
             </div>
           ) : isOfficeResource(resource) ? (
+            coverImageUrl ? (
+              <img src={coverImageUrl} alt={resource.title} className="h-full w-full object-contain" />
+            ) : (
             (() => {
               const ext = resource.filePath?.split('.').pop()?.toLowerCase() ?? '';
               const isWord = ext === 'docx' || ext === 'doc';
@@ -170,6 +183,7 @@ export function MemberResourceDetailPage() {
                 </div>
               );
             })()
+            )
           ) : isExternalLinkResource(resource) ? (
             <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-sky-50">
               <Globe size={48} className="text-sky-400" />

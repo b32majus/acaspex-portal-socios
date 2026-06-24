@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Edit, Info, Upload } from 'lucide-react';
+import { ChevronLeft, Edit, ImageIcon, Info, Upload, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchEditableResourceCategories, resourceSectionLabel, type ResourceCategoryOption, type ResourceSection } from '../../lib/resourceCategories';
 import {
@@ -31,6 +31,11 @@ export function AdminResourceEditorPage() {
   const [subsections, setSubsections] = useState<ResourceCategoryOption[]>([]);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [replaceWarning, setReplaceWarning] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [removeCover, setRemoveCover] = useState(false);
+  const [existingCoverUrl, setExistingCoverUrl] = useState<string | null>(null);
+  const [coverPath, setCoverPath] = useState<string>('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const configured = isSupabaseConfigured();
@@ -45,7 +50,7 @@ export function AdminResourceEditorPage() {
       if (configured && supabase && resourceId) {
         const { data, error } = await supabase
           .from('resources')
-          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, archived_at, created_at, section, category_id')
+          .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, archived_at, created_at, section, category_id')
           .eq('id', resourceId)
           .maybeSingle();
 
@@ -61,6 +66,7 @@ export function AdminResourceEditorPage() {
             status: (r.status as ResourceStatus) || 'draft',
             publishedAt: (r.published_at as string) || null,
             filePath: (r.file_path as string) || '',
+            coverImagePath: (r.cover_image_path as string) || '',
             externalUrl: (r.external_url as string) || '',
             estimatedReadMinutes: null,
             coverStyle: 'corporativo' as ResourceCoverStyle,
@@ -88,6 +94,7 @@ export function AdminResourceEditorPage() {
           const rawFound = found as typeof found & { section?: ResourceSection; categoryId?: string | null };
           setSection(rawFound.section ?? 'corporate_material');
           setCategoryId(rawFound.categoryId ?? '');
+          setCoverPath((rawFound as Record<string, unknown>).coverImagePath as string || '');
         }
         setLoading(false);
       }
@@ -106,6 +113,20 @@ export function AdminResourceEditorPage() {
     fetchEditableResourceCategories(section, categoryId || null).then(setSubsections);
   }, [configured, section, categoryId]);
 
+  useEffect(() => {
+    if (!configured || !supabase || !coverPath || removeCover) {
+      setExistingCoverUrl(null);
+      return;
+    }
+    supabase.storage
+      .from('acaspex-resource-files')
+      .createSignedUrl(coverPath, 300)
+      .then(({ data }) => {
+        if (data?.signedUrl) setExistingCoverUrl(data.signedUrl);
+      })
+      .catch(() => {});
+  }, [configured, coverPath, removeCover]);
+
   async function handleSave() {
     if (!configured || !supabase || !resource) return;
     const isReal = resource.id.length === 36 && resource.id.includes('-');
@@ -119,7 +140,9 @@ export function AdminResourceEditorPage() {
     setReplaceWarning(null);
 
     let newFilePath: string | null = null;
+    let newCoverPath: string | null = null;
     const oldFilePath = resource.filePath;
+    const oldCoverPath = coverPath;
 
     try {
       if (replaceFile) {
@@ -138,6 +161,26 @@ export function AdminResourceEditorPage() {
         newFilePath = storagePath;
       }
 
+      if (coverFile && !removeCover) {
+        const coverSafeName = coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+        const sectionPath = section === 'corporate_material' ? 'corporativo' : section;
+        newCoverPath = `${sectionPath}/2026/${crypto.randomUUID()}-cover-${coverSafeName}`;
+
+        const { error: coverError } = await supabase.storage
+          .from('acaspex-resource-files')
+          .upload(newCoverPath, coverFile, {
+            contentType: coverFile.type,
+            upsert: false,
+          });
+
+        if (coverError) {
+          if (newFilePath) {
+            await supabase.storage.from('acaspex-resource-files').remove([newFilePath]);
+          }
+          throw new Error('Error al subir portada: ' + coverError.message);
+        }
+      }
+
       const update: Record<string, unknown> = {
         title: title.trim(),
         description: description.trim() || null,
@@ -149,6 +192,12 @@ export function AdminResourceEditorPage() {
 
       if (newFilePath) {
         update.file_path = newFilePath;
+      }
+
+      if (newCoverPath) {
+        update.cover_image_path = newCoverPath;
+      } else if (removeCover) {
+        update.cover_image_path = null;
       }
 
       if (status === 'published' && resource.status !== 'published') {
@@ -164,8 +213,11 @@ export function AdminResourceEditorPage() {
         .eq('id', resource.id);
 
       if (error) {
-        if (newFilePath) {
-          await supabase.storage.from('acaspex-resource-files').remove([newFilePath]);
+        const toRemove: string[] = [];
+        if (newFilePath) toRemove.push(newFilePath);
+        if (newCoverPath) toRemove.push(newCoverPath);
+        if (toRemove.length > 0) {
+          await supabase.storage.from('acaspex-resource-files').remove(toRemove);
         }
         throw new Error('Error al actualizar: ' + error.message);
       }
@@ -179,6 +231,15 @@ export function AdminResourceEditorPage() {
         }
       }
 
+      if ((newCoverPath || removeCover) && oldCoverPath) {
+        const { error: coverDelError } = await supabase.storage
+          .from('acaspex-resource-files')
+          .remove([oldCoverPath]);
+        if (coverDelError) {
+          setReplaceWarning((prev) => (prev ? prev + ' ' : '') + 'La portada anterior no se pudo eliminar: ' + coverDelError.message);
+        }
+      }
+
       setResource({
         ...resource,
         title: title.trim(),
@@ -188,8 +249,12 @@ export function AdminResourceEditorPage() {
         externalUrl: externalUrl.trim() || '',
         filePath: newFilePath || resource.filePath,
         category: (categoryId || resource.category) as ResourceCategory,
-      });
+      } as typeof resource);
       setReplaceFile(null);
+      setCoverFile(null);
+      setCoverPreview(null);
+      setRemoveCover(false);
+      setCoverPath(removeCover ? '' : (newCoverPath || oldCoverPath));
       setFeedback({ type: 'success', message: 'Recurso actualizado correctamente.' });
     } catch (err) {
       setFeedback({
@@ -208,8 +273,8 @@ export function AdminResourceEditorPage() {
           <div className="h-6 w-32 rounded bg-slate-200" />
           <div className="h-32 rounded-2xl bg-slate-100" />
           <div className="h-64 rounded-2xl bg-slate-100" />
+          </div>
         </div>
-      </div>
     );
   }
 
@@ -433,6 +498,102 @@ export function AdminResourceEditorPage() {
             ) : (
               <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
                 Sin archivo asociado
+              </div>
+            )}
+          </div>
+          <div className="sm:col-span-2 border-t border-slate-100 pt-4">
+            <label className="block text-xs font-medium text-slate-500">
+              Imagen de portada (opcional)
+            </label>
+            {!removeCover && existingCoverUrl ? (
+              <div className="mt-2 space-y-2">
+                <img src={existingCoverUrl} alt="Portada actual" className="max-h-40 rounded-lg border border-slate-200 object-contain" />
+                <div className="flex gap-2">
+                  <span className="text-xs text-slate-400">Selecciona un archivo nuevo para sustituirla.</span>
+                  <button
+                    type="button"
+                    onClick={() => { setCoverFile(null); setCoverPreview(null); setRemoveCover(true); }}
+                    className="text-xs text-red-500 hover:text-red-700"
+                  >
+                    Quitar portada
+                  </button>
+                </div>
+              </div>
+            ) : removeCover ? (
+              <div className="mt-2">
+                <span className="text-xs text-amber-600">Se eliminará la portada al guardar.</span>
+                {' '}
+                <button
+                  type="button"
+                  onClick={() => { setRemoveCover(false); setCoverFile(null); setCoverPreview(null); }}
+                  className="text-xs text-teal-600 hover:text-teal-800"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : null}
+            <div className="mt-2 flex flex-wrap items-start gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <input
+                  id="resource-cover-file"
+                  type="file"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setCoverFile(f);
+                    setRemoveCover(false);
+                    if (f) {
+                      const reader = new FileReader();
+                      reader.onload = () => setCoverPreview(reader.result as string);
+                      reader.readAsDataURL(f);
+                    } else {
+                      setCoverPreview(null);
+                    }
+                  }}
+                  accept=".png,.jpg,.jpeg,.webp"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded-md file:border-0 file:bg-teal-50 file:px-3 file:py-1 file:text-xs file:font-medium file:text-teal-700"
+                />
+              </div>
+              <div
+                className="flex-1 min-w-[200px] rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-2.5 text-center"
+                onPaste={(e) => {
+                  const items = e.clipboardData?.items;
+                  if (!items) return;
+                  for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.startsWith('image/')) {
+                      const blob = items[i].getAsFile();
+                      if (blob) {
+                        const reader = new FileReader();
+                        reader.onload = () => setCoverPreview(reader.result as string);
+                        reader.readAsDataURL(blob);
+                        setCoverFile(new File([blob], 'captura.png', { type: 'image/png' }));
+                        setRemoveCover(false);
+                      }
+                      break;
+                    }
+                  }
+                }}
+                tabIndex={0}
+              >
+                <p className="text-xs text-slate-500">
+                  <ImageIcon size={14} className="inline mr-1 text-slate-400" />
+                  Pega aquí una captura (Ctrl+V)
+                </p>
+              </div>
+            </div>
+            {coverPreview && (
+              <div className="mt-3 relative inline-block">
+                <img
+                  src={coverPreview}
+                  alt="Vista previa de portada"
+                  className="max-h-48 rounded-lg border border-slate-200 object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setCoverFile(null); setCoverPreview(null); }}
+                  className="absolute -top-2 -right-2 rounded-full bg-white border border-slate-200 p-0.5 text-slate-400 hover:text-slate-600 shadow-sm"
+                >
+                  <X size={14} />
+                </button>
               </div>
             )}
           </div>

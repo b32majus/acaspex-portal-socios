@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, ImageIcon, Upload, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchActiveResourceCategories, resourceSectionLabel, type ResourceCategoryOption } from '../../lib/resourceCategories';
 import { useAuth } from '../../lib/authContext';
@@ -23,6 +23,8 @@ export function AdminResourceNewPage() {
   const [description, setDescription] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -66,6 +68,22 @@ export function AdminResourceNewPage() {
 
       if (uploadError) throw new Error(uploadError.message);
 
+      let coverPath: string | null = null;
+      if (coverFile) {
+        const coverSafeName = coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+        coverPath = `${sectionPath}/2026/${crypto.randomUUID()}-cover-${coverSafeName}`;
+        const { error: coverError } = await supabase!.storage
+          .from('acaspex-resource-files')
+          .upload(coverPath, coverFile, {
+            contentType: coverFile.type,
+            upsert: false,
+          });
+        if (coverError) {
+          await supabase!.storage.from('acaspex-resource-files').remove([storagePath]);
+          throw new Error('Error al subir portada: ' + coverError.message);
+        }
+      }
+
       const { data: resource, error: resourceError } = await supabase!
         .from('resources')
         .insert({
@@ -74,6 +92,7 @@ export function AdminResourceNewPage() {
           resource_type: type as ResourceType,
           status,
           file_path: storagePath,
+          cover_image_path: coverPath,
           external_url: externalUrl.trim() || null,
           created_by: session?.user?.id ?? null,
           published_at: status === 'published' ? new Date().toISOString() : null,
@@ -84,7 +103,9 @@ export function AdminResourceNewPage() {
         .single();
 
       if (resourceError) {
-        await supabase!.storage.from('acaspex-resource-files').remove([storagePath]);
+        const toRemove = [storagePath];
+        if (coverPath) toRemove.push(coverPath);
+        await supabase!.storage.from('acaspex-resource-files').remove(toRemove);
         throw new Error(resourceError.message);
       }
 
@@ -103,6 +124,8 @@ export function AdminResourceNewPage() {
 
       setFeedback({ type: 'success', message: 'Recurso creado correctamente.' });
       setFile(null);
+      setCoverFile(null);
+      setCoverPreview(null);
       setTitle('');
       setDescription('');
       setExternalUrl('');
@@ -277,6 +300,74 @@ export function AdminResourceNewPage() {
               </p>
             )}
             <p className="mt-1 text-xs text-slate-400">PNG, JPG, PDF, DOCX, PPTX. Máx. 50 MB.</p>
+          </div>
+          <div className="sm:col-span-2 border-t border-slate-100 pt-4">
+            <label className="block text-xs font-medium text-slate-500">
+              Imagen de portada (opcional)
+            </label>
+            <p className="mt-0.5 text-xs text-slate-400">Para Word, PowerPoint o cualquier recurso. Selecciona un archivo o pega una captura.</p>
+            <div className="mt-2 flex flex-wrap items-start gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <input
+                  id="new-cover-file"
+                  type="file"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setCoverFile(f);
+                    if (f) {
+                      const reader = new FileReader();
+                      reader.onload = () => setCoverPreview(reader.result as string);
+                      reader.readAsDataURL(f);
+                    } else {
+                      setCoverPreview(null);
+                    }
+                  }}
+                  accept=".png,.jpg,.jpeg,.webp"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded-md file:border-0 file:bg-teal-50 file:px-3 file:py-1 file:text-xs file:font-medium file:text-teal-700"
+                />
+              </div>
+              <div
+                className="flex-1 min-w-[200px] rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-2.5 text-center"
+                onPaste={(e) => {
+                  const items = e.clipboardData?.items;
+                  if (!items) return;
+                  for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.startsWith('image/')) {
+                      const blob = items[i].getAsFile();
+                      if (blob) {
+                        const reader = new FileReader();
+                        reader.onload = () => setCoverPreview(reader.result as string);
+                        reader.readAsDataURL(blob);
+                        setCoverFile(new File([blob], 'captura.png', { type: 'image/png' }));
+                      }
+                      break;
+                    }
+                  }
+                }}
+                tabIndex={0}
+              >
+                <p className="text-xs text-slate-500">
+                  <ImageIcon size={14} className="inline mr-1 text-slate-400" />
+                  Pega aquí una captura (Ctrl+V)
+                </p>
+              </div>
+            </div>
+            {coverPreview && (
+              <div className="mt-3 relative inline-block">
+                <img
+                  src={coverPreview}
+                  alt="Vista previa de portada"
+                  className="max-h-48 rounded-lg border border-slate-200 object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setCoverFile(null); setCoverPreview(null); }}
+                  className="absolute -top-2 -right-2 rounded-full bg-white border border-slate-200 p-0.5 text-slate-400 hover:text-slate-600 shadow-sm"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
