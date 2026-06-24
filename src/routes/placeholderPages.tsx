@@ -53,7 +53,7 @@ import {
 } from '../data/mockSignup';
 import { cn } from '../lib/utils';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
-import { fetchActiveResourceCategories, type ResourceCategoryOption } from '../lib/resourceCategories';
+import { fetchActiveResourceCategories, getResourceCategoryIcon, type ResourceCategoryOption } from '../lib/resourceCategories';
 import { useAuth } from '../lib/authContext';
 import { useIdentity } from '../lib/identityContext';
 import { categoryLabel, typeLabel, resourceStatusLabel, resourceStatusBadgeClass, typeIconMap, formatResourceDate, isImageResource, isPdfResource, isOfficeResource, isExternalLinkResource, isPreviewableResource, isDownloadOnlyResource } from '../lib/resourceHelpers';
@@ -940,15 +940,6 @@ export function MemberLibraryPage() {
   const activeCategoryOption = activeCategory ? realCategories.find((category) => category.slug === activeCategory) : null;
   const activeLabel = activeCategory ? (activeCategoryOption?.name ?? categoryLabel[activeCategory] ?? activeCategory) : null;
 
-  const officialCategoryIcons: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
-    calidad: TrendingUp,
-    seguridad: ShieldCheck,
-    investigacion: Lightbulb,
-    formacion: GraduationCap,
-    herramientas: Wrench,
-    corporativo: Building2,
-  };
-
   const sidebarButtonClass = (isActive: boolean) =>
     cn(
       'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors',
@@ -983,7 +974,8 @@ export function MemberLibraryPage() {
           </button>
 
           {officialCategoryOrder.map((cat) => {
-            const Icon = officialCategoryIcons[cat] ?? BookOpen;
+            const categoryRecord = realCategories.find((category) => category.slug === cat);
+            const Icon = getResourceCategoryIcon(categoryRecord?.icon_key);
             const count = categoryCounts[cat] ?? 0;
             const isActive = activeCategory === cat;
             return (
@@ -994,7 +986,7 @@ export function MemberLibraryPage() {
                 className={sidebarButtonClass(isActive)}
               >
                 <Icon size={16} className={isActive ? 'text-teal-200/70' : 'text-slate-400'} />
-                <span className="flex-1">{realCategories.find((category) => category.slug === cat)?.name ?? categoryLabel[cat] ?? cat}</span>
+                <span className="flex-1">{categoryRecord?.name ?? categoryLabel[cat] ?? cat}</span>
                 {count > 0 && (
                   <span className={cn('text-xs tabular-nums', isActive ? 'text-teal-200/70' : 'text-slate-400')}>{count}</span>
                 )}
@@ -1301,20 +1293,6 @@ export function MemberProjectBankPage() {
 
   const officialCategoryOrder = realCategories.map((category) => category.slug);
 
-  const categoryIcon: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
-    seguridad_paciente: ShieldCheck,
-    mejora_procesos: TrendingUp,
-    experiencia_paciente: Users,
-    continuidad_asistencial: Stethoscope,
-    humanizacion: Heart,
-    gestion_clinica: Building2,
-    'seguridad-del-paciente-proyectos': ShieldCheck,
-    'mejora-de-procesos': TrendingUp,
-    'experiencia-del-paciente': Users,
-    'continuidad-asistencial': Stethoscope,
-    'gestion-clinica': Building2,
-  };
-
   const categoryCounts: Record<string, number> = {};
   for (const p of projects) {
     categoryCounts[p.category] = (categoryCounts[p.category] ?? 0) + 1;
@@ -1361,7 +1339,8 @@ export function MemberProjectBankPage() {
           </button>
 
           {officialCategoryOrder.map((cat) => {
-            const Icon = categoryIcon[cat] ?? FolderKanban;
+            const categoryRecord = realCategories.find((category) => category.slug === cat);
+            const Icon = getResourceCategoryIcon(categoryRecord?.icon_key);
             const count = categoryCounts[cat] ?? 0;
             const isActive = activeCategory === cat;
             return (
@@ -1372,7 +1351,7 @@ export function MemberProjectBankPage() {
                 className={sidebarButtonClass(isActive)}
               >
                 <Icon size={16} className={isActive ? 'text-teal-200/70' : 'text-slate-400'} />
-                <span className="flex-1">{realCategories.find((category) => category.slug === cat)?.name ?? projectCategoryLabel[cat as ProjectCategory] ?? cat}</span>
+                <span className="flex-1">{categoryRecord?.name ?? projectCategoryLabel[cat as ProjectCategory] ?? cat}</span>
                 {count > 0 && (
                   <span className={cn('text-xs tabular-nums', isActive ? 'text-teal-200/70' : 'text-slate-400')}>{count}</span>
                 )}

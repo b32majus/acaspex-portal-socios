@@ -574,3 +574,13 @@ Estado: h08t_resource_categories_unique_by_section_ready_for_validation — 2026
 - Error 23505 se traduce a mensaje amigable: Ya existe una subsección con ese nombre en esta sección. Elige otro nombre o edita la existente.
 - Validación pública pendiente con U1/U2/U3.
 
+
+### H0.8T-FIX4 — Iconos configurables para subsecciones
+
+Estado: h08t_resource_category_icons_ready_for_validation — 2026-06-24.
+
+- Migración 027 añade `icon_key` a `resource_categories` y asigna iconos iniciales a las subsecciones existentes.
+- Admin subsecciones permite elegir icono en alta y edición; si no se elige, persiste `folder`.
+- La tabla admin muestra icono actual junto al nombre.
+- Portal socios usa `resource_categories.icon_key` para Centro de Conocimiento y Banco de Proyectos, sin iconos aleatorios ni hardcodeados por subsección.
+- Fallback estable: `folder` cuando `icon_key` sea nulo o desconocido.

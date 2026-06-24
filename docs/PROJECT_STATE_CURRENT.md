@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-24  
-Estado de referencia: tras implementación H0.8T-FIX3 (unicidad de subsecciones por sección)  
+Estado de referencia: tras implementación H0.8T-FIX4 (iconos configurables para subsecciones)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: pendiente de commit H0.8T-FIX3
+Último commit: pendiente de commit H0.8T-FIX4
 
 ---
 
@@ -180,6 +180,19 @@ Estado esperado: h08t_resource_categories_unique_by_section_ready_for_validation
 - El error 23505 se traduce a mensaje amigable para duplicados.
 - No se permite duplicar slug dentro de la misma sección.
 - Sí se permite repetir nombre/slug en secciones distintas.
+
+### H0.8T-FIX4 — Iconos configurables para subsecciones
+
+Estado esperado: h08t_resource_category_icons_ready_for_validation.
+
+- Migración 027 añade `resource_categories.icon_key` en staging.
+- `resource_categories` pasa a guardar el icono visual de cada subsección.
+- El catálogo frontend queda cerrado y compartido, basado en Lucide.
+- Alta y edición de subsecciones permiten elegir icono; si queda vacío, frontend persiste `folder`.
+- La tabla admin muestra el icono actual de cada subsección.
+- Centro de Conocimiento y Banco de Proyectos usan `resource_categories.icon_key` para pintar el sidebar.
+- Si `icon_key` es nulo o desconocido, el portal usa `folder` como fallback estable.
+- Material Corporativo sigue fuera de la lógica de subsecciones e iconos.
 
 
 ## 9. Estado de staging (post H0.7q)

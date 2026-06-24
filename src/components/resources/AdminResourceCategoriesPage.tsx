@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowUp, CheckCircle, ChevronLeft, Edit, Plus, XCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
+import {
+  getResourceCategoryIconOption,
+  resourceCategoryIconOptions,
+} from '../../lib/resourceCategories';
 
 type Category = {
   id: string;
@@ -9,6 +13,7 @@ type Category = {
   slug: string;
   name: string;
   description: string | null;
+  icon_key: string | null;
   sort_order: number;
   is_active: boolean;
 };
@@ -37,33 +42,32 @@ export function AdminResourceCategoriesPage() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const configured = isSupabaseConfigured();
 
-  // Create state
   const [showCreate, setShowCreate] = useState(false);
   const [newSection, setNewSection] = useState('knowledge_center');
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newIconKey, setNewIconKey] = useState('');
   const [creating, setCreating] = useState(false);
 
-  // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editIconKey, setEditIconKey] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Reorder state
   const [reordering, setReordering] = useState(false);
 
   async function loadCategories() {
     if (!configured || !supabase) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('resource_categories')
-      .select('id, section, slug, name, description, sort_order, is_active')
+      .select('id, section, slug, name, description, icon_key, sort_order, is_active')
       .in('section', ['knowledge_center', 'project_bank'])
       .order('section', { ascending: true })
       .order('sort_order', { ascending: true });
 
-    if (!error && data) setCategories(data as Category[]);
+    if (data) setCategories(data as Category[]);
     setLoading(false);
   }
 
@@ -119,6 +123,7 @@ export function AdminResourceCategoriesPage() {
         name: newName.trim(),
         slug,
         description: newDesc.trim() || null,
+        icon_key: newIconKey || 'folder',
         sort_order: nextOrder,
         is_active: true,
       });
@@ -134,6 +139,7 @@ export function AdminResourceCategoriesPage() {
       setShowCreate(false);
       setNewName('');
       setNewDesc('');
+      setNewIconKey('');
       loadCategories();
     }
     setCreating(false);
@@ -159,10 +165,12 @@ export function AdminResourceCategoriesPage() {
     setEditingId(cat.id);
     setEditName(cat.name);
     setEditDesc(cat.description || '');
+    setEditIconKey(cat.icon_key || '');
   }
 
   function cancelEdit() {
     setEditingId(null);
+    setEditIconKey('');
   }
 
   async function handleSaveEdit(catId: string) {
@@ -179,11 +187,12 @@ export function AdminResourceCategoriesPage() {
         name: editName.trim(),
         slug,
         description: editDesc.trim() || null,
+        icon_key: editIconKey || 'folder',
       })
       .eq('id', catId);
 
     if (error) {
-      setFeedback({ type: 'error', message: 'Error al guardar: ' + error.message });
+      setFeedback({ type: 'error', message: error.code === '23505' ? duplicateCategoryMessage : 'Error al guardar: ' + error.message });
     } else {
       setFeedback({ type: 'success', message: 'Subsección actualizada.' });
       setEditingId(null);
@@ -313,6 +322,15 @@ export function AdminResourceCategoriesPage() {
               <label className="block text-xs font-medium text-slate-500">Descripción</label>
               <input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600" />
             </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500">Icono</label>
+              <select value={newIconKey} onChange={(e) => setNewIconKey(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
+                <option value="">Carpeta (por defecto)</option>
+                {resourceCategoryIconOptions.map((option) => (
+                  <option key={option.key} value={option.key}>{option.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="mt-4 flex gap-3">
             <button onClick={handleCreate} disabled={creating || !newName.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60">
@@ -332,12 +350,13 @@ export function AdminResourceCategoriesPage() {
           if (secCats.length === 0) return null;
           return (
             <section key={sec} className="rounded-2xl border border-slate-200 bg-white p-5">
-              <h2 className="font-serif text-lg text-slate-900 mb-3">{sectionLabel[sec]}</h2>
+              <h2 className="mb-3 font-serif text-lg text-slate-900">{sectionLabel[sec]}</h2>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[40rem] text-left text-sm">
+                <table className="w-full min-w-[52rem] text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
                       <th className="pb-3 font-medium">Nombre</th>
+                      <th className="pb-3 font-medium">Icono</th>
                       <th className="pb-3 font-medium">Slug</th>
                       <th className="pb-3 font-medium">Orden</th>
                       <th className="pb-3 font-medium">Estado</th>
@@ -351,17 +370,40 @@ export function AdminResourceCategoriesPage() {
                       const idx = sameSection.findIndex((c) => c.id === cat.id);
                       const isFirst = idx === 0;
                       const isLast = idx === sameSection.length - 1;
+                      const iconOption = getResourceCategoryIconOption(cat.icon_key);
+                      const Icon = iconOption.icon;
 
                       return (
                         <tr key={cat.id} className="hover:bg-slate-50/60">
-                          <td className="py-2.5">
+                          <td className="py-2.5 align-top">
                             {isEditing ? (
-                              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded border border-slate-200 px-2 py-1 text-sm" />
+                              <div className="space-y-2">
+                                <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded border border-slate-200 px-2 py-1 text-sm" />
+                                <input type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Descripción" className="w-full rounded border border-slate-200 px-2 py-1 text-sm text-slate-600" />
+                              </div>
                             ) : (
-                              <span className="font-medium text-slate-900">{cat.name}</span>
+                              <div>
+                                <span className="font-medium text-slate-900">{cat.name}</span>
+                                {cat.description && <p className="mt-0.5 text-xs text-slate-500">{cat.description}</p>}
+                              </div>
                             )}
                           </td>
-                          <td className="py-2.5 text-xs text-slate-500 font-mono">{cat.slug}</td>
+                          <td className="py-2.5 align-top">
+                            {isEditing ? (
+                              <select value={editIconKey} onChange={(e) => setEditIconKey(e.target.value)} className="w-full rounded border border-slate-200 px-2 py-1 text-sm">
+                                <option value="">Carpeta (por defecto)</option>
+                                {resourceCategoryIconOptions.map((option) => (
+                                  <option key={option.key} value={option.key}>{option.label}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+                                <Icon size={14} className="text-slate-500" />
+                                <span>{iconOption.label}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-2.5 text-xs font-mono text-slate-500">{cat.slug}</td>
                           <td className="py-2.5">
                             <span className="text-slate-600">{cat.sort_order}</span>
                           </td>

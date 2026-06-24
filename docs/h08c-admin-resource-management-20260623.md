@@ -370,3 +370,16 @@ Validación funcional esperada:
 ## 7. Estado
 
 Status: validated
+
+### 5.15 H0.8T-FIX4 — Iconos configurables para subsecciones
+
+Estado: h08t_resource_category_icons_ready_for_validation — 2026-06-24.
+
+- `resource_categories` añade `icon_key` como clave visual de subsección.
+- Se define un catálogo cerrado de iconos Lucide compartido entre admin y portal.
+- `AdminResourceCategoriesPage` permite elegir icono al crear o editar subsecciones.
+- Si no se elige icono, frontend persiste `folder`.
+- La tabla de subsecciones muestra el icono actual.
+- `MemberLibraryPage` y `MemberProjectBankPage` resuelven el icono desde `resource_categories.icon_key`.
+- Fallback estable en portal: `folder` si el valor es nulo o desconocido.
+- Material Corporativo sigue sin subsecciones ni iconos configurables en esta tanda.
