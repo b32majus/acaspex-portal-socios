@@ -82,6 +82,20 @@ export function calculatePaidUntilFromStartDate(startDate: string): string {
   return date.toISOString().split('T')[0];
 }
 
+export function mapDocumentTypeToDb(value: DocumentType | ''): 'DNI' | 'NIE' | 'Pasaporte' | null {
+  if (value === 'dni') return 'DNI';
+  if (value === 'nie') return 'NIE';
+  if (value === 'passport') return 'Pasaporte';
+  return null;
+}
+
+export function mapDocumentTypeFromDb(value: string | null): DocumentType | '' {
+  if (value === 'DNI') return 'dni';
+  if (value === 'NIE') return 'nie';
+  if (value === 'Pasaporte') return 'passport';
+  return '';
+}
+
 export type MemberRow = Record<string, unknown> & {
   id: string;
   member_number: string | null;
@@ -119,7 +133,7 @@ export function mapMemberRowToForm(row: MemberRow): MemberFormState {
     firstName: row.first_name || '',
     lastName1: row.last_name_1 || '',
     lastName2: row.last_name_2 || '',
-    documentType: (row.document_type as DocumentType) || '',
+    documentType: mapDocumentTypeFromDb(row.document_type),
     documentNumber: row.document_number || '',
     addressLine: row.address_line || '',
     postalCode: row.postal_code || '',
@@ -144,16 +158,26 @@ export function mapMemberRowToForm(row: MemberRow): MemberFormState {
 }
 
 export function mapFormToMemberInsertPayload(form: MemberFormState): Record<string, unknown> {
+  const email = form.email.trim();
+  const documentNumber = form.documentNumber.trim();
+
   return {
-    member_number: form.memberNumber || null,
-    first_name: form.firstName.trim() || null,
-    last_name_1: form.lastName1.trim() || null,
+    member_number: form.memberNumber.trim() || null,
+
+    first_name: form.firstName.trim(),
+    last_name_1: form.lastName1.trim(),
     last_name_2: form.lastName2.trim() || null,
-    document_type: form.documentType || null,
-    document_number: form.documentNumber ? normalizeDocumentNumber(form.documentNumber) : null,
+
+    document_type: mapDocumentTypeToDb(form.documentType),
+    document_number: documentNumber || null,
+    document_number_normalized: documentNumber ? normalizeDocumentNumber(documentNumber) : null,
+
     address_line: form.addressLine.trim() || null,
     postal_code: form.postalCode.trim() || null,
-    email: form.email ? normalizeEmail(form.email) : null,
+
+    email: email || null,
+    email_normalized: normalizeEmail(email),
+
     phone: form.phone.trim() || null,
     professional_category: form.professionalCategory || null,
     job_title: form.jobTitle.trim() || null,
@@ -174,16 +198,26 @@ export function mapFormToMemberInsertPayload(form: MemberFormState): Record<stri
 }
 
 export function mapFormToMemberUpdatePayload(form: MemberFormState): Record<string, unknown> {
+  const email = form.email.trim();
+  const documentNumber = form.documentNumber.trim();
+
   return {
-    member_number: form.memberNumber || null,
-    first_name: form.firstName.trim() || null,
-    last_name_1: form.lastName1.trim() || null,
+    member_number: form.memberNumber.trim() || null,
+
+    first_name: form.firstName.trim(),
+    last_name_1: form.lastName1.trim(),
     last_name_2: form.lastName2.trim() || null,
-    document_type: form.documentType || null,
-    document_number: form.documentNumber ? normalizeDocumentNumber(form.documentNumber) : null,
+
+    document_type: mapDocumentTypeToDb(form.documentType),
+    document_number: documentNumber || null,
+    document_number_normalized: documentNumber ? normalizeDocumentNumber(documentNumber) : null,
+
     address_line: form.addressLine.trim() || null,
     postal_code: form.postalCode.trim() || null,
-    email: form.email ? normalizeEmail(form.email) : null,
+
+    email: email || null,
+    email_normalized: normalizeEmail(email),
+
     phone: form.phone.trim() || null,
     professional_category: form.professionalCategory || null,
     job_title: form.jobTitle.trim() || null,
