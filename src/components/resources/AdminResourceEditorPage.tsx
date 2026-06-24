@@ -279,13 +279,6 @@ export function AdminResourceEditorPage() {
     const oldCoverPath = coverPath;
 
     try {
-      const { error: visibilityError } = await supabase
-        .from('resource_visibility')
-        .delete()
-        .eq('resource_id', resource.id);
-
-      if (visibilityError) throw new Error('Error al eliminar visibilidad: ' + visibilityError.message);
-
       const { error: resourceError } = await supabase
         .from('resources')
         .delete()
