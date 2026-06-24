@@ -14,3 +14,15 @@ dist/
 docs/.herenow/
 outbox/
 supabase/.temp/
+
+# Local operator config
+opencode.json
+
+# Local/sensitive operational docs
+docs/CLI_SECRETS_MAP.md
+
+# Local scripts not yet curated
+scripts/local/
+
+# Optional local archive/scratch
+.local/
