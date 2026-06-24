@@ -7,7 +7,6 @@ import { RequireBoardOrAdmin } from '../components/RequireBoardOrAdmin';
 import {
   AdminDashboardPage,
   AdminMemberDetailPage,
-  AdminMembersPage,
   AdminRenewalsPage,
   AdminSignupDetailPage,
   AdminSignupRequestsPage,
@@ -25,6 +24,7 @@ import { AdminResourceEditorPage } from '../components/resources/AdminResourceEd
 import { AdminResourceNewPage } from '../components/resources/AdminResourceNewPage';
 import { AdminResourceCategoriesPage } from '../components/resources/AdminResourceCategoriesPage';
 import { MemberResourceDetailPage } from '../components/resources/MemberResourceDetailPage';
+import { AdminMembersPage } from '../components/members/AdminMembersPage';
 
 export function AppRouter() {
   return (
