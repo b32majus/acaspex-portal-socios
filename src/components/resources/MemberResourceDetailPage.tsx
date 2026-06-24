@@ -45,19 +45,21 @@ export function MemberResourceDetailPage() {
       if (configured && supabase && resourceId) {
         const { data, error } = await supabase
           .from('resources')
-          .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, section, category_id')
+          .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, section, category_id, resource_categories(id, slug, name)')
           .eq('id', resourceId)
           .eq('status', 'published')
           .maybeSingle();
 
         if (!error && data && !cancelled) {
           const r = data as Record<string, unknown>;
+          const rc = r.resource_categories as { slug?: string; name?: string } | null;
           const mapped = {
             id: r.id as string,
             title: r.title as string,
             subtitle: (r.subtitle as string) || (r.description as string) || '',
             description: (r.description as string) || '',
-            category: (r.section === 'corporate_material' ? 'corporativo' : r.section === 'knowledge_center' ? 'calidad' : r.section === 'project_bank' ? 'proyectos' : 'calidad') as ResourceCategory,
+            category: (rc?.slug || (r.section === 'corporate_material' ? 'corporativo' : r.section === 'knowledge_center' ? 'calidad' : r.section === 'project_bank' ? 'proyectos' : 'calidad')) as ResourceCategory,
+            categoryName: rc?.name || null,
             type: (r.resource_type as ResourceType) || 'document',
             status: (r.status as ResourceStatus) || 'published',
             publishedAt: (r.published_at as string) || null,

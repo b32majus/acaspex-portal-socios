@@ -294,18 +294,21 @@ export function MaterialCorporativoPage() {
     if (!configured || !supabase) return;
     supabase
       .from('resources')
-      .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, section')
+      .select('id, title, subtitle, description, resource_type, status, file_path, cover_image_path, external_url, published_at, section, category_id, resource_categories(id, slug, name)')
       .eq('status', 'published')
       .eq('section', 'corporate_material')
       .order('published_at', { ascending: false })
       .then(({ data, error }) => {
         if (!error && data) {
-          const mapped = (data as Array<Record<string, unknown>>).map((r) => ({
+          const mapped = (data as Array<Record<string, unknown>>).map((r) => {
+            const rc = r.resource_categories as { slug?: string; name?: string } | null;
+            return {
             id: r.id as string,
             title: r.title as string,
             subtitle: (r.subtitle as string) || (r.description as string) || '',
             description: (r.description as string) || '',
-            category: 'corporativo' as ResourceCategory,
+            category: (rc?.slug || 'corporativo') as ResourceCategory,
+            categoryName: rc?.name || 'Material Corporativo',
             type: (r.resource_type as ResourceType) || 'other',
             status: (r.status as ResourceStatus) || 'published',
             publishedAt: (r.published_at as string) || new Date().toISOString().split('T')[0],
@@ -316,7 +319,8 @@ export function MaterialCorporativoPage() {
             coverStyle: 'corporativo' as 'corporativo',
             visualTone: 'corporativo' as 'corporativo',
             estimatedReadMinutes: null,
-          }));
+          };
+          });
           setSupabaseResources(mapped as unknown as typeof mockResources);
         }
       });
