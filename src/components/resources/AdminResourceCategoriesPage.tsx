@@ -2,10 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowUp, CheckCircle, ChevronLeft, Edit, Plus, XCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
-import {
-  getResourceCategoryIconOption,
-  resourceCategoryIconOptions,
-} from '../../lib/resourceCategories';
+import { getResourceCategoryIconOption } from '../../lib/resourceCategories';
+import { IconPicker } from './IconPicker';
 
 type Category = {
   id: string;
@@ -324,12 +322,7 @@ export function AdminResourceCategoriesPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500">Icono</label>
-              <select value={newIconKey} onChange={(e) => setNewIconKey(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
-                <option value="">Carpeta (por defecto)</option>
-                {resourceCategoryIconOptions.map((option) => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
-                ))}
-              </select>
+              <IconPicker value={newIconKey} onChange={setNewIconKey} disabled={creating} />
             </div>
           </div>
           <div className="mt-4 flex gap-3">
@@ -390,12 +383,7 @@ export function AdminResourceCategoriesPage() {
                           </td>
                           <td className="py-2.5 align-top">
                             {isEditing ? (
-                              <select value={editIconKey} onChange={(e) => setEditIconKey(e.target.value)} className="w-full rounded border border-slate-200 px-2 py-1 text-sm">
-                                <option value="">Carpeta (por defecto)</option>
-                                {resourceCategoryIconOptions.map((option) => (
-                                  <option key={option.key} value={option.key}>{option.label}</option>
-                                ))}
-                              </select>
+                              <IconPicker value={editIconKey} onChange={setEditIconKey} disabled={saving} />
                             ) : (
                               <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
                                 <Icon size={14} className="text-slate-500" />

@@ -383,3 +383,14 @@ Estado: h08t_resource_category_icons_ready_for_validation — 2026-06-24.
 - `MemberLibraryPage` y `MemberProjectBankPage` resuelven el icono desde `resource_categories.icon_key`.
 - Fallback estable en portal: `folder` si el valor es nulo o desconocido.
 - Material Corporativo sigue sin subsecciones ni iconos configurables en esta tanda.
+
+### 5.16 H0.8T-FIX5 — Selector visual de iconos para subsecciones
+
+Estado: h08t_resource_category_icon_picker_ready_for_validation — 2026-06-24.
+
+- Nuevo componente `src/components/resources/IconPicker.tsx`.
+- Sustituye el `<select>` textual por un selector visual con icono, label y estado seleccionado.
+- Se usa en crear y editar subsección dentro de `AdminResourceCategoriesPage`.
+- No hay cambios de DB ni de catálogo funcional; solo mejora UX.
+- Fallback estable: `folder` si no se elige icono.
+- El portal sigue consumiendo el mismo `icon_key`, por lo que refleja el cambio sin lógica adicional.

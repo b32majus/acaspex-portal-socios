@@ -584,3 +584,12 @@ Estado: h08t_resource_category_icons_ready_for_validation — 2026-06-24.
 - La tabla admin muestra icono actual junto al nombre.
 - Portal socios usa `resource_categories.icon_key` para Centro de Conocimiento y Banco de Proyectos, sin iconos aleatorios ni hardcodeados por subsección.
 - Fallback estable: `folder` cuando `icon_key` sea nulo o desconocido.
+
+### H0.8T-FIX5 — Selector visual de iconos para subsecciones
+
+Estado: h08t_resource_category_icon_picker_ready_for_validation — 2026-06-24.
+
+- Nuevo `IconPicker` visual para alta y edición de subsecciones.
+- Sin cambios de DB; se mantiene `resource_categories.icon_key`.
+- Fallback estable `folder` cuando no se elige icono.
+- Portal sigue reflejando el mismo icono configurado al consumir `icon_key`.

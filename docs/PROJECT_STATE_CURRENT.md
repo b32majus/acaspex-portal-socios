@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-24  
-Estado de referencia: tras implementación H0.8T-FIX4 (iconos configurables para subsecciones)  
+Estado de referencia: tras implementación H0.8T-FIX5 (selector visual de iconos para subsecciones)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: pendiente de commit H0.8T-FIX4
+Último commit: pendiente de commit H0.8T-FIX5
 
 ---
 
@@ -193,6 +193,16 @@ Estado esperado: h08t_resource_category_icons_ready_for_validation.
 - Centro de Conocimiento y Banco de Proyectos usan `resource_categories.icon_key` para pintar el sidebar.
 - Si `icon_key` es nulo o desconocido, el portal usa `folder` como fallback estable.
 - Material Corporativo sigue fuera de la lógica de subsecciones e iconos.
+
+### H0.8T-FIX5 — Selector visual de iconos para subsecciones
+
+Estado esperado: h08t_resource_category_icon_picker_ready_for_validation.
+
+- Sin cambios de DB ni de `icon_key`; se reutiliza el modelo cerrado en FIX4.
+- Nuevo componente `IconPicker` para elegir iconos viendo icono + label + estado seleccionado.
+- `AdminResourceCategoriesPage` usa `IconPicker` en alta y edición de subsecciones.
+- Si no se elige icono, se mantiene el fallback `folder`.
+- La tabla admin y el portal siguen reflejando el mismo `icon_key` configurado.
 
 
 ## 9. Estado de staging (post H0.7q)
