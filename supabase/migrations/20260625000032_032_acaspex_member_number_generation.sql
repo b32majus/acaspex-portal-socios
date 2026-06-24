@@ -15,6 +15,8 @@ begin
     return new;
   end if;
 
+  perform pg_advisory_xact_lock(hashtext('acaspex_members_member_number'));
+
   select coalesce(
     max(nullif(regexp_replace(member_number, '^ACX-0*', ''), '')::integer),
     0

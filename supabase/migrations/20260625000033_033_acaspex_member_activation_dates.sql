@@ -10,7 +10,7 @@ set search_path = public
 as $$
 begin
   if new.status = 'active' then
-    if old is null or old.status != 'active' then
+    if tg_op = 'INSERT' or old.status != 'active' then
       if new.membership_start is null then
         new.membership_start := current_date;
       end if;
