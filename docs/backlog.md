@@ -552,44 +552,40 @@ El estado `authenticated_no_member` en el identity read model captura este caso 
 
 - H0.8T-FIX2: Cierre del flujo real de subsecciones. Migración 025 aplicada: GRANT SELECT/INSERT/UPDATE y policies `resource_categories_*` con `TO authenticated`; admin activo puede crear/actualizar, socio/junta solo leen activas, sin DELETE. Admin nuevo/editor usan `category_id` real. Portal socio lee subsecciones activas reales y ordenadas para Centro de Conocimiento y Banco de Proyectos. Estado: `h08t_resource_subsections_admin_fix_ready_for_validation`.
 
-### H0.8T-FIX2 — Subsecciones reales admin + portal
+### H0.8T — Administración de subsecciones e iconos
 
-Estado: h08t_resource_subsections_admin_fix_ready_for_validation — 2026-06-24.
+Estado: validated — 2026-06-24.
 
-- Permisos resource_categories cerrados en staging con migración 025: authenticated tiene SELECT/INSERT/UPDATE y policies to authenticated; sin DELETE.
-- Admin subsecciones mantiene entrada propia en sidebar, alta sin orden manual y reordenación Subir/Bajar con updates secuenciales y reversión básica si falla el segundo update.
-- Formulario nuevo y editor de recursos usan categorías reales por category_id.
-- Editor conserva la categoría actual aunque esté inactiva y solo ofrece categorías activas de la misma sección para cambio.
-- Portal socios lee subsecciones activas reales y ordenadas desde resource_categories para Centro de Conocimiento y Banco de Proyectos.
-- No se crean nuevas secciones principales; Material Corporativo sigue sin subsecciones.
+Veredictos validados:
 
+- `h08t_resource_subsections_admin_validated`
+- `h08t_resource_categories_unique_by_section_validated`
+- `h08t_resource_category_icons_validated`
 
-### H0.8T-FIX3 — Unicidad de subsecciones por sección
+Cierre funcional:
 
-Estado: h08t_resource_categories_unique_by_section_ready_for_validation — 2026-06-24.
+- Admin crea, activa/desactiva y reordena subsecciones reales para Centro de Conocimiento y Banco de Proyectos.
+- Duplicados controlados por `section + slug` con mensaje amigable.
+- Portal socios lee `resource_categories` reales, activas y ordenadas.
+- `icon_key` configurable y reflejado en el sidebar del portal.
+- `IconPicker` visual operativo en alta y edición.
+- `U2` junta y `U3` socio mantienen el comportamiento correcto.
 
-- Error detectado: resource_categories_name_key bloqueaba nombres repetidos entre secciones.
-- Migración 026 elimina unicidad global por name/slug y crea unique index (section, slug).
-- Frontend valida duplicado por section+slug antes de insertar.
-- Error 23505 se traduce a mensaje amigable: Ya existe una subsección con ese nombre en esta sección. Elige otro nombre o edita la existente.
-- Validación pública pendiente con U1/U2/U3.
+Decisiones cerradas:
 
+- Material Corporativo sigue sin subsecciones.
+- No se crean secciones principales nuevas en esta fase.
+- No se permite DELETE de subsecciones; solo activar/desactivar.
+- Catálogo de iconos cerrado; sin iconos personalizados.
+- Fallback estable: `folder`.
 
-### H0.8T-FIX4 — Iconos configurables para subsecciones
+Deuda aceptada:
 
-Estado: h08t_resource_category_icons_ready_for_validation — 2026-06-24.
+- Reordenación resuelta en frontend con updates secuenciales y reversión básica.
+- Sin RPC/transacción específica para reordenación.
+- Sin eliminación definitiva de subsecciones.
+- Sin creación dinámica de secciones principales.
 
-- Migración 027 añade `icon_key` a `resource_categories` y asigna iconos iniciales a las subsecciones existentes.
-- Admin subsecciones permite elegir icono en alta y edición; si no se elige, persiste `folder`.
-- La tabla admin muestra icono actual junto al nombre.
-- Portal socios usa `resource_categories.icon_key` para Centro de Conocimiento y Banco de Proyectos, sin iconos aleatorios ni hardcodeados por subsección.
-- Fallback estable: `folder` cuando `icon_key` sea nulo o desconocido.
+Siguiente bloque recomendado:
 
-### H0.8T-FIX5 — Selector visual de iconos para subsecciones
-
-Estado: h08t_resource_category_icon_picker_ready_for_validation — 2026-06-24.
-
-- Nuevo `IconPicker` visual para alta y edición de subsecciones.
-- Sin cambios de DB; se mantiene `resource_categories.icon_key`.
-- Fallback estable `folder` cuando no se elige icono.
-- Portal sigue reflejando el mismo icono configurado al consumir `icon_key`.
+- `H0.9 — Alta y gestión de socios por parte del administrador.`

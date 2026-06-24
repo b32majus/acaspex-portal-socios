@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-24  
-Estado de referencia: tras implementación H0.8T-FIX5 (selector visual de iconos para subsecciones)  
+Estado de referencia: cierre validado H0.8T — administración de subsecciones e iconos  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: pendiente de commit H0.8T-FIX5
+Último commit: pendiente de commit H0.8T-CLOSE
 
 ---
 
@@ -156,53 +156,54 @@ h08t_fix1_resource_subsections_admin_fix_ready_for_validation
 ```
 
 
-### H0.8T-FIX2 — Subsecciones reales en admin y portal
+### H0.8T — Administración de subsecciones e iconos ✅ VALIDADO
 
-Estado: `h08t_resource_subsections_admin_fix_ready_for_validation`
+Estado: cierre validado H0.8T — 2026-06-24.
 
-- Staging corregido con migración 025: `resource_categories` tiene GRANT `SELECT, INSERT, UPDATE` para `authenticated`.
-- Policies `resource_categories_select_authenticated`, `resource_categories_insert_admin`, `resource_categories_update_admin` recreadas con `TO authenticated`.
-- No hay policy DELETE para `resource_categories`.
-- Pantalla admin de subsecciones mantiene creación sin campo Orden, calcula `max(sort_order) + 1` desde DB y reordena con updates secuenciales + reversión básica si falla el segundo update.
-- `/admin/recursos/nuevo` usa subsecciones activas reales y guarda `category_id` directamente.
-- `/admin/recursos/:id` muestra la sección real, mantiene la categoría actual aunque esté inactiva y permite cambiar a otra activa de la misma sección; `corporate_material` queda con `category_id = null`.
-- Portal socio lee subsecciones activas reales y ordenadas desde `resource_categories` para Centro de Conocimiento y Banco de Proyectos.
-- Se mantiene la decisión de no crear nuevas secciones principales todavía.
+Veredictos validados:
 
-### H0.8T-FIX3 — Unicidad de subsecciones por sección
+- `h08t_resource_subsections_admin_validated`
+- `h08t_resource_categories_unique_by_section_validated`
+- `h08t_resource_category_icons_validated`
 
-Estado esperado: h08t_resource_categories_unique_by_section_ready_for_validation.
+Alcance validado por Sil:
 
-- Problema corregido: constraint global resource_categories_name_key impedía repetir nombres en secciones distintas.
-- Migración 026 elimina resource_categories_name_key y resource_categories_slug_key.
-- Nueva unicidad estable: resource_categories_section_slug_key sobre (section, slug).
-- AdminResourceCategoriesPage valida duplicados por section+slug antes de insertar.
-- El error 23505 se traduce a mensaje amigable para duplicados.
-- No se permite duplicar slug dentro de la misma sección.
-- Sí se permite repetir nombre/slug en secciones distintas.
+- Subsecciones aparece como entrada propia en el sidebar admin.
+- Crear subsecciones funciona.
+- Duplicados controlados por `section + slug` funcionan.
+- Los mensajes de duplicado son amigables.
+- Activar/desactivar funciona.
+- Reordenar funciona y el orden se refleja en el portal del socio.
+- Las subsecciones nuevas se reflejan en el portal del socio.
+- El portal lee `resource_categories` reales.
+- `U2` junta y `U3` socio mantienen el comportamiento correcto.
+- `icon_key` funciona.
+- El icono configurado se refleja en el sidebar.
+- `IconPicker` visual funciona correctamente.
 
-### H0.8T-FIX4 — Iconos configurables para subsecciones
+Decisiones cerradas:
 
-Estado esperado: h08t_resource_category_icons_ready_for_validation.
+- Material Corporativo no tendrá subsecciones por ahora.
+- Centro de Conocimiento y Banco de Proyectos sí tienen subsecciones administrables.
+- No se permite crear secciones principales nuevas en esta fase.
+- No se permite eliminar subsecciones, solo activar/desactivar.
+- Los iconos son configurables mediante catálogo cerrado.
+- No se permiten iconos personalizados subidos por archivo.
+- El fallback de icono es `folder`.
 
-- Migración 027 añade `resource_categories.icon_key` en staging.
-- `resource_categories` pasa a guardar el icono visual de cada subsección.
-- El catálogo frontend queda cerrado y compartido, basado en Lucide.
-- Alta y edición de subsecciones permiten elegir icono; si queda vacío, frontend persiste `folder`.
-- La tabla admin muestra el icono actual de cada subsección.
-- Centro de Conocimiento y Banco de Proyectos usan `resource_categories.icon_key` para pintar el sidebar.
-- Si `icon_key` es nulo o desconocido, el portal usa `folder` como fallback estable.
-- Material Corporativo sigue fuera de la lógica de subsecciones e iconos.
+Deuda aceptada:
 
-### H0.8T-FIX5 — Selector visual de iconos para subsecciones
+- La reordenación se resuelve en frontend con updates secuenciales y reversión básica.
+- No hay todavía RPC/transacción para reordenación.
+- No hay eliminación definitiva de subsecciones.
+- No hay creación dinámica de secciones principales.
 
-Estado esperado: h08t_resource_category_icon_picker_ready_for_validation.
+Commits asociados al bloque:
 
-- Sin cambios de DB ni de `icon_key`; se reutiliza el modelo cerrado en FIX4.
-- Nuevo componente `IconPicker` para elegir iconos viendo icono + label + estado seleccionado.
-- `AdminResourceCategoriesPage` usa `IconPicker` en alta y edición de subsecciones.
-- Si no se elige icono, se mantiene el fallback `folder`.
-- La tabla admin y el portal siguen reflejando el mismo `icon_key` configurado.
+- `2ac0edd` — `fix: complete resource subsections admin flow`
+- `9af92cc` — `fix: scope resource category uniqueness by section`
+- `4b2039b` — `feat: add configurable resource category icons`
+- `f70b038` — `feat: add visual icon picker for resource categories`
 
 
 ## 9. Estado de staging (post H0.7q)
@@ -227,7 +228,7 @@ H0.7 cerrado funcionalmente:
 
 ## 10. Siguiente fase
 
-H0.8 — Primer flujo real de recursos: subida, previsualización y descarga de Material Corporativo.
+H0.9 — Alta y gestión de socios por parte del administrador.
 
 ### H0.8a — Diseño
 
