@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ChevronLeft, ShieldCheck, User } from 'lucide-react';
-import { fetchAdminMemberById } from '../../lib/memberQueries';
-import { mapMemberRowToForm, type MemberRow } from '../../lib/memberFormModel';
+import { ChevronLeft, Edit, ShieldCheck, User } from 'lucide-react';
+import { fetchAdminMemberById, updateAdminMember } from '../../lib/memberQueries';
+import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, documentTypeOptions } from '../../lib/memberFormOptions';
+import { MemberForm } from './MemberForm';
 
 const statusLabelMap = Object.fromEntries(memberStatusOptions.map(o => [o.value, o.label]));
 const profileLabelMap = Object.fromEntries(memberProfileOptions.map(o => [o.value, o.label]));
@@ -29,6 +30,12 @@ export function AdminMemberDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState<MemberFormState | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
   useEffect(() => {
     if (!memberId) return;
     fetchAdminMemberById(memberId)
@@ -39,6 +46,37 @@ export function AdminMemberDetailPage() {
       .catch(() => setError('No se pudo cargar el socio.'))
       .finally(() => setLoading(false));
   }, [memberId]);
+
+  function startEdit() {
+    if (!row) return;
+    setEditForm(mapMemberRowToForm(row));
+    setEditing(true);
+    setSaveError(null);
+    setFeedback(null);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setEditForm(null);
+    setSaveError(null);
+  }
+
+  async function handleSave() {
+    if (!row || !editForm) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const updated = await updateAdminMember(row.id, editForm);
+      setRow(updated);
+      setEditing(false);
+    setEditForm(null);
+      setFeedback('Ficha actualizada correctamente.');
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Error al guardar.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -78,6 +116,22 @@ export function AdminMemberDetailPage() {
         <ChevronLeft size={14} /> Volver a socios
       </Link>
 
+      {feedback && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-sm text-emerald-800">{feedback}</div>
+      )}
+
+      {editing && editForm ? (
+        <MemberForm
+          value={editForm}
+          mode="edit"
+          submitting={saving}
+          error={saveError}
+          onChange={setEditForm}
+          onSubmit={handleSave}
+          onCancel={cancelEdit}
+        />
+      ) : (
+        <>
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -94,6 +148,13 @@ export function AdminMemberDetailPage() {
             <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
               {profileLabel}
             </span>
+            <button
+              type="button"
+              onClick={startEdit}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+            >
+              <Edit size={15} /> Editar ficha
+            </button>
           </div>
         </div>
       </section>
@@ -224,6 +285,8 @@ export function AdminMemberDetailPage() {
           <strong>Acceso al portal:</strong> pendiente de H0.9C. Esta ficha es solo administrativa; no se ha creado cuenta de acceso/login.
         </p>
       </section>
+        </>
+      )}
     </div>
   );
 }

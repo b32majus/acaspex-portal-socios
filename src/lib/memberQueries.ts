@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import type { MemberRow } from './memberFormModel';
+import { mapFormToMemberInsertPayload, mapFormToMemberUpdatePayload, type MemberFormState } from './memberFormModel';
 
 const MEMBER_SELECT = `
   id,
@@ -57,4 +58,35 @@ export async function fetchAdminMemberById(memberId: string): Promise<MemberRow 
 
   if (error) throw error;
   return (data as MemberRow) ?? null;
+}
+
+export async function createAdminMember(form: MemberFormState): Promise<MemberRow> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase no configurado');
+
+  const payload = mapFormToMemberInsertPayload(form);
+
+  const { data, error } = await supabase
+    .from('members')
+    .insert(payload)
+    .select(MEMBER_SELECT)
+    .single();
+
+  if (error) throw error;
+  return data as MemberRow;
+}
+
+export async function updateAdminMember(memberId: string, form: MemberFormState): Promise<MemberRow> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase no configurado');
+
+  const payload = mapFormToMemberUpdatePayload(form);
+
+  const { data, error } = await supabase
+    .from('members')
+    .update(payload)
+    .eq('id', memberId)
+    .select(MEMBER_SELECT)
+    .single();
+
+  if (error) throw error;
+  return data as MemberRow;
 }
