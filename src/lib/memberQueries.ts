@@ -26,6 +26,7 @@ const MEMBER_SELECT = `
   paid_until,
   communication_consent,
   privacy_accepted_at,
+  notes,
   legacy_member_number,
   legacy_source,
   legacy_import_batch,
@@ -41,8 +42,8 @@ export async function fetchAdminMembers(): Promise<MemberRow[]> {
     .select(MEMBER_SELECT)
     .order('created_at', { ascending: false });
 
-  if (error || !data) return [];
-  return data as MemberRow[];
+  if (error) throw error;
+  return (data ?? []) as MemberRow[];
 }
 
 export async function fetchAdminMemberById(memberId: string): Promise<MemberRow | null> {
@@ -54,6 +55,6 @@ export async function fetchAdminMemberById(memberId: string): Promise<MemberRow 
     .eq('id', memberId)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data as MemberRow;
+  if (error) throw error;
+  return (data as MemberRow) ?? null;
 }

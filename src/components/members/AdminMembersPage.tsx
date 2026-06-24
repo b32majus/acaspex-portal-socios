@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, Filter, Search } from 'lucide-react';
 import { fetchAdminMembers } from '../../lib/memberQueries';
 import { mapMemberRowToForm, type MemberRow } from '../../lib/memberFormModel';
-import { memberStatusOptions, memberProfileOptions } from '../../lib/memberFormOptions';
+import { memberStatusOptions, memberProfileOptions, professionalCategoryOptions, organizationOptions } from '../../lib/memberFormOptions';
 
 const statusLabelMap = Object.fromEntries(memberStatusOptions.map(o => [o.value, o.label]));
 const profileLabelMap = Object.fromEntries(memberProfileOptions.map(o => [o.value, o.label]));
@@ -16,6 +16,8 @@ export function AdminMembersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [profileFilter, setProfileFilter] = useState<string>('all');
+  const [organizationFilter, setOrganizationFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchAdminMembers()
@@ -23,11 +25,6 @@ export function AdminMembersPage() {
       .catch(() => setError('No se pudieron cargar los socios.'))
       .finally(() => setLoading(false));
   }, []);
-
-  const orgs = useMemo(
-    () => Array.from(new Set(rows.map(r => r.organization).filter(Boolean))).sort() as string[],
-    [rows],
-  );
 
   const filtered = useMemo(() => {
     return rows.filter((row) => {
@@ -45,10 +42,12 @@ export function AdminMembersPage() {
 
       const matchStatus = statusFilter === 'all' || row.status === statusFilter;
       const matchProfile = profileFilter === 'all' || row.member_profile === profileFilter;
+      const matchOrg = organizationFilter === 'all' || row.organization === organizationFilter;
+      const matchCat = categoryFilter === 'all' || row.professional_category === categoryFilter;
 
-      return matchSearch && matchStatus && matchProfile;
+      return matchSearch && matchStatus && matchProfile && matchOrg && matchCat;
     });
-  }, [rows, search, statusFilter, profileFilter]);
+  }, [rows, search, statusFilter, profileFilter, organizationFilter, categoryFilter]);
 
   if (loading) {
     return (
@@ -132,13 +131,28 @@ export function AdminMembersPage() {
             <label htmlFor="member-org" className="block text-xs font-medium text-slate-500">Organización</label>
             <select
               id="member-org"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={organizationFilter}
+              onChange={(e) => setOrganizationFilter(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
-              <option value="">Todas</option>
-              {orgs.map((org) => (
-                <option key={org} value={org}>{org}</option>
+              <option value="all">Todas</option>
+              {organizationOptions.filter(o => o.value !== '').map((org) => (
+                <option key={org.value} value={org.value}>{org.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="member-cat" className="block text-xs font-medium text-slate-500">Categoría profesional</label>
+            <select
+              id="member-cat"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              <option value="all">Todas</option>
+              {professionalCategoryOptions.filter(o => o.value !== '').map((cat) => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
               ))}
             </select>
           </div>

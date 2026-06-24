@@ -188,6 +188,11 @@ export function AdminMemberDetailPage() {
         </section>
       </div>
 
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-serif text-lg text-slate-900">Notas internas</h2>
+        <p className="mt-3 text-sm text-slate-600">{(row as Record<string, unknown>).notes as string || 'Sin notas.'}</p>
+      </section>
+
       {(row.legacy_member_number || row.legacy_source) && (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="font-serif text-lg text-slate-900">Importación legacy</h2>
