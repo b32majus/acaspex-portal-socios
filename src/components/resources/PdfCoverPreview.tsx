@@ -35,31 +35,28 @@ function PdfCoverPreview({ signedUrl, className = '' }: { signedUrl: string; cla
       }
     }
 
+    setStatus('loading');
     render();
     return () => { cancelled = true; };
   }, [signedUrl]);
 
-  if (status === 'loading') {
-    return (
-      <div className={`flex items-center justify-center bg-slate-100 ${className}`}>
-        <FileText size={32} className="text-slate-300" />
-      </div>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <div className={`flex items-center justify-center bg-rose-50 ${className}`}>
-        <FileText size={32} className="text-rose-300" />
-      </div>
-    );
-  }
-
   return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full object-contain ${className}`}
-    />
+    <div className={`relative ${className}`}>
+      <canvas
+        ref={canvasRef}
+        className={`w-full h-full object-contain ${status === 'ready' ? '' : 'hidden'}`}
+      />
+      {status === 'loading' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+          <FileText size={32} className="text-slate-300" />
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-rose-50">
+          <FileText size={32} className="text-rose-300" />
+        </div>
+      )}
+    </div>
   );
 }
 
