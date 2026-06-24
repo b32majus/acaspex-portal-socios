@@ -330,6 +330,32 @@ Objetivo cerrado:
 - No se crean nuevas secciones principales en esta tanda.
 
 
+### 5.14 H0.8T-FIX3 — Unicidad de subsecciones por sección
+
+Estado: h08t_resource_categories_unique_by_section_ready_for_validation — 2026-06-24.
+
+Problema detectado:
+- Al crear una subsección con nombre ya existente en otra sección, Supabase devolvía duplicate key sobre resource_categories_name_key.
+- La tabla conservaba unicidad global antigua: UNIQUE(name) y UNIQUE(slug).
+
+Cambio DB:
+- Migración 026 elimina resource_categories_name_key y resource_categories_slug_key.
+- Crea índice único resource_categories_section_slug_key sobre (section, slug).
+- No hay duplicados actuales por section+slug antes de aplicar.
+
+Cambio frontend:
+- AdminResourceCategoriesPage comprueba section+slug antes de insertar.
+- Si ya existe, muestra: Ya existe una subsección con ese nombre en esta sección. Elige otro nombre o edita la existente.
+- Si Supabase devuelve 23505, se traduce al mismo mensaje amigable.
+- No se muestran errores técnicos de PostgreSQL para duplicados.
+
+Validación funcional esperada:
+- U1 admin puede repetir nombre en secciones distintas.
+- U1 admin no puede duplicar nombre dentro de la misma sección.
+- U2 junta y U3 socio siguen sin acceso a admin/subsecciones.
+- Material Corporativo sigue sin subsecciones.
+
+
 ---
 
 ## 6. Deuda conocida

@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-24  
-Estado de referencia: tras implementación H0.8T-FIX2 (subsecciones reales en admin y portal)  
+Estado de referencia: tras implementación H0.8T-FIX3 (unicidad de subsecciones por sección)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: pendiente de commit H0.8T-FIX2
+Último commit: pendiente de commit H0.8T-FIX3
 
 ---
 
@@ -168,6 +168,19 @@ Estado: `h08t_resource_subsections_admin_fix_ready_for_validation`
 - `/admin/recursos/:id` muestra la sección real, mantiene la categoría actual aunque esté inactiva y permite cambiar a otra activa de la misma sección; `corporate_material` queda con `category_id = null`.
 - Portal socio lee subsecciones activas reales y ordenadas desde `resource_categories` para Centro de Conocimiento y Banco de Proyectos.
 - Se mantiene la decisión de no crear nuevas secciones principales todavía.
+
+### H0.8T-FIX3 — Unicidad de subsecciones por sección
+
+Estado esperado: h08t_resource_categories_unique_by_section_ready_for_validation.
+
+- Problema corregido: constraint global resource_categories_name_key impedía repetir nombres en secciones distintas.
+- Migración 026 elimina resource_categories_name_key y resource_categories_slug_key.
+- Nueva unicidad estable: resource_categories_section_slug_key sobre (section, slug).
+- AdminResourceCategoriesPage valida duplicados por section+slug antes de insertar.
+- El error 23505 se traduce a mensaje amigable para duplicados.
+- No se permite duplicar slug dentro de la misma sección.
+- Sí se permite repetir nombre/slug en secciones distintas.
+
 
 ## 9. Estado de staging (post H0.7q)
 

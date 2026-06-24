@@ -563,3 +563,14 @@ Estado: h08t_resource_subsections_admin_fix_ready_for_validation — 2026-06-24.
 - Portal socios lee subsecciones activas reales y ordenadas desde resource_categories para Centro de Conocimiento y Banco de Proyectos.
 - No se crean nuevas secciones principales; Material Corporativo sigue sin subsecciones.
 
+
+### H0.8T-FIX3 — Unicidad de subsecciones por sección
+
+Estado: h08t_resource_categories_unique_by_section_ready_for_validation — 2026-06-24.
+
+- Error detectado: resource_categories_name_key bloqueaba nombres repetidos entre secciones.
+- Migración 026 elimina unicidad global por name/slug y crea unique index (section, slug).
+- Frontend valida duplicado por section+slug antes de insertar.
+- Error 23505 se traduce a mensaje amigable: Ya existe una subsección con ese nombre en esta sección. Elige otro nombre o edita la existente.
+- Validación pública pendiente con U1/U2/U3.
+

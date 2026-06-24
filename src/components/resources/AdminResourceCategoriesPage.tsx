@@ -20,6 +20,8 @@ const sectionLabel: Record<string, string> = {
 
 const sections = ['knowledge_center', 'project_bank'] as const;
 
+const duplicateCategoryMessage = 'Ya existe una subsección con ese nombre en esta sección. Elige otro nombre o edita la existente.';
+
 function slugify(name: string): string {
   return name
     .toLowerCase()
@@ -74,6 +76,26 @@ export function AdminResourceCategoriesPage() {
     setFeedback(null);
 
     const slug = slugify(newName.trim());
+
+    const { data: existingCategory, error: duplicateCheckError } = await supabase
+      .from('resource_categories')
+      .select('id')
+      .eq('section', newSection)
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (duplicateCheckError) {
+      setFeedback({ type: 'error', message: 'No se ha podido comprobar si la subsección ya existe. Inténtalo de nuevo.' });
+      setCreating(false);
+      return;
+    }
+
+    if (existingCategory) {
+      setFeedback({ type: 'error', message: duplicateCategoryMessage });
+      setCreating(false);
+      return;
+    }
+
     const { data: maxOrderData, error: maxOrderError } = await supabase
       .from('resource_categories')
       .select('sort_order')
@@ -102,7 +124,11 @@ export function AdminResourceCategoriesPage() {
       });
 
     if (error) {
-      setFeedback({ type: 'error', message: 'Error al crear: ' + error.message });
+      if (error.code === '23505') {
+        setFeedback({ type: 'error', message: duplicateCategoryMessage });
+      } else {
+        setFeedback({ type: 'error', message: 'No se ha podido crear la subsección. Inténtalo de nuevo.' });
+      }
     } else {
       setFeedback({ type: 'success', message: 'Subsección creada.' });
       setShowCreate(false);
