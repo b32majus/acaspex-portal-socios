@@ -59,6 +59,7 @@ import { useIdentity } from '../lib/identityContext';
 import { categoryLabel, typeLabel, resourceStatusLabel, resourceStatusBadgeClass, typeIconMap, formatResourceDate, isImageResource, isPdfResource, isOfficeResource, isExternalLinkResource, isPreviewableResource, isDownloadOnlyResource } from '../lib/resourceHelpers';
 import type { ResourceLike } from '../lib/resourceHelpers';
 import { MockCover } from '../components/resources/MockCover';
+import PdfCoverPreview from '../components/resources/PdfCoverPreview';
 
 export function LoginPage() {
   const assetBase = import.meta.env.BASE_URL;
@@ -459,6 +460,17 @@ function ResourceCardImage({ resource }: { resource: (typeof mockResources)[numb
       .catch(() => {});
   }, [resource.filePath, isImage]);
 
+  useEffect(() => {
+    if (!isPdf || !resource.filePath || !supabase) return;
+    supabase.storage
+      .from('acaspex-resource-files')
+      .createSignedUrl(resource.filePath, 300)
+      .then(({ data }) => {
+        if (data?.signedUrl) setSignedUrl(data.signedUrl);
+      })
+      .catch(() => {});
+  }, [resource.filePath, isPdf]);
+
   if (coverUrl) {
     return (
       <img
@@ -490,6 +502,13 @@ function ResourceCardImage({ resource }: { resource: (typeof mockResources)[numb
   }
 
   if (isPdf) {
+    if (signedUrl) {
+      return (
+        <div className="h-full w-full">
+          <PdfCoverPreview signedUrl={signedUrl} className="h-full w-full" />
+        </div>
+      );
+    }
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-rose-50">
         <FileText size={32} className="text-rose-300" />
