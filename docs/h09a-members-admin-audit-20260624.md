@@ -659,6 +659,8 @@ Incluye:
 - sin crear `auth.users`;
 - sin tocar `profiles` salvo lectura futura si se quiere mostrar “tiene acceso / no tiene acceso”.
 
+**Nota correctiva (2026-06-24):** La ficha administrativa de socio debe reflejar todos los campos del formulario de alta, más `member_number` y campos operativos. No se implementará un CRUD mínimo reducido. El formulario completo incluye: identificación personal, documento, dirección, contacto, categoría profesional, organización, consentimientos, perfil de cuota, estado, vigencia, notas y campos de importación legacy.
+
 Micro-WOs recomendadas:
 
 1. H0.9B-A: grants mínimos admin para `members`.
