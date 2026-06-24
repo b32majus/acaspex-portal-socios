@@ -549,3 +549,17 @@ Clarificado en `docs/h07e-identity-read-model-20260623.md`:
 
 El estado `authenticated_no_member` en el identity read model captura este caso correctamente.
 
+
+- H0.8T-FIX2: Cierre del flujo real de subsecciones. Migración 025 aplicada: GRANT SELECT/INSERT/UPDATE y policies `resource_categories_*` con `TO authenticated`; admin activo puede crear/actualizar, socio/junta solo leen activas, sin DELETE. Admin nuevo/editor usan `category_id` real. Portal socio lee subsecciones activas reales y ordenadas para Centro de Conocimiento y Banco de Proyectos. Estado: `h08t_resource_subsections_admin_fix_ready_for_validation`.
+
+### H0.8T-FIX2 — Subsecciones reales admin + portal
+
+Estado: h08t_resource_subsections_admin_fix_ready_for_validation — 2026-06-24.
+
+- Permisos resource_categories cerrados en staging con migración 025: authenticated tiene SELECT/INSERT/UPDATE y policies to authenticated; sin DELETE.
+- Admin subsecciones mantiene entrada propia en sidebar, alta sin orden manual y reordenación Subir/Bajar con updates secuenciales y reversión básica si falla el segundo update.
+- Formulario nuevo y editor de recursos usan categorías reales por category_id.
+- Editor conserva la categoría actual aunque esté inactiva y solo ofrece categorías activas de la misma sección para cambio.
+- Portal socios lee subsecciones activas reales y ordenadas desde resource_categories para Centro de Conocimiento y Banco de Proyectos.
+- No se crean nuevas secciones principales; Material Corporativo sigue sin subsecciones.
+

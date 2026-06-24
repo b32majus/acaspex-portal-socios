@@ -2,22 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
+import { fetchActiveResourceCategories, resourceSectionLabel, type ResourceCategoryOption } from '../../lib/resourceCategories';
 import { useAuth } from '../../lib/authContext';
 import type { ResourceStatus, ResourceType } from '../../data/mockResources';
-
-const sectionLabel: Record<string, string> = {
-  corporate_material: 'Material Corporativo',
-  knowledge_center: 'Centro de Conocimiento',
-  project_bank: 'Banco de Proyectos',
-};
 
 const sectionVisibility: Record<string, string[]> = {
   corporate_material: ['administrador', 'junta_directiva'],
   knowledge_center: ['administrador', 'junta_directiva', 'socio'],
   project_bank: ['administrador', 'junta_directiva', 'socio'],
 };
-
-type CategoryOption = { value: string; label: string };
 
 export function AdminResourceNewPage() {
   const navigate = useNavigate();
@@ -33,42 +26,13 @@ export function AdminResourceNewPage() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [subsections, setSubsections] = useState<CategoryOption[]>([]);
+  const [subsections, setSubsections] = useState<ResourceCategoryOption[]>([]);
   const configured = isSupabaseConfigured();
 
   useEffect(() => {
-    if (!configured || !supabase) { setSubsections([]); return; }
-    if (section === 'corporate_material') { setSubsections([]); return; }
-    supabase
-      .from('resource_categories')
-      .select('slug, name')
-      .eq('section', section)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .then(({ data, error }) => {
-        if (!error && data) {
-          setSubsections(
-            (data as Array<{ slug: string; name: string }>).map((c) => ({
-              value: c.slug,
-              label: c.name,
-            }))
-          );
-        } else {
-          setSubsections([]);
-        }
-      });
+    if (!configured || section === 'corporate_material') { setSubsections([]); return; }
+    fetchActiveResourceCategories(section).then(setSubsections);
   }, [configured, section]);
-
-  async function getCategoryId(slug: string): Promise<string | null> {
-    if (!slug || !configured || !supabase) return null;
-    const { data } = await supabase
-      .from('resource_categories')
-      .select('id')
-      .eq('slug', slug)
-      .eq('section', section)
-      .maybeSingle();
-    return (data as { id?: string } | null)?.id ?? null;
-  }
 
   async function handleSave() {
     if (!configured) {
@@ -114,7 +78,7 @@ export function AdminResourceNewPage() {
           created_by: session?.user?.id ?? null,
           published_at: status === 'published' ? new Date().toISOString() : null,
           section,
-          category_id: subsection ? await getCategoryId(subsection) : null,
+          category_id: section === 'corporate_material' ? null : (subsection || null),
         })
         .select('id')
         .single();
@@ -212,7 +176,7 @@ export function AdminResourceNewPage() {
               >
                 <option value="">Seleccionar subsección</option>
                 {subsections.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
             </div>
@@ -222,7 +186,7 @@ export function AdminResourceNewPage() {
               <label className="block text-xs font-medium text-slate-500">Subsección</label>
               <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 flex items-start gap-2">
                 <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-                <span>No hay subsecciones activas para esta sección. Crea una desde Gestión de subsecciones.</span>
+                <span>No hay subsecciones activas para esta sección. Crea una desde Subsecciones.</span>
               </div>
             </div>
           )}
@@ -360,7 +324,7 @@ export function AdminResourceNewPage() {
                 to={section === 'corporate_material' ? '/socios/material-corporativo' : '/socios/recursos'}
                 className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800"
               >
-                Ver en {sectionLabel[section]}
+                Ver en {resourceSectionLabel[section]}
                 <ChevronRight size={14} />
               </Link>
             )}

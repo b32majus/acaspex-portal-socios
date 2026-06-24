@@ -263,11 +263,72 @@ Crear una nueva sección principal requiere una fase específica porque afecta a
 
 Futuro bloque: H0.9 — Modelo dinámico de secciones principales.
 
+### 5.13 H0.8T-FIX2 — Subsections reales en admin y portal
+
+Estado: h08t_resource_subsections_admin_fix_ready_for_validation — 2026-06-24.
+
+Cierre funcional del flujo real de subsecciones:
+
+- resource_categories queda como fuente única para subsecciones de Centro de Conocimiento y Banco de Proyectos.
+- AdminResourceCategoriesPage calcula sort_order = max(sort_order) + 1 consultando datos reales de la tabla al crear.
+- Reordenación con Subir/Bajar deja de usar updates paralelos: aplica update secuencial y revierte el primero si falla el segundo.
+- AdminResourceNewPage usa category_id real de categorías activas, no slug intermedio.
+- AdminResourceEditorPage muestra la sección del recurso, mantiene la categoría actual aunque esté inactiva y permite cambiar a otra categoría activa de la misma sección.
+- MemberLibraryPage lee subsecciones activas reales de resource_categories para el sidebar/listado de Centro de Conocimiento y muestra recursos reales section = knowledge_center.
+- MemberProjectBankPage lee subsecciones activas reales de resource_categories para el sidebar/listado de Banco de Proyectos.
+- Material Corporativo sigue sin subsecciones.
+
+Permisos/RLS:
+
+- Migración 025: reafirma GRANT SELECT, INSERT, UPDATE ON public.resource_categories TO authenticated.
+- Recrea policies resource_categories_select_authenticated, resource_categories_insert_admin y resource_categories_update_admin con to authenticated.
+- No se crea policy DELETE.
+- Staging verificado post-migración: policies con roles={authenticated} y grants SELECT/INSERT/UPDATE para authenticated.
+
+Decisión vigente:
+
+No se crean nuevas secciones principales. Las secciones siguen siendo Centro de Conocimiento, Banco de Proyectos y Material Corporativo.
+
+
 ### Archivos modificados H0.8T-FIX1
 - `src/components/layout/AdminLayout.tsx` — navegación sidebar
 - `src/components/resources/AdminResourcesPage.tsx` — eliminar botón subsecciones
 - `src/components/resources/AdminResourceCategoriesPage.tsx` — reescritura completa (orden, permisos)
 - `supabase/migrations/20260623000024_024_acaspex_resource_categories_admin_write_grants.sql` — GRANTs
+
+---
+
+### 5.13 H0.8T-FIX2 — Subsecciones reales en admin y portal
+
+**Estado:** `h08t_resource_subsections_admin_fix_ready_for_validation` — 2026-06-24.
+
+Objetivo cerrado:
+- Admin crea subsecciones solo para Centro de Conocimiento y Banco de Proyectos.
+- Admin activa/desactiva subsecciones.
+- Admin reordena con botones Subir/Bajar dentro de la misma sección.
+- Alta de recurso usa `category_id` real de `resource_categories`.
+- Editor de recurso muestra sección, mantiene categoría actual aunque esté inactiva y permite cambiar a otra activa de la misma sección.
+- Portal socio lee subsecciones activas reales y ordenadas desde `resource_categories`.
+
+**Permisos / RLS / GRANT:**
+- Migración `025`: `GRANT SELECT, INSERT, UPDATE ON public.resource_categories TO authenticated`.
+- Policies `resource_categories_select_authenticated`, `resource_categories_insert_admin`, `resource_categories_update_admin` recreadas con `TO authenticated`.
+- Admin activo puede INSERT/UPDATE.
+- Socio/Junta solo leen subsecciones activas.
+- Sin policy DELETE.
+
+**Orden:**
+- Crear subsección calcula `sort_order` consultando el máximo real en DB dentro de la sección.
+- Reordenación evita `Promise.all`: aplica updates secuenciales; si falla el segundo, intenta revertir el primero.
+
+**Portal:**
+- Centro de Conocimiento carga categorías activas `section = knowledge_center` ordenadas por `sort_order, name`.
+- Banco de Proyectos carga categorías activas `section = project_bank` ordenadas por `sort_order, name`.
+- Material Corporativo queda sin subsecciones.
+
+**Decisión mantenida:**
+- No se crean nuevas secciones principales en esta tanda.
+
 
 ---
 
@@ -277,7 +338,6 @@ Futuro bloque: H0.9 — Modelo dinámico de secciones principales.
 - PPTX sigue sin preview (placeholder premium + botón Descargar).
 - DOCX sigue sin preview (placeholder premium + botón Descargar).
 - La eliminación física de recursos no está implementada (archivar en su lugar).
-- `AdminResourceEditorPage` todavía no refleja el modelo sección/subsección (solo AdminResourceNewPage).
 
 ---
 

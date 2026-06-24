@@ -74,10 +74,21 @@ export function AdminResourceCategoriesPage() {
     setFeedback(null);
 
     const slug = slugify(newName.trim());
-    const sameSection = categories.filter((c) => c.section === newSection);
-    const nextOrder = sameSection.length > 0
-      ? Math.max(...sameSection.map((c) => c.sort_order)) + 1
-      : 1;
+    const { data: maxOrderData, error: maxOrderError } = await supabase
+      .from('resource_categories')
+      .select('sort_order')
+      .eq('section', newSection)
+      .order('sort_order', { ascending: false })
+      .limit(1);
+
+    if (maxOrderError) {
+      setFeedback({ type: 'error', message: 'Error al calcular el orden: ' + maxOrderError.message });
+      setCreating(false);
+      return;
+    }
+
+    const currentMaxOrder = (maxOrderData?.[0] as { sort_order?: number } | undefined)?.sort_order ?? 0;
+    const nextOrder = currentMaxOrder + 1;
 
     const { error } = await supabase
       .from('resource_categories')
@@ -165,15 +176,17 @@ export function AdminResourceCategoriesPage() {
     const prev = sameSection[idx - 1];
     setReordering(true);
 
-    const updates = [
-      supabase.from('resource_categories').update({ sort_order: cat.sort_order }).eq('id', prev.id),
-      supabase.from('resource_categories').update({ sort_order: prev.sort_order }).eq('id', cat.id),
-    ];
+    const first = await supabase.from('resource_categories').update({ sort_order: cat.sort_order }).eq('id', prev.id);
+    if (first.error) {
+      setFeedback({ type: 'error', message: 'Error al reordenar: ' + first.error.message });
+      setReordering(false);
+      return;
+    }
 
-    const results = await Promise.all(updates);
-    const errors = results.filter((r) => r.error);
-    if (errors.length > 0) {
-      setFeedback({ type: 'error', message: 'Error al reordenar: ' + errors[0].error!.message });
+    const second = await supabase.from('resource_categories').update({ sort_order: prev.sort_order }).eq('id', cat.id);
+    if (second.error) {
+      await supabase.from('resource_categories').update({ sort_order: prev.sort_order }).eq('id', prev.id);
+      setFeedback({ type: 'error', message: 'Error al reordenar. Se intentó revertir el cambio parcial: ' + second.error.message });
     } else {
       loadCategories();
     }
@@ -190,15 +203,17 @@ export function AdminResourceCategoriesPage() {
     const next = sameSection[idx + 1];
     setReordering(true);
 
-    const updates = [
-      supabase.from('resource_categories').update({ sort_order: cat.sort_order }).eq('id', next.id),
-      supabase.from('resource_categories').update({ sort_order: next.sort_order }).eq('id', cat.id),
-    ];
+    const first = await supabase.from('resource_categories').update({ sort_order: cat.sort_order }).eq('id', next.id);
+    if (first.error) {
+      setFeedback({ type: 'error', message: 'Error al reordenar: ' + first.error.message });
+      setReordering(false);
+      return;
+    }
 
-    const results = await Promise.all(updates);
-    const errors = results.filter((r) => r.error);
-    if (errors.length > 0) {
-      setFeedback({ type: 'error', message: 'Error al reordenar: ' + errors[0].error!.message });
+    const second = await supabase.from('resource_categories').update({ sort_order: next.sort_order }).eq('id', cat.id);
+    if (second.error) {
+      await supabase.from('resource_categories').update({ sort_order: next.sort_order }).eq('id', next.id);
+      setFeedback({ type: 'error', message: 'Error al reordenar. Se intentó revertir el cambio parcial: ' + second.error.message });
     } else {
       loadCategories();
     }

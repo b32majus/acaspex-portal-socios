@@ -53,6 +53,7 @@ import {
 } from '../data/mockSignup';
 import { cn } from '../lib/utils';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { fetchActiveResourceCategories, type ResourceCategoryOption } from '../lib/resourceCategories';
 import { useAuth } from '../lib/authContext';
 import { useIdentity } from '../lib/identityContext';
 import { categoryLabel, typeLabel, resourceStatusLabel, resourceStatusBadgeClass, typeIconMap, formatResourceDate, isImageResource, isPdfResource, isOfficeResource, isExternalLinkResource, isPreviewableResource, isDownloadOnlyResource } from '../lib/resourceHelpers';
@@ -508,6 +509,7 @@ type ResourceCardProps = {
 function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
   const TypeIcon = typeIconMap[resource.type] ?? FileText;
   const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
+  const resourceCategoryName = (resource as typeof resource & { categoryName?: string }).categoryName;
 
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -519,7 +521,7 @@ function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
       <div className="flex flex-col gap-2.5 p-4">
         <div className="flex items-center justify-between gap-2">
           <span className="inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">
-            {categoryLabel[resource.category] ?? resource.category}
+            {resourceCategoryName ?? categoryLabel[resource.category] ?? resource.category}
           </span>
           <span className="inline-flex items-center gap-1 text-xs text-slate-500">
             <TypeIcon size={12} />
@@ -864,14 +866,67 @@ export function MemberHomePage() {
 
 export function MemberLibraryPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [realCategories, setRealCategories] = useState<ResourceCategoryOption[]>([]);
+  const [supabaseResources, setSupabaseResources] = useState<typeof mockResources>([]);
+  const configured = isSupabaseConfigured();
 
-  const publishedResources = mockResources
-    .filter((r) => r.status === 'published' && r.id !== 'res-004')
+  useEffect(() => {
+    if (!configured || !supabase) return;
+
+    fetchActiveResourceCategories('knowledge_center').then((categories) => {
+      setRealCategories(categories);
+      if (activeCategory && !categories.some((category) => category.slug === activeCategory)) {
+        setActiveCategory(null);
+      }
+    });
+
+    supabase
+      .from('resources')
+      .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, section, category_id, resource_categories(id, slug, name)')
+      .eq('status', 'published')
+      .eq('section', 'knowledge_center')
+      .order('published_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error || !data) {
+          setSupabaseResources([]);
+          return;
+        }
+
+        const mapped = (data as Array<Record<string, unknown>>).map((r) => {
+          const category = r.resource_categories as { slug?: string; name?: string } | null;
+          return {
+            id: r.id as string,
+            title: r.title as string,
+            subtitle: (r.subtitle as string) || (r.title as string),
+            description: (r.description as string) || '',
+            category: (category?.slug || r.category_id || 'sin-subseccion') as ResourceCategory,
+            categoryName: category?.name || 'Sin subsección',
+            type: (r.resource_type as ResourceType) || 'document',
+            status: (r.status as ResourceStatus) || 'published',
+            publishedAt: (r.published_at as string) || new Date().toISOString().split('T')[0],
+            filePath: (r.file_path as string) || '',
+            externalUrl: (r.external_url as string) || '',
+            featured: false,
+            coverStyle: 'documento' as ResourceCoverStyle,
+            visualTone: 'herramientas' as 'herramientas',
+            estimatedReadMinutes: null,
+            fileLabel: null,
+          };
+        });
+        setSupabaseResources(mapped as unknown as typeof mockResources);
+      });
+  }, [configured, activeCategory]);
+
+  const mockKnowledgeResources = mockResources
+    .filter((r) => r.status === 'published' && r.id !== 'res-004');
+
+  const publishedResources = [...supabaseResources, ...mockKnowledgeResources]
+    .filter((r, i, arr) => arr.findIndex((x) => x.id === r.id) === i)
     .sort((a, b) => (b.publishedAt!).localeCompare(a.publishedAt!));
 
   const featuredResources = publishedResources.filter((r) => r.featured === true);
 
-  const officialCategoryOrder = ['calidad', 'seguridad', 'investigacion', 'formacion', 'herramientas'];
+  const officialCategoryOrder = realCategories.map((category) => category.slug);
 
   const categoryCounts: Record<string, number> = {};
   for (const cat of officialCategoryOrder) {
@@ -882,7 +937,8 @@ export function MemberLibraryPage() {
     ? publishedResources.filter((r) => r.category === activeCategory)
     : publishedResources;
 
-  const activeLabel = activeCategory ? (categoryLabel[activeCategory] ?? activeCategory) : null;
+  const activeCategoryOption = activeCategory ? realCategories.find((category) => category.slug === activeCategory) : null;
+  const activeLabel = activeCategory ? (activeCategoryOption?.name ?? categoryLabel[activeCategory] ?? activeCategory) : null;
 
   const officialCategoryIcons: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
     calidad: TrendingUp,
@@ -927,7 +983,7 @@ export function MemberLibraryPage() {
           </button>
 
           {officialCategoryOrder.map((cat) => {
-            const Icon = officialCategoryIcons[cat];
+            const Icon = officialCategoryIcons[cat] ?? BookOpen;
             const count = categoryCounts[cat] ?? 0;
             const isActive = activeCategory === cat;
             return (
@@ -938,7 +994,7 @@ export function MemberLibraryPage() {
                 className={sidebarButtonClass(isActive)}
               >
                 <Icon size={16} className={isActive ? 'text-teal-200/70' : 'text-slate-400'} />
-                <span className="flex-1">{categoryLabel[cat]}</span>
+                <span className="flex-1">{realCategories.find((category) => category.slug === cat)?.name ?? categoryLabel[cat] ?? cat}</span>
                 {count > 0 && (
                   <span className={cn('text-xs tabular-nums', isActive ? 'text-teal-200/70' : 'text-slate-400')}>{count}</span>
                 )}
@@ -969,7 +1025,7 @@ export function MemberLibraryPage() {
                   onClick={() => setActiveCategory(cat)}
                   className={mobileTabClass(isActive)}
                 >
-                  {categoryLabel[cat]}
+                  {realCategories.find((category) => category.slug === cat)?.name ?? categoryLabel[cat] ?? cat}
                 </button>
               );
             })}
@@ -998,7 +1054,7 @@ export function MemberLibraryPage() {
         {/* Cabecera de categoría activa */}
         {activeCategory && (
           <div className="mb-6">
-            <h2 className="font-serif text-xl text-slate-900">{categoryLabel[activeCategory]}</h2>
+            <h2 className="font-serif text-xl text-slate-900">{activeLabel}</h2>
             <p className="mt-1 text-sm text-slate-500">{categoryCounts[activeCategory] ?? 0} recursos</p>
           </div>
         )}
@@ -1227,25 +1283,36 @@ export function MemberAccountPage() {
 
 export function MemberProjectBankPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [realCategories, setRealCategories] = useState<ResourceCategoryOption[]>([]);
+  const configured = isSupabaseConfigured();
+
+  useEffect(() => {
+    if (!configured) return;
+
+    fetchActiveResourceCategories('project_bank').then((categories) => {
+      setRealCategories(categories);
+      if (activeCategory && !categories.some((category) => category.slug === activeCategory)) {
+        setActiveCategory(null);
+      }
+    });
+  }, [configured, activeCategory]);
 
   const projects = mockProjects;
 
-  const officialCategoryOrder: ProjectCategory[] = [
-    'seguridad_paciente',
-    'mejora_procesos',
-    'experiencia_paciente',
-    'continuidad_asistencial',
-    'humanizacion',
-    'gestion_clinica',
-  ];
+  const officialCategoryOrder = realCategories.map((category) => category.slug);
 
-  const categoryIcon: Record<ProjectCategory, React.ComponentType<{ size?: number | string; className?: string }>> = {
+  const categoryIcon: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
     seguridad_paciente: ShieldCheck,
     mejora_procesos: TrendingUp,
     experiencia_paciente: Users,
     continuidad_asistencial: Stethoscope,
     humanizacion: Heart,
     gestion_clinica: Building2,
+    'seguridad-del-paciente-proyectos': ShieldCheck,
+    'mejora-de-procesos': TrendingUp,
+    'experiencia-del-paciente': Users,
+    'continuidad-asistencial': Stethoscope,
+    'gestion-clinica': Building2,
   };
 
   const categoryCounts: Record<string, number> = {};
@@ -1257,7 +1324,8 @@ export function MemberProjectBankPage() {
     ? projects.filter((p) => p.category === activeCategory)
     : projects;
 
-  const activeLabel = activeCategory ? (projectCategoryLabel[activeCategory as ProjectCategory] ?? activeCategory) : null;
+  const activeCategoryOption = activeCategory ? realCategories.find((category) => category.slug === activeCategory) : null;
+  const activeLabel = activeCategory ? (activeCategoryOption?.name ?? projectCategoryLabel[activeCategory as ProjectCategory] ?? activeCategory) : null;
 
   const sidebarButtonClass = (isActive: boolean) =>
     cn(
@@ -1293,7 +1361,7 @@ export function MemberProjectBankPage() {
           </button>
 
           {officialCategoryOrder.map((cat) => {
-            const Icon = categoryIcon[cat];
+            const Icon = categoryIcon[cat] ?? FolderKanban;
             const count = categoryCounts[cat] ?? 0;
             const isActive = activeCategory === cat;
             return (
@@ -1304,7 +1372,7 @@ export function MemberProjectBankPage() {
                 className={sidebarButtonClass(isActive)}
               >
                 <Icon size={16} className={isActive ? 'text-teal-200/70' : 'text-slate-400'} />
-                <span className="flex-1">{projectCategoryLabel[cat]}</span>
+                <span className="flex-1">{realCategories.find((category) => category.slug === cat)?.name ?? projectCategoryLabel[cat as ProjectCategory] ?? cat}</span>
                 {count > 0 && (
                   <span className={cn('text-xs tabular-nums', isActive ? 'text-teal-200/70' : 'text-slate-400')}>{count}</span>
                 )}
@@ -1335,7 +1403,7 @@ export function MemberProjectBankPage() {
                   onClick={() => setActiveCategory(cat)}
                   className={mobileTabClass(isActive)}
                 >
-                  {projectCategoryLabel[cat]}
+                  {realCategories.find((category) => category.slug === cat)?.name ?? projectCategoryLabel[cat as ProjectCategory] ?? cat}
                 </button>
               );
             })}

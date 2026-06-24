@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Edit, Info } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
+import { fetchEditableResourceCategories, resourceSectionLabel, type ResourceCategoryOption, type ResourceSection } from '../../lib/resourceCategories';
 import {
   resourceStatusBadgeClass,
   resourceStatusLabel,
@@ -25,6 +26,9 @@ export function AdminResourceEditorPage() {
   const [status, setStatus] = useState<ResourceStatus>('draft');
   const [description, setDescription] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
+  const [section, setSection] = useState<ResourceSection>('corporate_material');
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [subsections, setSubsections] = useState<ResourceCategoryOption[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const configured = isSupabaseConfigured();
@@ -39,7 +43,7 @@ export function AdminResourceEditorPage() {
       if (configured && supabase && resourceId) {
         const { data, error } = await supabase
           .from('resources')
-          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, archived_at, created_at')
+          .select('id, title, subtitle, description, resource_type, status, file_path, external_url, published_at, archived_at, created_at, section, category_id')
           .eq('id', resourceId)
           .maybeSingle();
 
@@ -50,7 +54,7 @@ export function AdminResourceEditorPage() {
             title: r.title as string,
             subtitle: (r.subtitle as string) || '',
             description: (r.description as string) || '',
-            category: 'corporativo' as ResourceCategory,
+            category: ((r.category_id as string | null) || (r.section === 'corporate_material' ? 'corporativo' : 'proyectos')) as ResourceCategory,
             type: (r.resource_type as ResourceType) || 'document',
             status: (r.status as ResourceStatus) || 'draft',
             publishedAt: (r.published_at as string) || null,
@@ -61,6 +65,8 @@ export function AdminResourceEditorPage() {
             visualTone: 'corporativo' as 'corporativo',
             featured: false,
             fileLabel: null,
+            section: (r.section as ResourceSection) || 'corporate_material',
+            categoryId: (r.category_id as string | null) || '',
           } as (typeof mockResources)[number];
         }
       }
@@ -77,6 +83,9 @@ export function AdminResourceEditorPage() {
           setStatus(found.status);
           setDescription(found.description || '');
           setExternalUrl(found.externalUrl || '');
+          const rawFound = found as typeof found & { section?: ResourceSection; categoryId?: string | null };
+          setSection(rawFound.section ?? 'corporate_material');
+          setCategoryId(rawFound.categoryId ?? '');
         }
         setLoading(false);
       }
@@ -85,6 +94,15 @@ export function AdminResourceEditorPage() {
     load();
     return () => { cancelled = true; };
   }, [configured, resourceId]);
+
+  useEffect(() => {
+    if (!configured || section === 'corporate_material') {
+      setSubsections([]);
+      return;
+    }
+
+    fetchEditableResourceCategories(section, categoryId || null).then(setSubsections);
+  }, [configured, section, categoryId]);
 
   async function handleSave() {
     if (!configured || !supabase || !resource) return;
@@ -103,6 +121,7 @@ export function AdminResourceEditorPage() {
       resource_type: type,
       status,
       external_url: externalUrl.trim() || null,
+      category_id: section === 'corporate_material' ? null : (categoryId || null),
     };
 
     if (status === 'published' && resource.status !== 'published') {
@@ -123,7 +142,7 @@ export function AdminResourceEditorPage() {
       return;
     }
 
-    setResource({ ...resource, title: title.trim(), description: description.trim() || '', type, status, externalUrl: externalUrl.trim() || '' });
+    setResource({ ...resource, title: title.trim(), description: description.trim() || '', type, status, externalUrl: externalUrl.trim() || '', category: (categoryId || resource.category) as ResourceCategory });
     setFeedback({ type: 'success', message: 'Recurso actualizado correctamente.' });
     setSaving(false);
   }
@@ -256,6 +275,45 @@ export function AdminResourceEditorPage() {
               <option value="archived">Archivado</option>
             </select>
           </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500">
+              Sección
+            </label>
+            <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              {resourceSectionLabel[section]}
+            </div>
+          </div>
+          {section !== 'corporate_material' && (
+            <div>
+              <label htmlFor="resource-subsection" className="block text-xs font-medium text-slate-500">
+                Subsección
+              </label>
+              <select
+                id="resource-subsection"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+              >
+                <option value="">Sin subsección</option>
+                {subsections.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}{category.is_active ? '' : ' (inactiva)'}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-400">Solo se ofrecen activas, manteniendo la actual si está inactiva.</p>
+            </div>
+          )}
+          {section === 'corporate_material' && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500">
+                Subsección
+              </label>
+              <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
+                Sin subsección — Material Corporativo
+              </div>
+            </div>
+          )}
           <div>
             <label htmlFor="resource-external-url" className="block text-xs font-medium text-slate-500">
               Enlace externo

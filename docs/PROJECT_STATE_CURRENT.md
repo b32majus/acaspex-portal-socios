@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-24  
-Estado de referencia: tras cierre H0.8T-FIX1 (corrección permisos, navegación y orden subsecciones)  
+Estado de referencia: tras implementación H0.8T-FIX2 (subsecciones reales en admin y portal)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `a3c967b — fix: allow admins to create resources + H0.8T-FIX1 in-flight`
+Último commit: pendiente de commit H0.8T-FIX2
 
 ---
 
@@ -154,6 +154,20 @@ h08s_resource_sections_model_validated
 h08t_resource_subsections_admin_validated
 h08t_fix1_resource_subsections_admin_fix_ready_for_validation
 ```
+
+
+### H0.8T-FIX2 — Subsecciones reales en admin y portal
+
+Estado: `h08t_resource_subsections_admin_fix_ready_for_validation`
+
+- Staging corregido con migración 025: `resource_categories` tiene GRANT `SELECT, INSERT, UPDATE` para `authenticated`.
+- Policies `resource_categories_select_authenticated`, `resource_categories_insert_admin`, `resource_categories_update_admin` recreadas con `TO authenticated`.
+- No hay policy DELETE para `resource_categories`.
+- Pantalla admin de subsecciones mantiene creación sin campo Orden, calcula `max(sort_order) + 1` desde DB y reordena con updates secuenciales + reversión básica si falla el segundo update.
+- `/admin/recursos/nuevo` usa subsecciones activas reales y guarda `category_id` directamente.
+- `/admin/recursos/:id` muestra la sección real, mantiene la categoría actual aunque esté inactiva y permite cambiar a otra activa de la misma sección; `corporate_material` queda con `category_id = null`.
+- Portal socio lee subsecciones activas reales y ordenadas desde `resource_categories` para Centro de Conocimiento y Banco de Proyectos.
+- Se mantiene la decisión de no crear nuevas secciones principales todavía.
 
 ## 9. Estado de staging (post H0.7q)
 
