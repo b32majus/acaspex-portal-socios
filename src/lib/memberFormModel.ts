@@ -25,6 +25,7 @@ export type MemberFormState = {
   membershipStart: string;
   paidUntil: string;
   notes: string;
+  accreditationFilePath: string;
   legacyMemberNumber: string;
   legacySource: string;
   legacyImportBatch: string;
@@ -54,6 +55,7 @@ export function createEmptyMemberFormState(): MemberFormState {
     membershipStart: '',
     paidUntil: '',
     notes: '',
+    accreditationFilePath: '',
     legacyMemberNumber: '',
     legacySource: '',
     legacyImportBatch: '',
@@ -120,6 +122,7 @@ export type MemberRow = Record<string, unknown> & {
   communication_consent: boolean | null;
   privacy_accepted_at: string | null;
   notes: string | null;
+  reduced_fee_accreditation_file_path: string | null;
   legacy_member_number: string | null;
   legacy_source: string | null;
   legacy_import_batch: string | null;
@@ -151,6 +154,7 @@ export function mapMemberRowToForm(row: MemberRow): MemberFormState {
     membershipStart: row.membership_start || '',
     paidUntil: row.paid_until || '',
     notes: row.notes || '',
+    accreditationFilePath: row.reduced_fee_accreditation_file_path || '',
     legacyMemberNumber: row.legacy_member_number || '',
     legacySource: row.legacy_source || '',
     legacyImportBatch: row.legacy_import_batch || '',
@@ -193,6 +197,7 @@ export function mapFormToMemberInsertPayload(form: MemberFormState): Record<stri
     notes: form.notes.trim() || null,
     communication_consent: form.communicationConsent,
     privacy_accepted_at: form.privacyAcceptedAt || null,
+    reduced_fee_accreditation_file_path: form.accreditationFilePath || null,
     legacy_member_number: form.legacyMemberNumber || null,
     legacy_source: form.legacySource || null,
     legacy_import_batch: form.legacyImportBatch || null,
@@ -232,5 +237,6 @@ export function mapFormToMemberUpdatePayload(form: MemberFormState): Record<stri
     fee_amount: feeAmount,
     notes: form.notes.trim() || null,
     communication_consent: form.communicationConsent,
+    reduced_fee_accreditation_file_path: form.accreditationFilePath || null,
   };
 }

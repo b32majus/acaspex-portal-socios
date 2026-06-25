@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Edit, ShieldCheck, Trash2, User } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchAdminMemberById, updateAdminMember, deleteAdminMember } from '../../lib/memberQueries';
 import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, documentTypeOptions } from '../../lib/memberFormOptions';
@@ -39,6 +40,7 @@ export function AdminMemberDetailPage() {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!memberId) return;
@@ -54,6 +56,7 @@ export function AdminMemberDetailPage() {
   function startEdit() {
     if (!row) return;
     setEditForm(mapMemberRowToForm(row));
+    setAccreditationFile(null);
     setEditing(true);
     setSaveError(null);
     setFeedback(null);
@@ -62,6 +65,7 @@ export function AdminMemberDetailPage() {
   function cancelEdit() {
     setEditing(false);
     setEditForm(null);
+    setAccreditationFile(null);
     setSaveError(null);
   }
 
@@ -70,10 +74,36 @@ export function AdminMemberDetailPage() {
     setSaving(true);
     setSaveError(null);
     try {
-      const updated = await updateAdminMember(row.id, editForm);
+      const configured = isSupabaseConfigured();
+      let newPath = editForm.accreditationFilePath;
+
+      if (accreditationFile && configured && supabase) {
+        const oldPath = row.reduced_fee_accreditation_file_path;
+        const ext = accreditationFile.name.split('.').pop()?.toLowerCase() || 'pdf';
+        const storagePath = `${row.id}/accreditation.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('acaspex-reduced-fee-accreditations')
+          .upload(storagePath, accreditationFile, {
+            contentType: accreditationFile.type,
+            upsert: true,
+          });
+
+        if (uploadError) throw new Error('Error al subir justificante: ' + uploadError.message);
+
+        if (oldPath && oldPath !== storagePath) {
+          await supabase.storage.from('acaspex-reduced-fee-accreditations').remove([oldPath]);
+        }
+
+        newPath = storagePath;
+      }
+
+      const saveForm = { ...editForm, accreditationFilePath: newPath };
+      const updated = await updateAdminMember(row.id, saveForm);
       setRow(updated);
       setEditing(false);
-    setEditForm(null);
+      setEditForm(null);
+      setAccreditationFile(null);
       setFeedback('Ficha actualizada correctamente.');
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Error al guardar.');
@@ -143,6 +173,9 @@ export function AdminMemberDetailPage() {
           mode="edit"
           submitting={saving}
           error={saveError}
+          accreditationFile={accreditationFile}
+          onAccreditationFileChange={setAccreditationFile}
+          existingAccreditationPath={row?.reduced_fee_accreditation_file_path || null}
           onChange={setEditForm}
           onSubmit={handleSave}
           onCancel={cancelEdit}

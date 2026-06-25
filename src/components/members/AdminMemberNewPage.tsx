@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
-import { createAdminMember } from '../../lib/memberQueries';
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
+import { createAdminMember, updateAdminMember } from '../../lib/memberQueries';
 import { createEmptyMemberFormState, type MemberFormState } from '../../lib/memberFormModel';
 import { MemberForm } from './MemberForm';
 
@@ -10,12 +11,30 @@ export function AdminMemberNewPage() {
   const [form, setForm] = useState<MemberFormState>(createEmptyMemberFormState());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
 
   async function handleCreate() {
     setSubmitting(true);
     setError(null);
     try {
       const created = await createAdminMember(form);
+
+      if (accreditationFile && isSupabaseConfigured() && supabase) {
+        const ext = accreditationFile.name.split('.').pop()?.toLowerCase() || 'pdf';
+        const storagePath = `${created.id}/accreditation.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('acaspex-reduced-fee-accreditations')
+          .upload(storagePath, accreditationFile, {
+            contentType: accreditationFile.type,
+            upsert: false,
+          });
+
+        if (uploadError) throw new Error('Justificante subido, pero error al almacenarlo: ' + uploadError.message);
+
+        await updateAdminMember(created.id, { ...form, accreditationFilePath: storagePath });
+      }
+
       navigate(`/admin/socios/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear el socio.');
@@ -49,6 +68,8 @@ export function AdminMemberNewPage() {
         mode="create"
         submitting={submitting}
         error={error}
+        accreditationFile={accreditationFile}
+        onAccreditationFileChange={setAccreditationFile}
         onChange={setForm}
         onSubmit={handleCreate}
         onCancel={() => navigate('/admin/socios')}
