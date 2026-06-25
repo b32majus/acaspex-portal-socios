@@ -24,7 +24,7 @@ export function MemberForm({ value: v, mode, submitting, error, onChange, onSubm
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
-      className="space-y-6"
+      className="max-w-4xl mx-auto space-y-6"
     >
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50/60 p-3 text-sm text-red-800">{error}</div>
@@ -163,6 +163,17 @@ export function MemberForm({ value: v, mode, submitting, error, onChange, onSubm
           )}
         </div>
       </fieldset>
+
+      {/* Justificante cuota reducida */}
+      {(v.memberProfile === 'residente' || v.memberProfile === 'estudiante' || v.memberProfile === 'jubilado') && (
+        <fieldset className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+          <legend className="font-serif text-lg text-amber-900 px-1">Justificante de cuota reducida</legend>
+          <p className="mt-2 text-sm text-amber-800">
+            La gestión documental del justificante se añadirá en una fase posterior.
+            Mientras tanto, registre la situación en notas internas.
+          </p>
+        </fieldset>
+      )}
 
       {/* Consentimientos */}
       <fieldset className="rounded-2xl border border-slate-200 bg-white p-5">

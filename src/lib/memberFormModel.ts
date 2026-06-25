@@ -119,6 +119,7 @@ export type MemberRow = Record<string, unknown> & {
   paid_until: string | null;
   communication_consent: boolean | null;
   privacy_accepted_at: string | null;
+  notes: string | null;
   legacy_member_number: string | null;
   legacy_source: string | null;
   legacy_import_batch: string | null;
@@ -149,7 +150,7 @@ export function mapMemberRowToForm(row: MemberRow): MemberFormState {
     feeAmount: row.fee_amount || 50,
     membershipStart: row.membership_start || '',
     paidUntil: row.paid_until || '',
-    notes: ((row as Record<string, unknown>).notes as string) || '',
+    notes: row.notes || '',
     legacyMemberNumber: row.legacy_member_number || '',
     legacySource: row.legacy_source || '',
     legacyImportBatch: row.legacy_import_batch || '',

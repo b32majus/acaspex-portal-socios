@@ -25,7 +25,7 @@ export function AdminMemberNewPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8">
       <Link to="/admin/socios" className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800">
         <ChevronLeft size={14} /> Volver a socios
       </Link>
