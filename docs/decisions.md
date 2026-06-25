@@ -138,6 +138,10 @@ Los `member_number` ACX-XXXX no se reutilizan aunque se elimine un socio. Se uti
 
 Al eliminar un `member`, cualquier `profile` vinculado se desactiva (`is_active = false`) antes de que la FK `ON DELETE SET NULL` deje el perfil sin ficha. No se borran `auth.users` desde la aplicación en el MVP. Decisión cerrada por Sil/Cora en H0.9C-A. Implementado mediante trigger `deactivate_profiles_before_member_delete`.
 
+### D033 — Configuración SMTP/correo corporativo al final
+
+La conexión del correo corporativo o SMTP propio para invitaciones, recuperación de contraseña y emails transaccionales se realizará al final del proyecto, cuando Sil haga los últimos ajustes presenciales con Ana T. Hasta entonces, el entorno staging puede seguir usando el SMTP gratuito/default de Supabase, aceptando sus rate limits. Esta decisión evita bloquear el desarrollo funcional del portal por la configuración definitiva del correo institucional.
+
 ## Decisiones pendientes
 
 1. Texto legal/RGPD.

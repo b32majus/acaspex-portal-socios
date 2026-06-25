@@ -27,6 +27,7 @@ members.status + members.paid_until = elegibilidad de socio
 - Borrado seguro: al eliminar member, desactivar profile antes.
 - No borrar auth.users desde la app en MVP.
 - La eliminación de member deja profile sin member_id por ON DELETE SET NULL, pero inactivo.
+- La conexión del correo corporativo / SMTP propio se pospone hasta el final, cuando Sil haga los últimos ajustes presenciales con Ana T. Hasta entonces, se acepta que staging pueda quedar limitado por el SMTP gratuito/default de Supabase.
 
 ## H0.9C-A — Cerrado
 
@@ -51,12 +52,14 @@ Micro-WOs:
 - B3: Desactivar/reactivar acceso desde ficha.
 - B4: Reenviar invitación / reset password si procede.
 - B5: `last_seen_at` si se decide registrar último acceso.
+- SMTP-final: configurar correo corporativo / SMTP propio para invitaciones, recuperación de contraseña y emails transaccionales. Esta fase queda deliberadamente pospuesta hasta los últimos ajustes presenciales con Ana T.
 
 ## Riesgos
 
 - Orfandad parcial si falla profile tras crear auth user.
 - Email ya existente en auth.users.
 - Configuración de templates/redirección Supabase Auth.
+- Rate limit del SMTP gratuito/default de Supabase hasta que se configure el correo corporativo / SMTP propio en la fase final.
 - No confundir profile activo con socio activo.
 - No exponer service_role.
 - No crear múltiples profiles para el mismo member.
