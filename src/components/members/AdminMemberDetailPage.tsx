@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ExternalLink, ChevronLeft, Edit, ShieldCheck, Trash2, User } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchAdminMemberById, updateAdminMember, deleteAdminMember } from '../../lib/memberQueries';
+import { fetchMemberAccessProfile, type MemberAccessProfile } from '../../lib/memberAccessQueries';
 import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, documentTypeOptions } from '../../lib/memberFormOptions';
 import { MemberForm } from './MemberForm';
@@ -40,6 +41,9 @@ export function AdminMemberDetailPage() {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [accessProfile, setAccessProfile] = useState<MemberAccessProfile | null>(null);
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
   const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
   const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
   const [paymentReceiptUrl, setPaymentReceiptUrl] = useState<string | null>(null);
@@ -62,6 +66,16 @@ export function AdminMemberDetailPage() {
         .catch(() => {});
     }
   }, [row]);
+
+  useEffect(() => {
+    if (!memberId) return;
+    setAccessLoading(true);
+    setAccessError(null);
+    fetchMemberAccessProfile(memberId)
+      .then((data) => setAccessProfile(data))
+      .catch(() => setAccessError('No se pudo consultar el estado de acceso.'))
+      .finally(() => setAccessLoading(false));
+  }, [memberId]);
 
   useEffect(() => {
     if (!memberId) return;
@@ -413,10 +427,48 @@ export function AdminMemberDetailPage() {
         </section>
       )}
 
-      <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
-        <p className="text-sm text-amber-800">
-          <strong>Acceso al portal:</strong> pendiente de H0.9C. Esta ficha es solo administrativa; no se ha creado cuenta de acceso/login.
-        </p>
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-serif text-lg text-slate-900">Acceso al portal</h2>
+        <div className="mt-4 space-y-3 text-sm">
+          {accessLoading && (
+            <p className="text-slate-400">Consultando estado de acceso...</p>
+          )}
+          {accessError && (
+            <p className="text-red-600">{accessError}</p>
+          )}
+          {!accessLoading && !accessError && !accessProfile && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4">
+              <p className="text-sm font-medium text-blue-800">Sin acceso creado</p>
+              <p className="mt-1 text-xs text-blue-600">Esta ficha administrativa todavía no tiene usuario de acceso vinculado.</p>
+              <p className="mt-2 text-xs text-blue-500">La creación automática de acceso/invitación se implementará en el siguiente bloque H0.9C.</p>
+            </div>
+          )}
+          {!accessLoading && !accessError && accessProfile && (
+            <div className={`rounded-lg border p-4 ${accessProfile.is_active ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60'}`}>
+              <p className="text-sm font-medium text-slate-800">
+                {accessProfile.is_active ? 'Acceso creado' : 'Acceso desactivado'}
+              </p>
+              <dl className="mt-3 space-y-2 text-xs">
+                <div>
+                  <dt className="text-slate-400">Email</dt>
+                  <dd className="mt-0.5 text-slate-700">{accessProfile.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">Rol</dt>
+                  <dd className="mt-0.5 text-slate-700">{accessProfile.role === 'socio' ? 'Socio' : accessProfile.role === 'junta_directiva' ? 'Junta Directiva' : 'Administrador'}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">Invitado</dt>
+                  <dd className="mt-0.5 text-slate-700">{accessProfile.invited_at ? formatDate(accessProfile.invited_at) : '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">Último acceso</dt>
+                  <dd className="mt-0.5 text-slate-700">{accessProfile.last_seen_at ? formatDate(accessProfile.last_seen_at) : '—'}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="rounded-2xl border border-red-200 bg-white p-5 mt-4">
@@ -427,6 +479,9 @@ export function AdminMemberDetailPage() {
               <div>
                 <p className="text-sm font-medium text-red-800">¿Eliminar este socio?</p>
                 <p className="mt-1 text-xs text-red-600">Esta acción eliminará la ficha administrativa de forma permanente. No se podrá deshacer.</p>
+                {accessProfile && (
+                  <p className="mt-1 text-xs font-medium text-amber-700">Este socio tiene acceso al portal. Al eliminar la ficha, el acceso se desactivará y el perfil quedará sin ficha vinculada.</p>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
