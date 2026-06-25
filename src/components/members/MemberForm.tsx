@@ -186,20 +186,22 @@ export function MemberForm({ value: v, mode, submitting, error, accreditationFil
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <SectionHeader title="Justificante de pago" subtitle="Comprobante de transferencia bancaria (PDF, JPG o PNG)" />
         {existingPaymentReceiptPath && !paymentReceiptFile && (
-          <p className="mb-3 text-xs text-teal-700">Justificante cargado: <code className="text-xs">{existingPaymentReceiptPath.split('/').pop() || existingPaymentReceiptPath}</code></p>
+          <p className="mb-2 text-xs text-teal-700">Justificante cargado: <code className="text-xs">{existingPaymentReceiptPath.split('/').pop() || existingPaymentReceiptPath}</code></p>
         )}
-        {paymentReceiptFile ? (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-teal-700">{paymentReceiptFile.name} ({(paymentReceiptFile.size / 1024).toFixed(0)} KB)</span>
+        {paymentReceiptFile && (
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm text-teal-700">Nuevo: {paymentReceiptFile.name} ({(paymentReceiptFile.size / 1024).toFixed(0)} KB)</span>
             <button type="button" onClick={() => onPaymentReceiptFileChange(null)} className="text-xs text-slate-400 hover:text-slate-600">Quitar</button>
           </div>
-        ) : (
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={(e) => onPaymentReceiptFileChange(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-xs file:font-medium file:text-teal-700 hover:file:bg-teal-100"
-          />
+        )}
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          onChange={(e) => onPaymentReceiptFileChange(e.target.files?.[0] ?? null)}
+          className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-xs file:font-medium file:text-teal-700 hover:file:bg-teal-100"
+        />
+        {existingPaymentReceiptPath && !paymentReceiptFile && (
+          <p className="mt-1.5 text-xs text-slate-400">Selecciona un archivo para sustituir el justificante actual.</p>
         )}
       </section>
 
@@ -208,20 +210,22 @@ export function MemberForm({ value: v, mode, submitting, error, accreditationFil
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <SectionHeader title="Justificante de cuota reducida" subtitle="Adjunte el documento acreditativo (PDF, JPG o PNG)" />
           {existingAccreditationPath && !accreditationFile && (
-            <p className="mb-3 text-xs text-teal-700">Justificante cargado: <code className="text-xs">{existingAccreditationPath.split('/').pop() || existingAccreditationPath}</code></p>
+            <p className="mb-2 text-xs text-teal-700">Justificante cargado: <code className="text-xs">{existingAccreditationPath.split('/').pop() || existingAccreditationPath}</code></p>
           )}
-          {accreditationFile ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-teal-700">{accreditationFile.name} ({(accreditationFile.size / 1024).toFixed(0)} KB)</span>
+          {accreditationFile && (
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-sm text-teal-700">Nuevo: {accreditationFile.name} ({(accreditationFile.size / 1024).toFixed(0)} KB)</span>
               <button type="button" onClick={() => onAccreditationFileChange(null)} className="text-xs text-slate-400 hover:text-slate-600">Quitar</button>
             </div>
-          ) : (
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(e) => onAccreditationFileChange(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-xs file:font-medium file:text-teal-700 hover:file:bg-teal-100"
-            />
+          )}
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={(e) => onAccreditationFileChange(e.target.files?.[0] ?? null)}
+            className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-xs file:font-medium file:text-teal-700 hover:file:bg-teal-100"
+          />
+          {existingAccreditationPath && !accreditationFile && (
+            <p className="mt-1.5 text-xs text-slate-400">Selecciona un archivo para sustituir el justificante actual.</p>
           )}
         </section>
       )}

@@ -323,8 +323,28 @@ export function AdminMemberDetailPage() {
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-serif text-lg text-slate-900">Justificantes</h2>
+        <dl className="mt-4 space-y-3 text-sm">
+          <div>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Comprobante de pago</dt>
+            <dd className={`mt-0.5 ${row.payment_receipt_file_path ? 'text-teal-700 font-medium' : 'text-slate-400'}`}>
+              {row.payment_receipt_file_path ? 'Archivo cargado' : 'No cargado'}
+            </dd>
+          </div>
+          {(row.member_profile === 'residente' || row.member_profile === 'estudiante' || row.member_profile === 'jubilado') && (
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Justificante de cuota reducida</dt>
+              <dd className={`mt-0.5 ${row.reduced_fee_accreditation_file_path ? 'text-teal-700 font-medium' : 'text-slate-400'}`}>
+                {row.reduced_fee_accreditation_file_path ? 'Archivo cargado' : 'No cargado'}
+              </dd>
+            </div>
+          )}
+        </dl>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="font-serif text-lg text-slate-900">Notas internas</h2>
-        <p className="mt-3 text-sm text-slate-600">{(row as Record<string, unknown>).notes as string || 'Sin notas.'}</p>
+        <p className="mt-3 text-sm text-slate-600">{row.notes || 'Sin notas.'}</p>
       </section>
 
       {(row.legacy_member_number || row.legacy_source) && (

@@ -19,40 +19,35 @@ export function AdminMemberNewPage() {
     setError(null);
     try {
       const created = await createAdminMember(form);
-
       const configured = isSupabaseConfigured();
+
+      let accredPath = '';
+      let paymentPath = '';
 
       if (accreditationFile && configured && supabase) {
         const ext = accreditationFile.name.split('.').pop()?.toLowerCase() || 'pdf';
-        const storagePath = `${created.id}/accreditation.${ext}`;
-
+        accredPath = `${created.id}/accreditation.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from('acaspex-reduced-fee-accreditations')
-          .upload(storagePath, accreditationFile, {
-            contentType: accreditationFile.type,
-            upsert: false,
-          });
-
-        if (uploadError) throw new Error('Justificante de cuota subido, pero error al almacenarlo: ' + uploadError.message);
-
-        await updateAdminMember(created.id, { ...form, accreditationFilePath: storagePath, paymentReceiptFilePath: form.paymentReceiptFilePath });
+          .upload(accredPath, accreditationFile, { contentType: accreditationFile.type, upsert: false });
+        if (uploadError) throw new Error('Error al guardar justificante de cuota: ' + uploadError.message);
       }
 
       if (paymentReceiptFile && configured && supabase) {
         const ext = paymentReceiptFile.name.split('.').pop()?.toLowerCase() || 'pdf';
-        const storagePath = `${created.id}/comprobante-pago.${ext}`;
-
+        paymentPath = `${created.id}/comprobante-pago.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from('acaspex-payment-receipts')
-          .upload(storagePath, paymentReceiptFile, {
-            contentType: paymentReceiptFile.type,
-            upsert: false,
-          });
+          .upload(paymentPath, paymentReceiptFile, { contentType: paymentReceiptFile.type, upsert: false });
+        if (uploadError) throw new Error('Error al guardar justificante de pago: ' + uploadError.message);
+      }
 
-        if (uploadError) throw new Error('Justificante de pago subido, pero error al almacenarlo: ' + uploadError.message);
-
-        const currentAccredPath = accreditationFile ? `${created.id}/accreditation.${(accreditationFile.name.split('.').pop()?.toLowerCase() || 'pdf')}` : form.accreditationFilePath;
-        await updateAdminMember(created.id, { ...form, accreditationFilePath: currentAccredPath, paymentReceiptFilePath: storagePath });
+      if (accredPath || paymentPath) {
+        await updateAdminMember(created.id, {
+          ...form,
+          accreditationFilePath: accredPath || form.accreditationFilePath,
+          paymentReceiptFilePath: paymentPath || form.paymentReceiptFilePath,
+        });
       }
 
       navigate(`/admin/socios/${created.id}`);
