@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ChevronLeft, Edit, ShieldCheck, User } from 'lucide-react';
-import { fetchAdminMemberById, updateAdminMember } from '../../lib/memberQueries';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ChevronLeft, Edit, ShieldCheck, Trash2, User } from 'lucide-react';
+import { fetchAdminMemberById, updateAdminMember, deleteAdminMember } from '../../lib/memberQueries';
 import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, documentTypeOptions } from '../../lib/memberFormOptions';
 import { MemberForm } from './MemberForm';
@@ -26,6 +26,7 @@ function formatDate(value: string | null | undefined): string {
 
 export function AdminMemberDetailPage() {
   const { memberId } = useParams<{ memberId: string }>();
+  const navigate = useNavigate();
   const [row, setRow] = useState<MemberRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +36,9 @@ export function AdminMemberDetailPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!memberId) return;
@@ -75,6 +79,19 @@ export function AdminMemberDetailPage() {
       setSaveError(err instanceof Error ? err.message : 'Error al guardar.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeleteMember() {
+    if (!row) return;
+    setDeleting(true);
+    try {
+      await deleteAdminMember(row.id);
+      navigate('/admin/socios');
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : 'Error al eliminar.');
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   }
 
@@ -284,6 +301,49 @@ export function AdminMemberDetailPage() {
         <p className="text-sm text-amber-800">
           <strong>Acceso al portal:</strong> pendiente de H0.9C. Esta ficha es solo administrativa; no se ha creado cuenta de acceso/login.
         </p>
+      </section>
+
+      <section className="rounded-2xl border border-red-200 bg-white p-5 mt-4">
+        {confirmDelete ? (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <Trash2 size={18} className="mt-0.5 shrink-0 text-red-500" />
+              <div>
+                <p className="text-sm font-medium text-red-800">¿Eliminar este socio?</p>
+                <p className="mt-1 text-xs text-red-600">Esta acción eliminará la ficha administrativa de forma permanente. No se podrá deshacer.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Escribe ELIMINAR para confirmar"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm w-60 focus:border-red-500 focus:outline-none"
+                onChange={(e) => {
+                  if (e.target.value === 'ELIMINAR') {
+                    handleDeleteMember();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+            </div>
+            {deleting && <p className="text-xs text-slate-500">Eliminando...</p>}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+          >
+            <Trash2 size={15} /> Eliminar socio
+          </button>
+        )}
       </section>
         </>
       )}

@@ -118,3 +118,14 @@ export async function fetchAdminMemberStats(): Promise<MemberStats> {
   }
   return stats;
 }
+
+export async function deleteAdminMember(memberId: string): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase no configurado');
+
+  const { error } = await supabase
+    .from('members')
+    .delete()
+    .eq('id', memberId);
+
+  if (error) throw error;
+}
