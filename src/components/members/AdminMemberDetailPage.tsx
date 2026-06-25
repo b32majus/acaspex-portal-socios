@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Edit, ShieldCheck, Trash2, User } from 'lucide-react';
+import { ExternalLink, ChevronLeft, Edit, ShieldCheck, Trash2, User } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchAdminMemberById, updateAdminMember, deleteAdminMember } from '../../lib/memberQueries';
 import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
@@ -42,6 +42,26 @@ export function AdminMemberDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
   const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
+  const [paymentReceiptUrl, setPaymentReceiptUrl] = useState<string | null>(null);
+  const [accreditationUrl, setAccreditationUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!row || !isSupabaseConfigured()) return;
+    const configured = isSupabaseConfigured();
+
+    if (row.payment_receipt_file_path && configured && supabase) {
+      supabase.storage.from('acaspex-payment-receipts')
+        .createSignedUrl(row.payment_receipt_file_path, 300)
+        .then(({ data }) => { if (data?.signedUrl) setPaymentReceiptUrl(data.signedUrl); })
+        .catch(() => {});
+    }
+    if (row.reduced_fee_accreditation_file_path && configured && supabase) {
+      supabase.storage.from('acaspex-reduced-fee-accreditations')
+        .createSignedUrl(row.reduced_fee_accreditation_file_path, 300)
+        .then(({ data }) => { if (data?.signedUrl) setAccreditationUrl(data.signedUrl); })
+        .catch(() => {});
+    }
+  }, [row]);
 
   useEffect(() => {
     if (!memberId) return;
@@ -327,15 +347,35 @@ export function AdminMemberDetailPage() {
         <dl className="mt-4 space-y-3 text-sm">
           <div>
             <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Comprobante de pago</dt>
-            <dd className={`mt-0.5 ${row.payment_receipt_file_path ? 'text-teal-700 font-medium' : 'text-slate-400'}`}>
-              {row.payment_receipt_file_path ? 'Archivo cargado' : 'No cargado'}
+            <dd className="mt-0.5">
+              {row.payment_receipt_file_path ? (
+                paymentReceiptUrl ? (
+                  <a href={paymentReceiptUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-teal-700 hover:text-teal-800 font-medium">
+                    <ExternalLink size={12} /> Ver comprobante
+                  </a>
+                ) : (
+                  <span className="text-teal-700 font-medium">Archivo cargado</span>
+                )
+              ) : (
+                <span className="text-slate-400">No cargado</span>
+              )}
             </dd>
           </div>
           {(row.member_profile === 'residente' || row.member_profile === 'estudiante' || row.member_profile === 'jubilado') && (
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Justificante de cuota reducida</dt>
-              <dd className={`mt-0.5 ${row.reduced_fee_accreditation_file_path ? 'text-teal-700 font-medium' : 'text-slate-400'}`}>
-                {row.reduced_fee_accreditation_file_path ? 'Archivo cargado' : 'No cargado'}
+              <dd className="mt-0.5">
+                {row.reduced_fee_accreditation_file_path ? (
+                  accreditationUrl ? (
+                    <a href={accreditationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-teal-700 hover:text-teal-800 font-medium">
+                      <ExternalLink size={12} /> Ver justificante
+                    </a>
+                  ) : (
+                    <span className="text-teal-700 font-medium">Archivo cargado</span>
+                  )
+                ) : (
+                  <span className="text-slate-400">No cargado</span>
+                )}
               </dd>
             </div>
           )}
