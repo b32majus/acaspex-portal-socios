@@ -1,7 +1,7 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
-Última actualización: 2026-06-24  
-Estado de referencia: cierre validado H0.8U — correcciones finales del módulo de recursos  
+Última actualización: 2026-06-25  
+Estado de referencia: cierre H0.9B — gestión administrativa real de socios  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
 Último commit: `4af438d` — fix: show corporate subsection in resource detail
@@ -269,9 +269,49 @@ H0.7 cerrado funcionalmente:
 - Material Corporativo unificado como sección específica Junta/Admin.
 - Ruta directa protegida por RequireBoardOrAdmin.
 
+### H0.9B — Gestión administrativa real de socios ✅ pending_validation
+
+Estado: implementado, pendiente de validación — 2026-06-25.
+
+Implementado:
+- Listado real de socios con filtros (estado, perfil, organización, categoría, búsqueda libre).
+- Detalle real con todos los campos de ficha: identificación, documento, contacto, perfil profesional, membresía, consentimientos, notas, legacy.
+- Formulario reutilizable `MemberForm` con todos los campos del alta + admin.
+- Edición completa de ficha desde detalle.
+- Alta manual completa desde `/admin/socios/nuevo` (sin crear login).
+- Dashboard admin con conteos reales de members.
+- `member_number` ACX-XXXX autogenerado por trigger DB.
+- `membership_start` y `paid_until` calculados por trigger DB al activar.
+- Migraciones: 031 (grants), 032 (member_number trigger), 033 (activation dates trigger).
+
+No incluye:
+- auth.users / profiles (no se crea login).
+- Formulario público `/hazte-socio` real.
+- Pagos, renovaciones, solicitudes reales.
+- Aplicación de migraciones en staging.
+
+Commits del bloque:
+- `9470904` — docs: align H0.9A audit with full member form
+- `b738926` — docs: define canonical member form contract
+- `6036638` — feat: add shared member form options
+- `8f25601` — refactor: reuse shared member form options in signup
+- `023a151` — feat: add member form model and mappers
+- `759d4dd` — fix: align member form mappers with database schema
+- `fd32e7c` — feat: grant admin member writes through RLS
+- `0e1fcb7` — feat: generate ACASPEX member numbers
+- `024be0a` — feat: calculate member activation dates
+- `19aeb16` — fix: harden member triggers before UI integration
+- `0bb6834` — feat: connect admin members list to Supabase
+- `75252aa` — feat: connect admin member detail to Supabase
+- `f059ae3` — fix: polish read-only member admin views
+- `35d2a4a` — feat: add member form and allow full admin editing
+- `90050c9` — fix: preserve member notes and sync fee with profile
+- `69ea19d` — feat: add manual member creation
+- `799453d` — feat: use real member stats in admin dashboard
+
 ## 10. Siguiente fase
 
-H0.9A — Auditoría de gestión de socios por parte del administrador.
+H0.9C — Acceso / invitación Auth (vínculo member → profile → auth.users).
 
 ### H0.8a — Diseño
 
@@ -626,7 +666,7 @@ Regla de seguridad:
 
 ## 8. Siguiente fase
 
-H0.9A — Auditoría de gestión de socios por parte del administrador.
+H0.9C — Acceso / invitación Auth.
 
 ## 9. Estado de este documento
 

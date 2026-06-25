@@ -1,7 +1,7 @@
 ---
 title: Backlog vivo — ACASPEX Portal Socios
 created: 2026-06-20
-updated: 2026-06-23
+updated: 2026-06-25
 status: living-draft
 owner: Sil + Cora
 project: ACASPEX Portal Socios
@@ -588,7 +588,17 @@ Deuda aceptada:
 
 Siguiente bloque recomendado:
 
-- `H0.9A — Auditoría de gestión de socios por parte del administrador.`
+- `H0.9C — Acceso / invitación Auth (member → profile → auth.users).`
+
+### H0.9B — Gestión administrativa real de socios pending_validation
+
+Estado: implementado, pendiente de validación — 2026-06-25.
+
+17 commits. Listado real con filtros. Detalle real completo. Formulario `MemberForm` reutilizable. Edición completa. Alta manual sin login. Dashboard con conteos reales. `member_number` ACX-XXXX autogenerado por trigger DB. `membership_start` + `paid_until` calculados al activar.
+
+No incluye: auth.users, profiles, login, formulario público real, pagos, renovaciones.
+
+Migraciones: 031 (grants), 032 (member_number ACX trigger), 033 (activation dates trigger).
 
 ### H0.8U — Correcciones finales del módulo de recursos ✅ VALIDADO
 
