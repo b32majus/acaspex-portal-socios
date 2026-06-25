@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ExternalLink, ChevronLeft, Edit, ShieldCheck, Trash2, User } from 'lucide-react';
+import { ExternalLink, ChevronLeft, Edit, ShieldCheck, Trash2, User, Mail } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchAdminMemberById, updateAdminMember, deleteAdminMember } from '../../lib/memberQueries';
 import { fetchMemberAccessProfile, type MemberAccessProfile } from '../../lib/memberAccessQueries';
+import { createMemberAccess } from '../../lib/memberAccessActions';
 import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, documentTypeOptions } from '../../lib/memberFormOptions';
 import { MemberForm } from './MemberForm';
@@ -44,6 +45,9 @@ export function AdminMemberDetailPage() {
   const [accessProfile, setAccessProfile] = useState<MemberAccessProfile | null>(null);
   const [accessLoading, setAccessLoading] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [creatingAccess, setCreatingAccess] = useState(false);
+  const [accessActionError, setAccessActionError] = useState<string | null>(null);
+  const [accessActionFeedback, setAccessActionFeedback] = useState<string | null>(null);
   const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
   const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
   const [paymentReceiptUrl, setPaymentReceiptUrl] = useState<string | null>(null);
@@ -87,6 +91,50 @@ export function AdminMemberDetailPage() {
       .catch(() => setError('No se pudo cargar el socio.'))
       .finally(() => setLoading(false));
   }, [memberId]);
+
+  function mapAccessError(response: { code?: string; message?: string }): string {
+    const code = response.code ?? '';
+    const msg = response.message ?? '';
+
+    if (code === 'member_not_eligible') return 'El socio debe estar activo y con cuota vigente para crear acceso.';
+    if (code === 'member_without_email') return 'El socio no tiene email registrado. Añade un email antes de crear acceso.';
+    if (code === 'forbidden_not_admin') return 'No tienes permisos de administración para crear accesos.';
+    if (code === 'profile_already_exists') return 'El acceso ya existe para este socio.';
+    if (code === 'member_not_found') return 'Socio no encontrado.';
+    if (code === 'profile_creation_failed') return 'Se creó la invitación, pero no se pudo vincular el perfil. Revisa el handoff/logs antes de reintentar.';
+    if (code === 'auth_user_creation_failed') {
+      if (msg.toLowerCase().includes('rate limit')) {
+        return 'No se ha podido enviar la invitación porque el proveedor de correo ha aplicado un límite temporal de envío. Inténtalo de nuevo más tarde.';
+      }
+      return 'No se ha podido crear/enviar la invitación de acceso. Revisa la configuración de correo o inténtalo más tarde.';
+    }
+    return msg || 'Error inesperado al crear el acceso.';
+  }
+
+  async function handleCreateAccess() {
+    if (!row) return;
+    setAccessActionError(null);
+    setAccessActionFeedback(null);
+    setCreatingAccess(true);
+    try {
+      const result = await createMemberAccess(row.id);
+
+      if (result.ok && result.profile) {
+        setAccessProfile(result.profile);
+        if (result.already_exists) {
+          setAccessActionFeedback('El acceso ya existía. Se ha actualizado la información mostrada.');
+        } else {
+          setAccessActionFeedback('Acceso creado e invitación enviada correctamente.');
+        }
+      } else if (!result.ok) {
+        setAccessActionError(mapAccessError(result));
+      }
+    } catch (err) {
+      setAccessActionError(err instanceof Error ? err.message : 'Error al crear el acceso.');
+    } finally {
+      setCreatingAccess(false);
+    }
+  }
 
   function startEdit() {
     if (!row) return;
@@ -210,6 +258,7 @@ export function AdminMemberDetailPage() {
   const badgeClass = statusBadgeClass[row.status] ?? 'bg-slate-100 text-slate-600';
   const profileLabel = profileLabelMap[row.member_profile || ''] || row.member_profile || '—';
   const docTypeLabel = docTypeLabelMap[row.document_type || ''] || row.document_type || '—';
+  const isEligible = row.status === 'active' && row.paid_until && row.paid_until >= new Date().toISOString().slice(0, 10) && !!row.email;
 
   return (
     <div className="space-y-8">
@@ -437,10 +486,40 @@ export function AdminMemberDetailPage() {
             <p className="text-red-600">{accessError}</p>
           )}
           {!accessLoading && !accessError && !accessProfile && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4">
-              <p className="text-sm font-medium text-blue-800">Sin acceso creado</p>
-              <p className="mt-1 text-xs text-blue-600">Esta ficha administrativa todavía no tiene usuario de acceso vinculado.</p>
-              <p className="mt-2 text-xs text-blue-500">La creación automática de acceso/invitación se implementará en el siguiente bloque H0.9C.</p>
+            <div className="space-y-3">
+              <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4">
+                <p className="text-sm font-medium text-blue-800">Sin acceso creado</p>
+                <p className="mt-1 text-xs text-blue-600">Esta ficha administrativa todavía no tiene usuario de acceso vinculado.</p>
+              </div>
+
+              {accessActionError && (
+                <div className="rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">{accessActionError}</div>
+              )}
+              {accessActionFeedback && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">{accessActionFeedback}</div>
+              )}
+
+              {!accessProfile && (
+                <div className="flex flex-col items-start gap-2">
+                  {isEligible ? (
+                    <button
+                      type="button"
+                      onClick={handleCreateAccess}
+                      disabled={creatingAccess}
+                      className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+                    >
+                      <Mail size={15} />
+                      {creatingAccess ? 'Creando acceso...' : 'Crear acceso / Enviar invitación'}
+                    </button>
+                  ) : (
+                    <p className="text-xs text-slate-500">El socio debe estar activo y con cuota vigente para crear acceso.</p>
+                  )}
+
+                  <p className="text-xs text-slate-400">
+                    El envío real de invitaciones utiliza temporalmente el correo configurado en Supabase. El correo corporativo de ACASPEX se conectará en la fase final de ajustes con Ana T.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           {!accessLoading && !accessError && accessProfile && (
