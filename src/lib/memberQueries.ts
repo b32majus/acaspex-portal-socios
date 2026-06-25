@@ -29,6 +29,7 @@ const MEMBER_SELECT = `
   privacy_accepted_at,
   notes,
   reduced_fee_accreditation_file_path,
+  payment_receipt_file_path,
   legacy_member_number,
   legacy_source,
   legacy_import_batch,

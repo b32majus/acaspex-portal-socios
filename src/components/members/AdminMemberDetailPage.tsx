@@ -41,6 +41,7 @@ export function AdminMemberDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
+  const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!memberId) return;
@@ -57,6 +58,7 @@ export function AdminMemberDetailPage() {
     if (!row) return;
     setEditForm(mapMemberRowToForm(row));
     setAccreditationFile(null);
+    setPaymentReceiptFile(null);
     setEditing(true);
     setSaveError(null);
     setFeedback(null);
@@ -66,6 +68,7 @@ export function AdminMemberDetailPage() {
     setEditing(false);
     setEditForm(null);
     setAccreditationFile(null);
+    setPaymentReceiptFile(null);
     setSaveError(null);
   }
 
@@ -75,7 +78,8 @@ export function AdminMemberDetailPage() {
     setSaveError(null);
     try {
       const configured = isSupabaseConfigured();
-      let newPath = editForm.accreditationFilePath;
+      let newAccredPath = editForm.accreditationFilePath;
+      let newPaymentPath = editForm.paymentReceiptFilePath;
 
       if (accreditationFile && configured && supabase) {
         const oldPath = row.reduced_fee_accreditation_file_path;
@@ -84,26 +88,42 @@ export function AdminMemberDetailPage() {
 
         const { error: uploadError } = await supabase.storage
           .from('acaspex-reduced-fee-accreditations')
-          .upload(storagePath, accreditationFile, {
-            contentType: accreditationFile.type,
-            upsert: true,
-          });
+          .upload(storagePath, accreditationFile, { contentType: accreditationFile.type, upsert: true });
 
-        if (uploadError) throw new Error('Error al subir justificante: ' + uploadError.message);
+        if (uploadError) throw new Error('Error al subir justificante de cuota: ' + uploadError.message);
 
         if (oldPath && oldPath !== storagePath) {
           await supabase.storage.from('acaspex-reduced-fee-accreditations').remove([oldPath]);
         }
 
-        newPath = storagePath;
+        newAccredPath = storagePath;
       }
 
-      const saveForm = { ...editForm, accreditationFilePath: newPath };
+      if (paymentReceiptFile && configured && supabase) {
+        const oldPath = row.payment_receipt_file_path;
+        const ext = paymentReceiptFile.name.split('.').pop()?.toLowerCase() || 'pdf';
+        const storagePath = `${row.id}/comprobante-pago.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('acaspex-payment-receipts')
+          .upload(storagePath, paymentReceiptFile, { contentType: paymentReceiptFile.type, upsert: true });
+
+        if (uploadError) throw new Error('Error al subir justificante de pago: ' + uploadError.message);
+
+        if (oldPath && oldPath !== storagePath) {
+          await supabase.storage.from('acaspex-payment-receipts').remove([oldPath]);
+        }
+
+        newPaymentPath = storagePath;
+      }
+
+      const saveForm = { ...editForm, accreditationFilePath: newAccredPath, paymentReceiptFilePath: newPaymentPath };
       const updated = await updateAdminMember(row.id, saveForm);
       setRow(updated);
       setEditing(false);
       setEditForm(null);
       setAccreditationFile(null);
+      setPaymentReceiptFile(null);
       setFeedback('Ficha actualizada correctamente.');
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Error al guardar.');
@@ -176,6 +196,9 @@ export function AdminMemberDetailPage() {
           accreditationFile={accreditationFile}
           onAccreditationFileChange={setAccreditationFile}
           existingAccreditationPath={row?.reduced_fee_accreditation_file_path || null}
+          paymentReceiptFile={paymentReceiptFile}
+          onPaymentReceiptFileChange={setPaymentReceiptFile}
+          existingPaymentReceiptPath={row?.payment_receipt_file_path || null}
           onChange={setEditForm}
           onSubmit={handleSave}
           onCancel={cancelEdit}

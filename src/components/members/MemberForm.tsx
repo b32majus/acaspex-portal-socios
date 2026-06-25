@@ -16,6 +16,9 @@ export type MemberFormProps = {
   accreditationFile: File | null;
   onAccreditationFileChange: (file: File | null) => void;
   existingAccreditationPath?: string | null;
+  paymentReceiptFile: File | null;
+  onPaymentReceiptFileChange: (file: File | null) => void;
+  existingPaymentReceiptPath?: string | null;
   onChange: (next: MemberFormState) => void;
   onSubmit: () => void;
   onCancel?: () => void;
@@ -35,7 +38,7 @@ const selectClass = 'mt-1.5 w-full rounded-lg border border-slate-200 bg-white p
 const readonlyClass = 'mt-1.5 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500';
 const labelClass = 'block text-xs font-medium text-slate-500';
 
-export function MemberForm({ value: v, mode, submitting, error, accreditationFile, onAccreditationFileChange, existingAccreditationPath, onChange, onSubmit, onCancel }: MemberFormProps) {
+export function MemberForm({ value: v, mode, submitting, error, accreditationFile, onAccreditationFileChange, existingAccreditationPath, paymentReceiptFile, onPaymentReceiptFileChange, existingPaymentReceiptPath, onChange, onSubmit, onCancel }: MemberFormProps) {
   const set = (partial: Partial<MemberFormState>) => onChange({ ...v, ...partial });
 
   return (
@@ -177,6 +180,27 @@ export function MemberForm({ value: v, mode, submitting, error, accreditationFil
             </div>
           )}
         </div>
+      </section>
+
+      {/* Justificante de pago */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <SectionHeader title="Justificante de pago" subtitle="Comprobante de transferencia bancaria (PDF, JPG o PNG)" />
+        {existingPaymentReceiptPath && !paymentReceiptFile && (
+          <p className="mb-3 text-xs text-teal-700">Justificante cargado: <code className="text-xs">{existingPaymentReceiptPath.split('/').pop() || existingPaymentReceiptPath}</code></p>
+        )}
+        {paymentReceiptFile ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-teal-700">{paymentReceiptFile.name} ({(paymentReceiptFile.size / 1024).toFixed(0)} KB)</span>
+            <button type="button" onClick={() => onPaymentReceiptFileChange(null)} className="text-xs text-slate-400 hover:text-slate-600">Quitar</button>
+          </div>
+        ) : (
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={(e) => onPaymentReceiptFileChange(e.target.files?.[0] ?? null)}
+            className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-xs file:font-medium file:text-teal-700 hover:file:bg-teal-100"
+          />
+        )}
       </section>
 
       {/* Justificante cuota reducida */}

@@ -12,6 +12,7 @@ export function AdminMemberNewPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
+  const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
 
   async function handleCreate() {
     setSubmitting(true);
@@ -19,7 +20,9 @@ export function AdminMemberNewPage() {
     try {
       const created = await createAdminMember(form);
 
-      if (accreditationFile && isSupabaseConfigured() && supabase) {
+      const configured = isSupabaseConfigured();
+
+      if (accreditationFile && configured && supabase) {
         const ext = accreditationFile.name.split('.').pop()?.toLowerCase() || 'pdf';
         const storagePath = `${created.id}/accreditation.${ext}`;
 
@@ -30,9 +33,26 @@ export function AdminMemberNewPage() {
             upsert: false,
           });
 
-        if (uploadError) throw new Error('Justificante subido, pero error al almacenarlo: ' + uploadError.message);
+        if (uploadError) throw new Error('Justificante de cuota subido, pero error al almacenarlo: ' + uploadError.message);
 
-        await updateAdminMember(created.id, { ...form, accreditationFilePath: storagePath });
+        await updateAdminMember(created.id, { ...form, accreditationFilePath: storagePath, paymentReceiptFilePath: form.paymentReceiptFilePath });
+      }
+
+      if (paymentReceiptFile && configured && supabase) {
+        const ext = paymentReceiptFile.name.split('.').pop()?.toLowerCase() || 'pdf';
+        const storagePath = `${created.id}/comprobante-pago.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('acaspex-payment-receipts')
+          .upload(storagePath, paymentReceiptFile, {
+            contentType: paymentReceiptFile.type,
+            upsert: false,
+          });
+
+        if (uploadError) throw new Error('Justificante de pago subido, pero error al almacenarlo: ' + uploadError.message);
+
+        const currentAccredPath = accreditationFile ? `${created.id}/accreditation.${(accreditationFile.name.split('.').pop()?.toLowerCase() || 'pdf')}` : form.accreditationFilePath;
+        await updateAdminMember(created.id, { ...form, accreditationFilePath: currentAccredPath, paymentReceiptFilePath: storagePath });
       }
 
       navigate(`/admin/socios/${created.id}`);
@@ -70,6 +90,8 @@ export function AdminMemberNewPage() {
         error={error}
         accreditationFile={accreditationFile}
         onAccreditationFileChange={setAccreditationFile}
+        paymentReceiptFile={paymentReceiptFile}
+        onPaymentReceiptFileChange={setPaymentReceiptFile}
         onChange={setForm}
         onSubmit={handleCreate}
         onCancel={() => navigate('/admin/socios')}
