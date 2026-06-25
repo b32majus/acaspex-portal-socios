@@ -61,6 +61,7 @@ import type { ResourceLike } from '../lib/resourceHelpers';
 import { MockCover } from '../components/resources/MockCover';
 import PdfCoverPreview from '../components/resources/PdfCoverPreview';
 import { documentTypeOptions, professionalCategoryOptions, organizationOptions } from '../lib/memberFormOptions';
+import { fetchAdminMemberStats, type MemberStats } from '../lib/memberQueries';
 
 export function LoginPage() {
   const assetBase = import.meta.env.BASE_URL;
@@ -1688,9 +1689,15 @@ export function MemberProjectDetailPage() {
 }
 
 export function AdminDashboardPage() {
-  const activeMembers = mockMembers.filter((m) => m.status === 'active').length;
-  const pendingMembers = mockMembers.filter((m) => m.status === 'pending_review').length;
-  const expiredMembers = mockMembers.filter((m) => m.status === 'expired').length;
+  const [memberStats, setMemberStats] = useState<MemberStats>({ total: 0, active: 0, pending_review: 0, expired: 0, inactive: 0, cancelled: 0 });
+
+  useEffect(() => {
+    fetchAdminMemberStats().then(setMemberStats).catch(() => {});
+  }, []);
+
+  const activeMembers = memberStats.active;
+  const pendingMembers = memberStats.pending_review;
+  const expiredMembers = memberStats.expired + memberStats.inactive + memberStats.cancelled;
 
   const publishedResources = mockResources.filter((r) => r.status === 'published').length;
   const draftResources = mockResources.filter((r) => r.status === 'draft').length;
@@ -1807,7 +1814,7 @@ export function AdminDashboardPage() {
           </div>
           <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Total registrados</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{mockMembers.length}</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{memberStats.total}</p>
           </div>
         </div>
       </section>

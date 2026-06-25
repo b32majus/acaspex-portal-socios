@@ -90,3 +90,31 @@ export async function updateAdminMember(memberId: string, form: MemberFormState)
   if (error) throw error;
   return data as MemberRow;
 }
+
+export type MemberStats = {
+  total: number;
+  active: number;
+  pending_review: number;
+  expired: number;
+  inactive: number;
+  cancelled: number;
+};
+
+export async function fetchAdminMemberStats(): Promise<MemberStats> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return { total: 0, active: 0, pending_review: 0, expired: 0, inactive: 0, cancelled: 0 };
+  }
+
+  const { data, error } = await supabase
+    .from('members')
+    .select('status');
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as { status: string }[];
+  const stats: MemberStats = { total: rows.length, active: 0, pending_review: 0, expired: 0, inactive: 0, cancelled: 0 };
+  for (const r of rows) {
+    if (r.status in stats) (stats as Record<string, number>)[r.status]++;
+  }
+  return stats;
+}
