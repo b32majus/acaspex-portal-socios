@@ -126,6 +126,18 @@ El rol administrador permite acceso operativo global al portal. Un administrador
 
 La sección "Material Corporativo" agrupa recursos internos de uso institucional de ACASPEX (plantillas, logos, documentos institucionales, materiales de jornadas, presentaciones, actas, recursos de comunicación). Acceso: `administrador` y `junta_directiva`. `socio` no accede. Esta sección permite demostrar de forma visible la diferencia entre roles sin crear una zona compleja de gobierno interno. Implementación en H0.7q.
 
+### D030 — Creación de acceso mediante Edge Function/backend
+
+La creación de `auth.users` e invitaciones se hará en backend seguro (Edge Function), nunca desde frontend. El frontend nunca usará `service_role`. La Edge Function verificará que el llamante es administrador y validará la elegibilidad del socio antes de crear el acceso. Decisión cerrada por Sil/Cora en H0.9C.
+
+### D031 — Números ACX no reutilizables
+
+Los `member_number` ACX-XXXX no se reutilizan aunque se elimine un socio. Se utiliza una secuencia monotónica PostgreSQL (`members_member_number_seq`) para garantizar que cada nuevo socio recibe un número mayor que el máximo histórico. Se acepta que existan huecos en la numeración. Decisión cerrada por Sil/Cora en H0.9C-A.
+
+### D032 — Borrado seguro de socios con acceso
+
+Al eliminar un `member`, cualquier `profile` vinculado se desactiva (`is_active = false`) antes de que la FK `ON DELETE SET NULL` deje el perfil sin ficha. No se borran `auth.users` desde la aplicación en el MVP. Decisión cerrada por Sil/Cora en H0.9C-A. Implementado mediante trigger `deactivate_profiles_before_member_delete`.
+
 ## Decisiones pendientes
 
 1. Texto legal/RGPD.

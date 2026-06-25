@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-25  
-Estado de referencia: cierre H0.9B — gestión administrativa real de socios  
+Estado de referencia: cierre H0.9C-A — acceso, borrado seguro, numeración monotónica  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `4af438d` — fix: show corporate subsection in resource detail
+Último commit: `6329e7d` — feat: add member access status and harden member deletion
 
 ---
 
@@ -664,8 +664,19 @@ Regla de seguridad:
 
 ---
 
-## 8. Siguiente fase
+## 8. H0.9C-A — Cerrado y validado por Sil
 
+- HEAD: 6329e7d.
+- Estado de acceso visible en ficha administrativa.
+- Helper read-only `fetchMemberAccessProfile()`.
+- Borrado seguro: trigger `deactivate_profiles_before_member_delete` desactiva profile antes de eliminar member.
+- ACX no reutilizable: secuencia monotónica `members_member_number_seq`, `generate_member_number()` con `nextval()`.
+- Aviso de acceso vinculado antes de eliminar socio en UI admin.
+- Próximo: H0.9C-B — Edge Function `create-member-access`.
+
+## 9. Siguiente fase
+
+H0.9C-B — Edge Function backend + botón UI de creación de acceso/invitación.
 H0.9C — Acceso / invitación Auth.
 
 ## 9. Estado de este documento
