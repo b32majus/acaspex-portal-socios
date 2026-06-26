@@ -1,7 +1,7 @@
 # H0.9D — Flujo público de alta real
 
 Última actualización: 2026-06-26
-Status: active
+Status: active — H0.9D-H (aprobación) completado
 
 ## Objetivo
 
@@ -44,6 +44,15 @@ Conectar el formulario público `/hazte-socio` a Supabase para crear solicitudes
 - `submitSignupRequest()` refactorizado: valida antes de subir archivo, usa `mapSignupFormToInsertPayload()`.
 - Validación de extensión de archivo añadida a `validateReceiptFile()`.
 - Riesgo de justificante huérfano mitigado: la validación ocurre antes del upload. Si el upload falla, no se inserta. Si el upload OK y el insert falla, el archivo queda huérfano en Storage (riesgo aceptado: bucket privado, sin acceso hasta que admin revise; limpieza futura pendiente).
+
+### H0.9D-H — Aprobación de solicitud ✓
+- **H-A**: Auditoría — `go`. Member.status = active, sin payments, sin RPC (dos operaciones frontend).
+- **H-B**: `signupApprovalModel.ts` — mapper `mapSignupRequestToMemberCreatePayload()`.
+- **H-C**: `signupApprovalActions.ts` — `approveSignupRequest()` con validación, duplicate check, insert member + update signup.
+- **H-D**: UI en detalle admin — botón "Crear socio y aprobar solicitud". Confirmación, estados, enlace a ficha.
+- **H-E**: Validación — build OK, security clean, grants verificados.
+- El admin puede convertir una solicitud en ficha administrativa de socio. El trigger 033 establece membership_start y paid_until automáticamente (12 meses desde aprobación).
+- No se crea acceso Auth/profile. No se envían emails. No se crea payment.
 
 ## Qué queda fuera de H0.9D
 

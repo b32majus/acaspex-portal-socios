@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-26  
-Estado de referencia: H0.9D — alta pública real conectada a Supabase  
+Estado de referencia: H0.9D-H — aprobación de solicitudes conectada (signup → member)  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo-main`  
 Rama operativa: `main`  
-Último commit funcional: `970a395` — feat: connect admin signup request detail
+Último commit funcional: `66f1462` — feat: add admin signup approval button
 
 ---
 
@@ -704,18 +704,18 @@ HEAD funcional: `2815207` — docs: close H0.9C functional access block.
 
 ## 10. Siguiente fase
 
-Tras el cierre funcional de H0.9C, la siguiente fase prioritaria es:
+Tras H0.9D (alta pública + aprobación admin):
 
-**H0.9D — Flujo público de alta real (`/hazte-socio`)**
-- Conectar formulario público a Supabase (actualmente mock/demo).
-- Subida de justificante de pago a Storage.
-- Subida de acreditación de cuota reducida a Storage.
-- Crear `signup_request` con estado `pending_review`.
-- Validación admin de solicitudes.
+**H0.9E — Validación de pago manual / payments**
+- Registrar payment en tabla `payments` al aprobar.
+- Validación formal de pago por admin.
+- Vincular payment a member y signup_request.
 
 **Pendientes diferidos:**
-- B4 (reenviar invitación / reset password): diferido hasta SMTP-final (D033).
-- SMTP-final: correo corporativo acaspex@outlook.es, templates, redirect URLs — con Ana T.
+- H0.9F — Crear acceso al portal desde socio aprobado (auth user + profile).
+- H0.9G — Estados needs_info/rejected en solicitudes.
+- B4 (reenvío/reset password): diferido hasta SMTP-final (D033).
+- SMTP-final: correo corporativo, templates, redirect URLs — con Ana T.
 
 ## 11. Estado de este documento
 
