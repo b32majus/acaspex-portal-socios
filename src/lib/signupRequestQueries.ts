@@ -28,6 +28,7 @@ export interface SignupRequestRow {
   province: string | null;
   job_title: string | null;
   quality_safety_link: string | null;
+  privacy_accepted_at: string | null;
 }
 
 export type SignupStatus = SignupRequestRow['status'];
