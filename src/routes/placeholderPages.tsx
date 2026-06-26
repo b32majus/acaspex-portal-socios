@@ -2682,25 +2682,51 @@ export function AdminSignupRequestsPage() {
 
 export function AdminSignupDetailPage() {
   const { signupId } = useParams<{ signupId: string }>();
-  const request = mockSignupRequests.find((r) => r.id === signupId);
+  const [request, setRequest] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
 
-  const [paymentAmount, setPaymentAmount] = useState<number | ''>(
-    request ? (request.membershipType === 'reduced' ? 30 : 50) : '',
-  );
-  const [paymentDate, setPaymentDate] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
-  const [paymentReference, setPaymentReference] = useState('');
-  const [activationMessage, setActivationMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (!signupId || !isSupabaseConfigured()) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    import('../lib/signupRequestQueries')
+      .then(({ fetchSignupRequestById }) => fetchSignupRequestById(signupId))
+      .then((data) => {
+        setRequest(data);
+        if (data?.receipt_file_path && supabase) {
+          supabase.storage.from('acaspex-payment-receipts')
+            .createSignedUrl(data.receipt_file_path, 300)
+            .then(({ data: urlData }) => { if (urlData?.signedUrl) setReceiptUrl(urlData.signedUrl); })
+            .catch(() => {});
+        }
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar la solicitud.'))
+      .finally(() => setLoading(false));
+  }, [signupId]);
 
-  if (!request) {
+  if (loading) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 w-32 rounded bg-slate-200" />
+          <div className="h-32 rounded-2xl bg-slate-100" />
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !request) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="space-y-4">
           <h1 className="font-serif text-2xl font-light text-slate-900">Solicitud no encontrada</h1>
           <p className="text-sm text-slate-600">
-            No existe ninguna solicitud con el identificador indicado.
+            {error || 'No existe ninguna solicitud con el identificador indicado.'}
           </p>
           <Link
             to="/admin/solicitudes"
@@ -2714,29 +2740,10 @@ export function AdminSignupDetailPage() {
     );
   }
 
-  const fullName = `${request.firstName} ${request.lastName1} ${request.lastName2}`;
+  const fullName = [request.first_name, request.last_name_1, request.last_name_2].filter(Boolean).join(' ');
   const badgeClass = statusBadgeClass[request.status] ?? 'bg-slate-100 text-slate-600';
-  const isReduced = request.membershipType === 'reduced';
-
-  const today = new Date();
-  const paidUntilPreview = new Date(today);
-  paidUntilPreview.setMonth(paidUntilPreview.getMonth() + 12);
-  const paidUntilPreviewLabel = paidUntilPreview.toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-
-  const handleActivate = () => {
-    const paidUntil = new Date();
-    paidUntil.setMonth(paidUntil.getMonth() + 12);
-    const paidUntilLabel = paidUntil.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-    setActivationMessage(`Socio activado (simulación). Vigencia hasta ${paidUntilLabel}.`);
-  };
+  const memberProfileLabel = request.member_profile === 'general' ? 'General — 50 €/año' : 'Reducida — 30 €/año';
+  const isReduced = request.member_profile !== 'general';
 
   return (
     <div className="space-y-8">
@@ -2748,7 +2755,6 @@ export function AdminSignupDetailPage() {
         Volver a solicitudes
       </Link>
 
-      {/* Cabecera */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -2761,46 +2767,41 @@ export function AdminSignupDetailPage() {
               {signupStatusLabel[request.status] ?? request.status}
             </span>
             <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              {signupMembershipSimpleLabel[request.membershipType] ?? request.membershipType}
+              {isReduced ? 'Reducida' : 'General'}
             </span>
           </div>
         </div>
       </section>
 
-      {/* Datos de la solicitud */}
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* Identificación */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <IdCard size={18} />
-            </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700"><IdCard size={18} /></div>
             <h2 className="font-serif text-xl text-slate-900">Identificación</h2>
           </div>
           <dl className="mt-6 space-y-4 text-sm">
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Documento</dt>
               <dd className="mt-0.5 text-slate-700">
-                {(documentTypeOptions.find(o => o.value === request.documentType)?.label ?? request.documentType)} · {request.documentNumber}
+                {(documentTypeOptions.find(o => o.value === request.document_type)?.label ?? (request.document_type || '—'))}{request.document_number ? ' · ' + request.document_number : ''}
               </dd>
             </div>
             <div>
-              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Domicilio</dt>
-              <dd className="mt-0.5 text-slate-700">{request.address}</dd>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Dirección</dt>
+              <dd className="mt-0.5 text-slate-700">
+                {[request.address_line, request.city, request.province].filter(Boolean).join(', ') || '—'}
+              </dd>
             </div>
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Código postal</dt>
-              <dd className="mt-0.5 text-slate-700">{request.postalCode}</dd>
+              <dd className="mt-0.5 text-slate-700">{request.postal_code || '—'}</dd>
             </div>
           </dl>
         </section>
 
-        {/* Contacto */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <Mail size={18} />
-            </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700"><Mail size={18} /></div>
             <h2 className="font-serif text-xl text-slate-900">Contacto</h2>
           </div>
           <dl className="mt-6 space-y-4 text-sm">
@@ -2809,251 +2810,109 @@ export function AdminSignupDetailPage() {
               <dd className="mt-0.5 text-slate-700">{request.email}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Email de confirmación</dt>
-              <dd className="mt-0.5 text-slate-700">{request.emailConfirmation}</dd>
-            </div>
-            <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Teléfono</dt>
-              <dd className="mt-0.5 text-slate-700">{request.phone}</dd>
+              <dd className="mt-0.5 text-slate-700">{request.phone || '—'}</dd>
             </div>
           </dl>
         </section>
 
-        {/* Perfil profesional */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:col-span-2">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <User size={18} />
-            </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700"><User size={18} /></div>
             <h2 className="font-serif text-xl text-slate-900">Perfil profesional</h2>
           </div>
           <dl className="mt-6 grid gap-6 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Categoría profesional</dt>
-              <dd className="mt-0.5 font-medium text-slate-900">{request.professionalCategory}</dd>
+              <dd className="mt-0.5 font-medium text-slate-900">{request.professional_category || '—'}</dd>
             </div>
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Puesto de trabajo</dt>
-              <dd className="mt-0.5 text-slate-700">{request.jobTitle}</dd>
+              <dd className="mt-0.5 text-slate-700">{request.job_title || '—'}</dd>
             </div>
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Organización</dt>
-              <dd className="mt-0.5 text-slate-700">{request.organization}</dd>
+              <dd className="mt-0.5 text-slate-700">{request.organization || '—'}</dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                Vínculo con calidad y seguridad del paciente
-              </dt>
-              <dd className="mt-0.5 leading-relaxed text-slate-700">{request.qualitySafetyLink}</dd>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Vínculo con calidad y seguridad</dt>
+              <dd className="mt-0.5 leading-relaxed text-slate-700">{request.quality_safety_link || '—'}</dd>
             </div>
           </dl>
         </section>
 
-        {/* Cuota */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-              <CreditCard size={18} />
-            </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700"><CreditCard size={18} /></div>
             <h2 className="font-serif text-xl text-slate-900">Cuota</h2>
           </div>
           <dl className="mt-6 space-y-4 text-sm">
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo de cuota</dt>
-              <dd className="mt-0.5 font-medium text-slate-900">
-                {signupMembershipTypeLabel[request.membershipType] ?? request.membershipType}
-              </dd>
+              <dd className="mt-0.5 font-medium text-slate-900">{memberProfileLabel}</dd>
             </div>
-            {isReduced && request.reducedFeeReason && (
+            {isReduced && (
               <div>
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Motivo cuota reducida</dt>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Perfil</dt>
                 <dd className="mt-0.5 text-slate-700">
-                  {signupReducedFeeReasonLabel[request.reducedFeeReason]}
+                  {request.member_profile === 'residente' ? 'Residente' : request.member_profile === 'estudiante' ? 'Estudiante' : 'Jubilado'}
                 </dd>
               </div>
             )}
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Fecha de solicitud</dt>
-              <dd className="mt-0.5 text-slate-700">{formatSignupDate(request.requestedAt)}</dd>
+              <dd className="mt-0.5 text-slate-700">{formatSignupDate(request.created_at)}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Consentimientos</dt>
-              <dd className="mt-0.5 text-slate-700">
-                Comunicaciones: {request.communicationConsent ? 'Sí' : 'No'} · Datos: {request.dataProcessingConsent ? 'Sí' : 'No'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Notas</dt>
-              <dd className="mt-0.5 leading-relaxed text-slate-700">{request.notes}</dd>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Consentimiento comunicación</dt>
+              <dd className="mt-0.5 text-slate-700">{request.communication_consent ? 'Sí' : 'No'}</dd>
             </div>
           </dl>
         </section>
       </div>
 
-      {/* Documentación adjunta */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h2 className="font-serif text-xl text-slate-900">Documentación adjunta</h2>
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Justificante de transferencia</p>
-            <p className="mt-2 text-sm font-medium text-slate-900">
-              {request.transferReceiptUploaded ? 'Subido' : 'No subido'}
-            </p>
-            {request.transferReceiptFileName && (
-              <p className="mt-1 break-all text-xs text-slate-600">{request.transferReceiptFileName}</p>
-            )}
-            <button
-              type="button"
-              disabled
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
-            >
-              <FileText size={15} />
-              Validar justificante
-            </button>
-          </div>
-
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Acreditación de cuota reducida</p>
-            {isReduced ? (
+            {request.receipt_file_path ? (
               <>
-                <p className="mt-2 text-sm font-medium text-slate-900">
-                  {request.accreditationUploaded ? 'Subida' : 'No subida'}
-                </p>
-                {request.accreditationFileName && (
-                  <p className="mt-1 break-all text-xs text-slate-600">{request.accreditationFileName}</p>
+                <p className="mt-2 text-sm font-medium text-slate-900">Subido</p>
+                <p className="mt-1 break-all text-xs text-slate-600">{request.receipt_file_path}</p>
+                {receiptUrl ? (
+                  <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-white px-4 py-2 text-sm font-medium text-teal-700 transition-colors hover:bg-teal-50">
+                    <Download size={14} /> Ver justificante
+                  </a>
+                ) : (
+                  <button type="button" disabled className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
+                    Cargando...
+                  </button>
                 )}
-                <button
-                  type="button"
-                  disabled
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
-                >
-                  <ShieldCheck size={15} />
-                  Validar acreditación
-                </button>
               </>
             ) : (
-              <p className="mt-2 text-sm text-slate-600">No aplica</p>
+              <p className="mt-2 text-sm text-slate-500">No subido</p>
+            )}
+          </div>
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Acreditación cuota reducida</p>
+            {request.accreditation_file_path ? (
+              <p className="mt-2 text-sm font-medium text-slate-900">Subida</p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-500">
+                {isReduced ? 'No subida. Se solicitará durante la revisión.' : 'No aplica'}
+              </p>
             )}
           </div>
         </div>
       </section>
 
-      {/* Validación administrativa */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h2 className="font-serif text-xl text-slate-900">Validación administrativa</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Al activar hoy, la vigencia sería hasta <span className="font-medium text-slate-900">{paidUntilPreviewLabel}</span>.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
-          >
-            <CheckCircle size={15} />
-            Activar socio
-          </button>
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
-          >
-            <XCircle size={15} />
-            Denegar / cancelar solicitud
-          </button>
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
-          >
-            <Mail size={15} />
-            Enviar comunicación de bienvenida
-          </button>
-        </div>
-      </section>
-
-      {/* Registro de pago */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h2 className="font-serif text-xl text-slate-900">Registro de pago (simulación)</h2>
-        <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          <div>
-            <label htmlFor="payment-amount" className="block text-xs font-medium text-slate-500">
-              Importe (€)
-            </label>
-            <input
-              id="payment-amount"
-              type="number"
-              min={0}
-              step={0.01}
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-            />
-          </div>
-          <div>
-            <label htmlFor="payment-date" className="block text-xs font-medium text-slate-500">
-              Fecha de pago
-            </label>
-            <input
-              id="payment-date"
-              type="date"
-              value={paymentDate}
-              onChange={(e) => setPaymentDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-            />
-          </div>
-          <div>
-            <label htmlFor="payment-method" className="block text-xs font-medium text-slate-500">
-              Método
-            </label>
-            <select
-              id="payment-method"
-              value="transfer"
-              disabled
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 opacity-60"
-            >
-              <option value="transfer">Transferencia</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="payment-reference" className="block text-xs font-medium text-slate-500">
-              Referencia
-            </label>
-            <input
-              id="payment-reference"
-              type="text"
-              value={paymentReference}
-              onChange={(e) => setPaymentReference(e.target.value)}
-              placeholder="Referencia de la operación"
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
-            />
-          </div>
-        </div>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors cursor-not-allowed"
-          >
-            <CreditCard size={15} />
-            Registrar pago
-          </button>
-          <button
-            type="button"
-            onClick={handleActivate}
-            aria-disabled="true"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 opacity-50 transition-colors hover:bg-slate-50 cursor-not-allowed"
-          >
-            <CheckCircle size={15} />
-            Activar socio
-          </button>
-        </div>
-        {activationMessage && (
-          <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
-            <p className="text-sm text-emerald-800/80">{activationMessage}</p>
-          </div>
-        )}
-      </section>
+      {request.admin_notes && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="font-serif text-lg text-slate-900">Notas administrativas</h2>
+          <p className="mt-3 text-sm text-slate-600">{request.admin_notes}</p>
+        </section>
+      )}
     </div>
   );
 }
