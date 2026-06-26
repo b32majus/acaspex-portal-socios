@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-06-26  
-Estado de referencia: cierre funcional H0.9C — bloqueo/desbloqueo, last_seen, B4 y SMTP diferidos  
-Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
+Estado de referencia: H0.9D — alta pública real conectada a Supabase  
+Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo-main`  
 Rama operativa: `main`  
-Último commit funcional: `2815207` — docs: close H0.9C functional access block
+Último commit funcional: `970a395` — feat: connect admin signup request detail
 
 ---
 
