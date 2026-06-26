@@ -2514,13 +2514,20 @@ export function AdminRenewalsPage() {
   );
 }
 
-const signupStatusLabel: Record<SignupStatus, string> = {
+const signupStatusLabel: Record<string, string> = {
   pending_review: 'Pendiente de revisión',
-  active: 'Activo',
-  expired: 'Expirado',
-  inactive: 'Inactivo',
-  cancelled: 'Cancelado',
+  needs_info: 'Requiere información',
+  approved: 'Aprobada',
+  rejected: 'Rechazada',
 };
+
+const signupStatusFilterOptions: { value: string; label: string }[] = [
+  { value: 'all', label: 'Todas' },
+  { value: 'pending_review', label: 'Pendiente de revisión' },
+  { value: 'needs_info', label: 'Requiere información' },
+  { value: 'approved', label: 'Aprobadas' },
+  { value: 'rejected', label: 'Rechazadas' },
+];
 
 const signupMembershipSimpleLabel: Record<SignupMembershipType, string> = {
   general: 'General',
@@ -2536,11 +2543,28 @@ function formatSignupDate(dateStr: string): string {
 }
 
 export function AdminSignupRequestsPage() {
-  const [statusFilter, setStatusFilter] = useState<SignupStatus | 'all'>('pending_review');
+  const [statusFilter, setStatusFilter] = useState<string>('pending_review');
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredRequests = mockSignupRequests.filter((req) =>
-    statusFilter === 'all' ? true : req.status === statusFilter,
-  );
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    import('../lib/signupRequestQueries')
+      .then(({ fetchSignupRequests }) =>
+        fetchSignupRequests(statusFilter === 'all' ? undefined : statusFilter as any),
+      )
+      .then((data) => setRequests(data))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar solicitudes.'))
+      .finally(() => setLoading(false));
+  }, [statusFilter]);
+
+  const requestsToShow = requests;
 
   return (
     <div className="space-y-6">
@@ -2566,11 +2590,9 @@ export function AdminSignupRequestsPage() {
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             >
               <option value="all">Todas</option>
-              <option value="pending_review">{signupStatusLabel.pending_review}</option>
-              <option value="active">{signupStatusLabel.active}</option>
-              <option value="expired">{signupStatusLabel.expired}</option>
-              <option value="inactive">{signupStatusLabel.inactive}</option>
-              <option value="cancelled">{signupStatusLabel.cancelled}</option>
+              {signupStatusFilterOptions.filter(o => o.value !== 'all').map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -2579,15 +2601,25 @@ export function AdminSignupRequestsPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-slate-500">
-            <span className="font-medium text-slate-900">{filteredRequests.length}</span> solicitudes
+            <span className="font-medium text-slate-900">{requestsToShow.length}</span> solicitudes
           </p>
         </div>
 
-        {filteredRequests.length === 0 ? (
+        {loading && (
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-6 text-center">
+            <p className="text-sm text-slate-400">Cargando solicitudes...</p>
+          </div>
+        )}
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+        {!loading && !error && requestsToShow.length === 0 ? (
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-6 text-center">
             <p className="text-sm text-slate-600">No hay solicitudes en este estado</p>
           </div>
-        ) : (
+        ) : !loading && !error ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[48rem] text-left text-sm">
               <thead>
@@ -2602,36 +2634,29 @@ export function AdminSignupRequestsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredRequests.map((req) => {
+                {requestsToShow.map((req: any) => {
+                  const statusLabel = signupStatusLabel[req.status as keyof typeof signupStatusLabel] ?? req.status;
                   const badgeClass = statusBadgeClass[req.status] ?? 'bg-slate-100 text-slate-600';
-                  const accreditationText =
-                    req.membershipType === 'general'
-                      ? 'No aplica'
-                      : req.accreditationUploaded
-                        ? 'Sí'
-                        : 'No';
+                  const memberProfileLabel = req.member_profile === 'general' ? 'General' : 'Reducida';
+                  const hasReceipt = !!req.receipt_file_path;
+                  const hasAccreditation = !!req.accreditation_file_path;
+                  const fullName = [req.first_name, req.last_name_1, req.last_name_2].filter(Boolean).join(' ');
 
                   return (
                     <tr key={req.id} className="hover:bg-slate-50/60">
-                      <td className="py-3 font-medium text-slate-900">
-                        {req.firstName} {req.lastName1} {req.lastName2}
-                      </td>
+                      <td className="py-3 font-medium text-slate-900">{fullName}</td>
                       <td className="py-3 text-slate-600">{req.email}</td>
-                      <td className="py-3 text-slate-600">{formatSignupDate(req.requestedAt)}</td>
-                      <td className="py-3 text-slate-600">
-                        {signupMembershipSimpleLabel[req.membershipType]}
-                      </td>
+                      <td className="py-3 text-slate-600">{formatSignupDate(req.created_at)}</td>
+                      <td className="py-3 text-slate-600">{memberProfileLabel}</td>
                       <td className="py-3 text-slate-600">
                         <div className="space-y-0.5">
-                          <p>Justificante: {req.transferReceiptUploaded ? 'Sí' : 'No'}</p>
-                          <p>Acreditación: {accreditationText}</p>
+                          <p>Justificante: {hasReceipt ? 'Sí' : 'No'}</p>
+                          <p>Acreditación: {hasAccreditation ? 'Sí' : req.member_profile !== 'general' ? 'No' : 'No aplica'}</p>
                         </div>
                       </td>
                       <td className="py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}
-                        >
-                          {signupStatusLabel[req.status] ?? req.status}
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}>
+                          {statusLabel}
                         </span>
                       </td>
                       <td className="py-3 text-right">
@@ -2649,7 +2674,7 @@ export function AdminSignupRequestsPage() {
               </tbody>
             </table>
           </div>
-        )}
+        ) : null}
       </section>
     </div>
   );
