@@ -11,7 +11,8 @@ Status: active
 - H0.9C-B2 (botón UI Crear acceso): done.
 - H0.9C-B2-FIX1 (grant INSERT/UPDATE sobre profiles a authenticated): done.
 - H0.9C-B3 (bloquear/desbloquear acceso): done.
-- HEAD validado: 87d1610.
+- H0.9C-B5 (last_seen_at): done.
+- HEAD validado: 9621d15.
 
 ## Arquitectura
 
@@ -57,7 +58,8 @@ Micro-WOs:
 - B2-FIX1: GRANT INSERT/UPDATE sobre profiles a authenticated. ✓
 - B3: Bloquear/desbloquear acceso al portal desde ficha. ✓
 - B4: Reenviar invitación / reset password si procede. (pendiente)
-- B5: `last_seen_at` si se decide registrar último acceso. (pendiente)
+- B5: `last_seen_at` registrado mediante RPC segura `touch_own_profile_last_seen()` con throttle 15 min. ✓
+  La RPC es SECURITY DEFINER y solo actualiza `last_seen_at` y `updated_at` del propio usuario autenticado si el profile está activo (`is_active = true`). No abre UPDATE general sobre profiles y no modifica `role`, `is_active`, `member_id`, `email` ni `email_normalized`.
 - SMTP-final: configurar correo corporativo / SMTP propio para invitaciones, recuperación de contraseña y emails transaccionales. Esta fase queda deliberadamente pospuesta hasta los últimos ajustes presenciales con Ana T.
 
 ## Distinción producto: socio vs acceso al portal
