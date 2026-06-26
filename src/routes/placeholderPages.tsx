@@ -53,6 +53,8 @@ import {
 } from '../data/mockSignup';
 import { cn } from '../lib/utils';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { submitSignupRequest } from '../lib/signupRequestActions';
+import type { SignupFormState as RealSignupFormState } from '../lib/signupRequestModel';
 import { fetchActiveResourceCategories, getResourceCategoryIcon, type ResourceCategoryOption } from '../lib/resourceCategories';
 import { useAuth } from '../lib/authContext';
 import { useIdentity } from '../lib/identityContext';
@@ -3097,19 +3099,63 @@ export function SignupPage() {
   const [form, setForm] = useState<SignupFormState>(signupInitialState);
   const [submitted, setSubmitted] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   const updateField = <K extends keyof SignupFormState>(field: K, value: SignupFormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function mapOldFormToRealForm(oldForm: SignupFormState): RealSignupFormState {
+    return {
+      first_name: oldForm.firstName,
+      last_name_1: oldForm.lastName1,
+      last_name_2: oldForm.lastName2,
+      document_type: oldForm.documentType === 'dni' ? 'DNI' : oldForm.documentType === 'nie' ? 'NIE' : oldForm.documentType === 'passport' ? 'Pasaporte' : '',
+      document_number: oldForm.documentNumber,
+      address_line: oldForm.address,
+      postal_code: oldForm.postalCode,
+      city: '',
+      province: '',
+      email: oldForm.email,
+      email_confirmation: oldForm.emailConfirmation,
+      phone: oldForm.phone,
+      professional_category: oldForm.professionalCategory,
+      job_title: oldForm.jobTitle,
+      organization: oldForm.organization,
+      quality_safety_link: oldForm.qualitySafetyLink,
+      member_profile: oldForm.membershipType === 'reduced'
+        ? (oldForm.reducedFeeReason === 'resident' ? 'residente' : oldForm.reducedFeeReason === 'student' ? 'estudiante' : oldForm.reducedFeeReason === 'retired' ? 'jubilado' : 'general')
+        : 'general',
+      communication_consent: oldForm.communicationConsent,
+      privacy_accepted: oldForm.dataProcessingConsent,
+      receipt_file: receiptFile,
+    };
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.email !== form.emailConfirmation) {
       setEmailError('Los correos electrónicos no coinciden.');
       return;
     }
     setEmailError('');
-    setSubmitted(true);
+    setSubmitError('');
+    setSubmitting(true);
+    try {
+      const realForm = mapOldFormToRealForm(form);
+      const result = await submitSignupRequest(realForm);
+      if (result.ok) {
+        setSubmitted(true);
+      } else {
+        setSubmitError(result.message);
+      }
+    } catch {
+      setSubmitError('No se ha podido enviar la solicitud. Inténtalo de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -3125,7 +3171,10 @@ export function SignupPage() {
               Pendiente de revisión por el equipo de ACASPEX.
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              El equipo revisará datos, justificante y acreditación si aplica.
+              Recibirás confirmación cuando el equipo revise tu solicitud.
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Si solicitaste cuota reducida, la secretaría podrá pedirte documentación acreditativa durante la revisión.
             </p>
             <div className="mt-6 rounded-lg border border-amber-100 bg-amber-50/60 p-4">
               <p className="text-sm leading-relaxed text-amber-800/80">
@@ -3479,6 +3528,7 @@ export function SignupPage() {
                     type="file"
                     onChange={(e) => {
                       const file = e.target.files?.[0] ?? null;
+                      setReceiptFile(file);
                       setForm((prev) => ({
                         ...prev,
                         transferReceiptUploaded: file !== null,
@@ -3496,39 +3546,14 @@ export function SignupPage() {
                 )}
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
                   <Info size={13} className="mt-0.5 shrink-0" />
-                  En esta versión de validación no se realiza subida real al servidor.
+                  Formatos aceptados: PDF, JPG, PNG. Máximo 10 MB.
                 </p>
               </div>
 
               {isReduced && (
-                <div>
-                  <label htmlFor="signup-accreditation" className="block text-sm font-medium text-slate-700">
-                    Acreditación de cuota reducida
-                  </label>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <input
-                      id="signup-accreditation"
-                      type="file"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] ?? null;
-                        setForm((prev) => ({
-                          ...prev,
-                          accreditationUploaded: file !== null,
-                          accreditationFileName: file?.name ?? null,
-                        }));
-                      }}
-                      required
-                      className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-100 file:px-4 file:py-2 file:font-medium file:text-teal-700 hover:file:bg-teal-200 sm:w-auto"
-                    />
-                  </div>
-                  {form.accreditationFileName && (
-                    <p className="mt-1 text-xs text-teal-700">
-                      Archivo seleccionado: {form.accreditationFileName}
-                    </p>
-                  )}
-                  <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
-                    <Info size={13} className="mt-0.5 shrink-0" />
-                    En esta versión de validación no se realiza subida real al servidor.
+                <div className="rounded-lg border border-amber-100 bg-amber-50/60 p-4">
+                  <p className="text-sm text-amber-800">
+                    La documentación acreditativa podrá ser solicitada por la secretaría durante la revisión de la solicitud.
                   </p>
                 </div>
               )}
@@ -3584,13 +3609,20 @@ export function SignupPage() {
           </div>
 
           {/* Enviar */}
+          {submitError && (
+            <div className="rounded-lg border border-red-200 bg-red-50/60 p-3 text-sm text-red-700">{submitError}</div>
+          )}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800"
+              disabled={submitting}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
             >
-              <Upload size={16} />
-              Enviar solicitud
+              {submitting ? (
+                <>Enviando solicitud...</>
+              ) : (
+                <><Upload size={16} /> Enviar solicitud</>
+              )}
             </button>
             <Link
               to="/"
