@@ -7,7 +7,9 @@ export interface SignupRequestRow {
   last_name_2: string | null;
   document_type: 'DNI' | 'NIE' | 'Pasaporte' | null;
   document_number: string | null;
+  document_number_normalized: string | null;
   email: string;
+  email_normalized: string;
   phone: string | null;
   professional_category: string | null;
   organization: string | null;
@@ -29,6 +31,7 @@ export interface SignupRequestRow {
   job_title: string | null;
   quality_safety_link: string | null;
   privacy_accepted_at: string | null;
+  approved_member_id: string | null;
 }
 
 export type SignupStatus = SignupRequestRow['status'];
