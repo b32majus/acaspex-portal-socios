@@ -1,10 +1,10 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
-Última actualización: 2026-06-25  
-Estado de referencia: cierre H0.9C-A — acceso, borrado seguro, numeración monotónica  
+Última actualización: 2026-06-26  
+Estado de referencia: cierre funcional H0.9C — bloqueo/desbloqueo, last_seen, B4 y SMTP diferidos  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo`  
 Rama operativa: `main`  
-Último commit: `6329e7d` — feat: add member access status and harden member deletion
+Último commit funcional: `2815207` — docs: close H0.9C functional access block
 
 ---
 
@@ -664,22 +664,60 @@ Regla de seguridad:
 
 ---
 
-## 8. H0.9C-A — Cerrado y validado por Sil
+## 8. H0.9C — Gestión de acceso e invitaciones ✅ CERRADO FUNCIONALMENTE
 
-- HEAD: 6329e7d.
+HEAD funcional: `2815207` — docs: close H0.9C functional access block.
+
+### H0.9C-A — Cerrado
+- HEAD: 6329e7d. Validado por Sil.
 - Estado de acceso visible en ficha administrativa.
 - Helper read-only `fetchMemberAccessProfile()`.
-- Borrado seguro: trigger `deactivate_profiles_before_member_delete` desactiva profile antes de eliminar member.
-- ACX no reutilizable: secuencia monotónica `members_member_number_seq`, `generate_member_number()` con `nextval()`.
-- Aviso de acceso vinculado antes de eliminar socio en UI admin.
-- Próximo: H0.9C-B — Edge Function `create-member-access`.
+- Borrado seguro: trigger `deactivate_profiles_before_member_delete`.
+- ACX no reutilizable: secuencia monotónica `members_member_number_seq`.
 
-## 9. Siguiente fase
+### H0.9C-B — Cerrado funcionalmente; B4 y SMTP-final diferidos por D033
+- **B1** ✓ Edge Function `create-member-access`. Crea auth user + profile via backend seguro.
+- **B2** ✓ Botón UI "Crear acceso / Enviar invitación" en ficha administrativa.
+- **B2-FIX1** ✓ Migración 041: GRANT INSERT, UPDATE sobre `public.profiles` TO authenticated. Soluciona `permission denied for table profiles`.
+- **B3** ✓ Bloquear/desbloquear acceso al portal. Toggle `profiles.is_active` sin modificar ficha administrativa. Guard anti-bloqueo de perfiles admin.
+- **B5** ✓ `last_seen_at` registrado mediante RPC `touch_own_profile_last_seen()` (SECURITY DEFINER, throttle 15 min). No abre UPDATE general sobre profiles.
+- **B4** Diferido hasta SMTP-final (D033). Requiere correo corporativo, templates, redirect URLs y validación con Ana T.
+- **SMTP-final** Diferido por D033. Correo corporativo acaspex@outlook.es pendiente de configuración.
 
-H0.9C-B — Edge Function backend + botón UI de creación de acceso/invitación.
-H0.9C — Acceso / invitación Auth.
+### Migraciones H0.9C
+- 034: members notes column
+- 035: members admin delete
+- 036: members payment receipt
+- 037: deactivate profile before member delete
+- 038: member number sequence no reuse
+- 041: profiles admin write grants (INSERT, UPDATE)
+- 042: RPC touch_own_profile_last_seen
 
-## 9. Estado de este documento
+### Commits del bloque H0.9C-B
+- `461f312` — feat: add member access invitation function
+- `646651a` — feat: connect member access invitation action
+- `d67fd9c` — fix: grant admin profile write permissions
+- `87d1610` — feat: add member portal access blocking toggle
+- `00ce50f` — feat: add secure last seen profile touch function
+- `9621d15` — feat: record last seen on authenticated access
+- `2815207` — docs: close H0.9C functional access block
+
+## 10. Siguiente fase
+
+Tras el cierre funcional de H0.9C, la siguiente fase prioritaria es:
+
+**H0.9D — Flujo público de alta real (`/hazte-socio`)**
+- Conectar formulario público a Supabase (actualmente mock/demo).
+- Subida de justificante de pago a Storage.
+- Subida de acreditación de cuota reducida a Storage.
+- Crear `signup_request` con estado `pending_review`.
+- Validación admin de solicitudes.
+
+**Pendientes diferidos:**
+- B4 (reenviar invitación / reset password): diferido hasta SMTP-final (D033).
+- SMTP-final: correo corporativo acaspex@outlook.es, templates, redirect URLs — con Ana T.
+
+## 11. Estado de este documento
 
 status: current
 owner: Sil / Cora

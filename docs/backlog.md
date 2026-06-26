@@ -1,7 +1,7 @@
 ---
 title: Backlog vivo — ACASPEX Portal Socios
 created: 2026-06-20
-updated: 2026-06-25
+updated: 2026-06-26
 status: living-draft
 owner: Sil + Cora
 project: ACASPEX Portal Socios
@@ -83,7 +83,7 @@ Incluye:
 - ver paid_until;
 - notas internas.
 
-Estado: candidato MVP v0.1.
+Estado: implementado — H0.9B. ✓
 
 ### M03 — Validación de pago manual
 
@@ -113,7 +113,7 @@ Incluye:
 - pantalla de acceso denegado/no activo;
 - enlace de soporte.
 
-Estado: candidato MVP v0.1.
+Estado: implementado — H0.7 (login/sesión) + H0.9C (acceso/invitación/bloqueo). B4 (reenvío/reset) diferido a SMTP-final (D033). ✓
 
 Dependencia: Supabase Auth + policies.
 
@@ -147,7 +147,7 @@ Incluye:
 - documentos descargables;
 - previsualización PDF si procede.
 
-Estado: candidato MVP v0.1.
+Estado: implementado — H0.8 (recursos, secciones, subsecciones, preview PDF, portadas). ✓
 
 ### M07 — Admin de recursos
 
@@ -163,7 +163,7 @@ Incluye:
 - añadir texto de presentación;
 - asociar categoría.
 
-Estado: candidato MVP v0.1/v0.2 según complejidad.
+Estado: implementado — H0.8 (CRUD recursos, archivar/publicar/borrador, secciones, subsecciones). ✓
 
 ### M08 — Renovaciones y vencimientos
 
@@ -272,36 +272,41 @@ WO-candidate-010 — Crear importador CSV desde Excel histórico
 
 ## 7. Bloqueantes antes de construir
 
-1. Confirmar campos obligatorios/opcionales.
-2. Confirmar modelo de cuota.
-3. Confirmar año natural vs 12 meses desde alta.
-4. Confirmar método de pago MVP.
-5. Confirmar stack frontend.
-6. Confirmar hosting frontend.
-7. Confirmar roles internos.
-8. Confirmar criterio de almacenamiento de justificantes/acreditaciones.
-9. Confirmar texto de privacidad.
-10. Confirmar qué datos reales se pueden usar y cuándo.
+Resueltos:
+- ~~Modelo de cuota~~: 50€ general / 30€ reducida. ✓
+- ~~Stack frontend~~: Vite + React + TypeScript + Tailwind v4. ✓
+- ~~Hosting frontend~~: GitHub Pages (demo), Cloudflare Pages (producción). ✓
+- ~~Roles internos~~: socio, junta_directiva, administrador. ✓
+- ~~Almacenamiento de justificantes/acreditaciones~~: Supabase Storage buckets privados. ✓
+
+Pendientes:
+1. Confirmar campos obligatorios/opcionales del formulario público.
+2. Confirmar año natural vs 12 meses desde alta.
+3. Confirmar método de pago MVP.
+4. Confirmar texto de privacidad.
+5. Confirmar qué datos reales se pueden usar y cuándo.
 
 ## 8. Siguiente paso recomendado
 
-Trabajar con Sil sobre:
+Próxima fase prioritaria: **H0.9D — Flujo público de alta real (`/hazte-socio`)**.
+- Conectar formulario público a Supabase.
+- Subida de justificante/acreditación a Storage.
+- Crear `signup_request` con `pending_review`.
+- Validación admin de solicitudes.
 
-```text
-formulario propio v0.1
-campos obligatorios/opcionales
-modelo de cuota
-flujo de pago MVP
-```
+Pendientes diferidos:
+- B4 (reenvío/reset password): diferido hasta SMTP-final (D033).
+- SMTP-final: correo corporativo, templates, redirect URLs — con Ana T.
 
-Después actualizar:
-
-```text
-PRD.md
-data-model.md
-security.md
-decisions.md
-```
+Módulos pendientes:
+- M01 (formulario propio) — parcial: formulario público mock existe, falta conectar a Supabase.
+- M03 (validación de pago manual) — pendiente.
+- M05 (portal privado socios) — parcial: estructura y navegación existen, falta enriquecer.
+- M08 (renovaciones) — pendiente.
+- M09 (Stripe) — fase posterior.
+- M10 (emails) — fase posterior, depende de SMTP-final.
+- M11 (importación Excel) — fase posterior, requiere datos reales.
+- M12 (diseño UX) — pendiente.
 
 ## 9. Pendientes detectados durante H0.7 — Auth/login/sesión
 
@@ -324,16 +329,9 @@ No resolver hasta que exista lectura de sesión, perfil, socio activo y rol.
 
 ### P-H07-002 — Acceso visible/oculto a administración
 
-Estado: pendiente.
+Estado: **resuelto — 2026-06-23 (H0.7d).**
 
-La pantalla de login conserva un acceso discreto hacia `/admin`. No bloquea H0.7b, pero antes de publicar con usuarios reales debe decidirse si:
-
-- se mantiene como acceso operativo para personas administradoras;
-- se reubica dentro del área privada;
-- se oculta de la pantalla pública;
-- se protege con sesión + rol administrador.
-
-No dejar `/admin` como acceso funcional sin protección real.
+`/admin` protegido por `RequireAuth` (H0.7d) y `RequireAdmin` (H0.7f). Sin acceso sin rol administrador.
 
 ### P-H07-003 — Session shell + logout
 
@@ -460,32 +458,21 @@ No crear usuarios reales ni seeds sin WO explícita.
 
 ### P-H07-008 — Orden correcto alta → socio → cuenta → perfil
 
-Estado: decidido en contrato, pendiente de implementación futura.
+Estado: **resuelto — 2026-06-26 (H0.9C).**
 
-El flujo aprobado es:
+Flujo implementado:
 
 ```text
-solicitud aprobada
-→ ficha de socio
-→ cuenta de acceso
-→ perfil vinculado
-```
-
-No construir automatismos que den acceso desde la solicitud pública sin revisión admin.
+solicitud aprobada (H0.9D pendiente)
+→ ficha de socio (H0.9B)
+→ admin crea acceso (H0.9C-B1/B2)
+→ perfil vinculado con role=socio, is_active=true (Edge Function)
 
 ### P-H07-009 — Edición posterior de socios y roles
 
-Estado: pendiente para panel admin.
+Estado: **resuelto — 2026-06-25 (H0.9B).**
 
-Los roles no quedan fijados solo en el alta. Administración debe poder editar socios posteriormente porque puede cambiar:
-
-- socio normal ↔ junta directiva;
-- junta directiva ↔ administrador operativo;
-- socio activo/inactivo;
-- cuota/vigencia;
-- estado de renovación.
-
-No permitir autoservicio para asignación o retirada de roles.
+El panel admin permite editar ficha de socio, cambiar estado (`active`/`inactive`/etc.), perfil de cuota, vigencia y notas. Los roles (`socio`/`junta_directiva`/`administrador`) se gestionan desde `profiles`, con acceso bloqueable/desbloqueable (H0.9C-B3).
 
 ### P-H07-010 — Gobernanza admin/junta sin superadmin
 
