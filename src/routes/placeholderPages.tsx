@@ -2686,6 +2686,36 @@ export function AdminSignupDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [approving, setApproving] = useState(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [approvalFeedback, setApprovalFeedback] = useState<string | null>(null);
+
+  async function handleApprove() {
+    if (!signupId) return;
+    setApprovalError(null);
+    setApprovalFeedback(null);
+    setApproving(true);
+    try {
+      const { approveSignupRequest } = await import('../lib/signupApprovalActions');
+      const result = await approveSignupRequest(signupId);
+      if (result.ok && result.member) {
+        setApprovalFeedback('Socio creado correctamente. La solicitud queda marcada como aprobada.');
+        setRequest((prev: any) => ({
+          ...prev,
+          status: 'approved',
+          approved_member_id: result.member!.id,
+          reviewed_by: 'admin',
+          reviewed_at: new Date().toISOString(),
+        }));
+      } else {
+        setApprovalError(result.message);
+      }
+    } catch (err) {
+      setApprovalError(err instanceof Error ? err.message : 'No se ha podido aprobar la solicitud.');
+    } finally {
+      setApproving(false);
+    }
+  }
 
   useEffect(() => {
     if (!signupId || !isSupabaseConfigured()) {
@@ -2911,6 +2941,52 @@ export function AdminSignupDetailPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="font-serif text-lg text-slate-900">Notas administrativas</h2>
           <p className="mt-3 text-sm text-slate-600">{request.admin_notes}</p>
+        </section>
+      )}
+
+      {request.status === 'pending_review' && !request.approved_member_id && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="font-serif text-lg text-slate-900">Aprobación</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Vas a crear una ficha administrativa de socio a partir de esta solicitud. Esto no crea todavía acceso al portal ni envía emails.
+          </p>
+          {approvalError && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">{approvalError}</div>
+          )}
+          {approvalFeedback && (
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">{approvalFeedback}</div>
+          )}
+          {!approvalFeedback && (
+            <button
+              type="button"
+              onClick={handleApprove}
+              disabled={approving}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+            >
+              {approving ? 'Creando socio...' : 'Crear socio y aprobar solicitud'}
+            </button>
+          )}
+        </section>
+      )}
+
+      {request.status === 'approved' && request.approved_member_id && (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 shadow-sm">
+          <h2 className="font-serif text-lg text-emerald-900">Solicitud aprobada</h2>
+          <Link
+            to={`/admin/socios/${request.approved_member_id}`}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+          >
+            Ver ficha de socio
+            <ChevronRight size={14} />
+          </Link>
+        </section>
+      )}
+
+      {request.status !== 'pending_review' && request.status !== 'approved' && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
+          <p className="text-sm text-amber-800">
+            Esta solicitud no se puede aprobar desde este estado ({signupStatusLabel[request.status] ?? request.status}).
+          </p>
         </section>
       )}
     </div>
