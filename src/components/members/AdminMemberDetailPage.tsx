@@ -4,7 +4,7 @@ import { ExternalLink, ChevronLeft, Edit, ShieldCheck, Trash2, User, Mail } from
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchAdminMemberById, updateAdminMember, deleteAdminMember } from '../../lib/memberQueries';
 import { fetchMemberAccessProfile, type MemberAccessProfile } from '../../lib/memberAccessQueries';
-import { createMemberAccess } from '../../lib/memberAccessActions';
+import { createMemberAccess, updateMemberAccessStatus } from '../../lib/memberAccessActions';
 import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, documentTypeOptions } from '../../lib/memberFormOptions';
 import { MemberForm } from './MemberForm';
@@ -48,6 +48,9 @@ export function AdminMemberDetailPage() {
   const [creatingAccess, setCreatingAccess] = useState(false);
   const [accessActionError, setAccessActionError] = useState<string | null>(null);
   const [accessActionFeedback, setAccessActionFeedback] = useState<string | null>(null);
+  const [togglingAccess, setTogglingAccess] = useState(false);
+  const [toggleAccessError, setToggleAccessError] = useState<string | null>(null);
+  const [toggleAccessFeedback, setToggleAccessFeedback] = useState<string | null>(null);
   const [accreditationFile, setAccreditationFile] = useState<File | null>(null);
   const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
   const [paymentReceiptUrl, setPaymentReceiptUrl] = useState<string | null>(null);
@@ -133,6 +136,28 @@ export function AdminMemberDetailPage() {
       setAccessActionError(err instanceof Error ? err.message : 'Error al crear el acceso.');
     } finally {
       setCreatingAccess(false);
+    }
+  }
+
+  async function handleToggleAccess() {
+    if (!row || !accessProfile) return;
+    setToggleAccessError(null);
+    setToggleAccessFeedback(null);
+    setTogglingAccess(true);
+    try {
+      const updated = await updateMemberAccessStatus(row.id, accessProfile.id, !accessProfile.is_active);
+      setAccessProfile(updated);
+      setToggleAccessFeedback(
+        updated.is_active
+          ? 'Acceso al portal desbloqueado correctamente.'
+          : 'Acceso al portal bloqueado correctamente.',
+      );
+    } catch (err) {
+      setToggleAccessError(
+        err instanceof Error ? err.message : 'No se ha podido actualizar el acceso. Revisa permisos o inténtalo de nuevo.',
+      );
+    } finally {
+      setTogglingAccess(false);
     }
   }
 
@@ -523,28 +548,63 @@ export function AdminMemberDetailPage() {
             </div>
           )}
           {!accessLoading && !accessError && accessProfile && (
-            <div className={`rounded-lg border p-4 ${accessProfile.is_active ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60'}`}>
-              <p className="text-sm font-medium text-slate-800">
-                {accessProfile.is_active ? 'Acceso creado' : 'Acceso desactivado'}
-              </p>
-              <dl className="mt-3 space-y-2 text-xs">
-                <div>
-                  <dt className="text-slate-400">Email</dt>
-                  <dd className="mt-0.5 text-slate-700">{accessProfile.email}</dd>
+            <div className="space-y-3">
+              <div className={`rounded-lg border p-4 ${accessProfile.is_active ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60'}`}>
+                <p className="text-sm font-medium text-slate-800">
+                  {accessProfile.is_active ? 'Acceso activo' : 'Acceso bloqueado'}
+                </p>
+                <dl className="mt-3 space-y-2 text-xs">
+                  <div>
+                    <dt className="text-slate-400">Email</dt>
+                    <dd className="mt-0.5 text-slate-700">{accessProfile.email}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Rol</dt>
+                    <dd className="mt-0.5 text-slate-700">{accessProfile.role === 'socio' ? 'Socio' : accessProfile.role === 'junta_directiva' ? 'Junta Directiva' : 'Administrador'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Invitado</dt>
+                    <dd className="mt-0.5 text-slate-700">{accessProfile.invited_at ? formatDate(accessProfile.invited_at) : '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Último acceso</dt>
+                    <dd className="mt-0.5 text-slate-700">{accessProfile.last_seen_at ? formatDate(accessProfile.last_seen_at) : '—'}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              {toggleAccessError && (
+                <div className="rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">{toggleAccessError}</div>
+              )}
+              {toggleAccessFeedback && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">{toggleAccessFeedback}</div>
+              )}
+
+              {accessProfile.role === 'administrador' ? (
+                <p className="text-xs text-slate-500">Los accesos de administrador no se gestionan desde la ficha de socio.</p>
+              ) : (
+                <div className="flex flex-col items-start gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleAccess}
+                    disabled={togglingAccess}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
+                      accessProfile.is_active
+                        ? 'border border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
+                        : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+                    }`}
+                  >
+                    {togglingAccess
+                      ? 'Actualizando acceso...'
+                      : accessProfile.is_active
+                        ? 'Bloquear acceso al portal'
+                        : 'Desbloquear acceso al portal'}
+                  </button>
+                  <p className="text-xs text-slate-400">
+                    Bloquear el acceso no modifica la situación administrativa del socio ni su cuota. Solo impide que pueda operar en el portal.
+                  </p>
                 </div>
-                <div>
-                  <dt className="text-slate-400">Rol</dt>
-                  <dd className="mt-0.5 text-slate-700">{accessProfile.role === 'socio' ? 'Socio' : accessProfile.role === 'junta_directiva' ? 'Junta Directiva' : 'Administrador'}</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-400">Invitado</dt>
-                  <dd className="mt-0.5 text-slate-700">{accessProfile.invited_at ? formatDate(accessProfile.invited_at) : '—'}</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-400">Último acceso</dt>
-                  <dd className="mt-0.5 text-slate-700">{accessProfile.last_seen_at ? formatDate(accessProfile.last_seen_at) : '—'}</dd>
-                </div>
-              </dl>
+              )}
             </div>
           )}
         </div>
