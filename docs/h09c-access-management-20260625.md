@@ -46,7 +46,7 @@ Resumen de cambios:
 - `generate_member_number()` con `nextval()`.
 - Validación manual Sil OK.
 
-## H0.9C-B — Cerrado
+## H0.9C-B — Cerrado funcionalmente; B4 y SMTP-final diferidos por D033
 
 Objetivo:
 - Crear acceso/invitación desde ficha de socio mediante backend seguro.
@@ -57,7 +57,7 @@ Micro-WOs:
 - B2: Botón UI "Crear acceso / Enviar invitación". ✓
 - B2-FIX1: GRANT INSERT/UPDATE sobre profiles a authenticated. ✓
 - B3: Bloquear/desbloquear acceso al portal desde ficha. ✓
-- B4: Reenviar invitación / reset password si procede. (pendiente)
+- B4: Reenviar invitación / reset password. Diferido hasta SMTP-final (D033): correo corporativo, templates, redirect URLs y validación con Ana T.
 - B5: `last_seen_at` registrado mediante RPC segura `touch_own_profile_last_seen()` con throttle 15 min. ✓
   La RPC es SECURITY DEFINER y solo actualiza `last_seen_at` y `updated_at` del propio usuario autenticado si el profile está activo (`is_active = true`). No abre UPDATE general sobre profiles y no modifica `role`, `is_active`, `member_id`, `email` ni `email_normalized`.
 - SMTP-final: configurar correo corporativo / SMTP propio para invitaciones, recuperación de contraseña y emails transaccionales. Esta fase queda deliberadamente pospuesta hasta los últimos ajustes presenciales con Ana T.
