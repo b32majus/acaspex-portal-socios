@@ -1,20 +1,24 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import type { SignupFormState } from './signupRequestModel';
 import {
-  normalizeEmail,
-  normalizeDocumentNumber,
-  getRequestedFeeAmount,
+  mapSignupFormToInsertPayload,
+  validateSignupForm,
 } from './signupRequestModel';
 
-const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 function validateReceiptFile(file: File): string | null {
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
     return 'El justificante debe ser PDF, JPG o PNG.';
   }
   if (file.size > MAX_FILE_SIZE) {
     return 'El justificante no puede superar 10 MB.';
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+    return 'La extensión del justificante no es válida. Usa PDF, JPG o PNG.';
   }
   return null;
 }
@@ -24,23 +28,32 @@ export interface SignupSubmitResult {
   message: string;
 }
 
-export async function submitSignupRequest(form: SignupFormState): Promise<SignupSubmitResult> {
+export async function submitSignupRequest(
+  form: SignupFormState,
+  emailConfirmation: string,
+): Promise<SignupSubmitResult> {
   if (!isSupabaseConfigured() || !supabase) {
     return { ok: false, message: 'El sistema no está configurado. Inténtalo más tarde.' };
+  }
+
+  const validationError = validateSignupForm(form, emailConfirmation);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  if (form.receipt_file) {
+    const fileError = validateReceiptFile(form.receipt_file);
+    if (fileError) {
+      return { ok: false, message: fileError };
+    }
   }
 
   const requestId = crypto.randomUUID();
   let receiptFilePath: string | null = null;
 
   if (form.receipt_file) {
-    const validationError = validateReceiptFile(form.receipt_file);
-    if (validationError) {
-      return { ok: false, message: validationError };
-    }
-
-    const ext = form.receipt_file.name.split('.').pop()?.toLowerCase();
-    const allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
-    const safeExt = allowedExts.includes(ext ?? '') ? ext : 'pdf';
+    const ext = form.receipt_file.name.split('.').pop()?.toLowerCase() ?? 'pdf';
+    const safeExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : 'pdf';
     const storagePath = `signup-requests/${requestId}/payment-receipt.${safeExt}`;
 
     const { error: uploadError } = await supabase.storage
@@ -57,41 +70,9 @@ export async function submitSignupRequest(form: SignupFormState): Promise<Signup
     receiptFilePath = storagePath;
   }
 
-  const now = new Date().toISOString();
-  const memberProfile = form.member_profile;
+  const payload = mapSignupFormToInsertPayload(requestId, form, receiptFilePath);
 
-  const { error: insertError } = await supabase.from('signup_requests').insert({
-    id: requestId,
-    first_name: form.first_name.trim(),
-    last_name_1: form.last_name_1.trim(),
-    last_name_2: form.last_name_2.trim() || null,
-    document_type: form.document_type || null,
-    document_number: form.document_number.trim() || null,
-    document_number_normalized: normalizeDocumentNumber(form.document_number),
-    address_line: form.address_line.trim() || null,
-    postal_code: form.postal_code.trim() || null,
-    city: form.city.trim() || null,
-    province: form.province.trim() || null,
-    email: form.email.trim(),
-    email_normalized: normalizeEmail(form.email),
-    phone: form.phone.trim() || null,
-    professional_category: form.professional_category.trim() || null,
-    job_title: form.job_title.trim() || null,
-    organization: form.organization.trim() || null,
-    quality_safety_link: form.quality_safety_link.trim() || null,
-    member_profile: memberProfile,
-    requested_fee_amount: getRequestedFeeAmount(memberProfile),
-    receipt_file_path: receiptFilePath,
-    accreditation_file_path: null,
-    privacy_accepted_at: now,
-    communication_consent: form.communication_consent,
-    status: 'pending_review',
-    approved_member_id: null,
-    reviewed_by: null,
-    reviewed_at: null,
-    admin_notes: null,
-    review_reason: null,
-  });
+  const { error: insertError } = await supabase.from('signup_requests').insert(payload);
 
   if (insertError) {
     return {

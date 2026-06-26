@@ -3029,7 +3029,7 @@ export function SignupPage() {
     setSubmitting(true);
     try {
       const realForm = mapOldFormToRealForm(form);
-      const result = await submitSignupRequest(realForm);
+      const result = await submitSignupRequest(realForm, form.emailConfirmation);
       if (result.ok) {
         setSubmitted(true);
       } else {

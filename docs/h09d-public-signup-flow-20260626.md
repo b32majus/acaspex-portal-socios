@@ -39,6 +39,12 @@ Conectar el formulario público `/hazte-socio` a Supabase para crear solicitudes
 - Justificante: signed URL desde Storage si existe.
 - Datos completos: identificación, contacto, perfil profesional, cuota, documentación.
 
+### H0.9D-FIX1 — Hardening envío ✓
+- `validateSignupForm()` en `signupRequestModel.ts`: nombre, apellido, email, email confirmation, privacidad, member_profile.
+- `submitSignupRequest()` refactorizado: valida antes de subir archivo, usa `mapSignupFormToInsertPayload()`.
+- Validación de extensión de archivo añadida a `validateReceiptFile()`.
+- Riesgo de justificante huérfano mitigado: la validación ocurre antes del upload. Si el upload falla, no se inserta. Si el upload OK y el insert falla, el archivo queda huérfano en Storage (riesgo aceptado: bucket privado, sin acceso hasta que admin revise; limpieza futura pendiente).
+
 ## Qué queda fuera de H0.9D
 
 - Aprobar/rechazar solicitud (pendiente de WO futura).

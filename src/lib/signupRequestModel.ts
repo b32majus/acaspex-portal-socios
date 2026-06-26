@@ -134,3 +134,27 @@ export function mapSignupFormToInsertPayload(
     review_reason: null,
   };
 }
+
+const VALID_MEMBER_PROFILES: SignupMemberProfile[] = ['general', 'residente', 'estudiante', 'jubilado'];
+
+export function validateSignupForm(form: SignupFormState, emailConfirmation: string): string | null {
+  if (!form.first_name.trim()) {
+    return 'El nombre es obligatorio.';
+  }
+  if (!form.last_name_1.trim()) {
+    return 'El primer apellido es obligatorio.';
+  }
+  if (!form.email.trim()) {
+    return 'El email es obligatorio.';
+  }
+  if (form.email.trim() !== emailConfirmation.trim()) {
+    return 'Los correos electrónicos no coinciden.';
+  }
+  if (!form.privacy_accepted) {
+    return 'Debes aceptar el tratamiento de datos personales.';
+  }
+  if (!VALID_MEMBER_PROFILES.includes(form.member_profile)) {
+    return 'El tipo de cuota seleccionado no es válido.';
+  }
+  return null;
+}
