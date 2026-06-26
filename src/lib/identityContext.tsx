@@ -142,6 +142,11 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
         const isAdmin = role === 'administrador'
         const isBoard = role === 'junta_directiva'
 
+        supabase!.rpc('touch_own_profile_last_seen').then(
+          () => {},
+          () => {},
+        )
+
         // Step 2: No member linked
         if (!memberId) {
           setState({
