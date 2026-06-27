@@ -2689,6 +2689,9 @@ export function AdminSignupDetailPage() {
   const [approving, setApproving] = useState(false);
   const [approvalError, setApprovalError] = useState<string | null>(null);
   const [approvalFeedback, setApprovalFeedback] = useState<string | null>(null);
+  const [registeringPayment, setRegisteringPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
 
   async function handleApprove() {
     if (!signupId) return;
@@ -2714,6 +2717,29 @@ export function AdminSignupDetailPage() {
       setApprovalError(err instanceof Error ? err.message : 'No se ha podido aprobar la solicitud.');
     } finally {
       setApproving(false);
+    }
+  }
+
+  async function handleRegisterPayment() {
+    if (!signupId || !request?.approved_member_id) return;
+    setPaymentError(null);
+    setPaymentFeedback(null);
+    setRegisteringPayment(true);
+    try {
+      const { registerValidatedPayment } = await import('../lib/paymentActions');
+      const result = await registerValidatedPayment({
+        memberId: request.approved_member_id,
+        signupRequestId: signupId,
+      });
+      if (result.ok) {
+        setPaymentFeedback(result.message);
+      } else {
+        setPaymentError(result.message);
+      }
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : 'No se ha podido registrar el pago.');
+    } finally {
+      setRegisteringPayment(false);
     }
   }
 
@@ -2970,16 +2996,41 @@ export function AdminSignupDetailPage() {
       )}
 
       {request.status === 'approved' && request.approved_member_id && (
-        <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 shadow-sm">
-          <h2 className="font-serif text-lg text-emerald-900">Solicitud aprobada</h2>
-          <Link
-            to={`/admin/socios/${request.approved_member_id}`}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
-          >
-            Ver ficha de socio
-            <ChevronRight size={14} />
-          </Link>
-        </section>
+        <div className="space-y-6">
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 shadow-sm">
+            <h2 className="font-serif text-lg text-emerald-900">Solicitud aprobada</h2>
+            <Link
+              to={`/admin/socios/${request.approved_member_id}`}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+            >
+              Ver ficha de socio
+              <ChevronRight size={14} />
+            </Link>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="font-serif text-lg text-slate-900">Pago de la cuota</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Esta acción registra un pago validado de la cuota anual mediante transferencia bancaria. No crea acceso al portal ni envía emails.
+            </p>
+            {paymentError && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">{paymentError}</div>
+            )}
+            {paymentFeedback && (
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">{paymentFeedback}</div>
+            )}
+            {!paymentFeedback && (
+              <button
+                type="button"
+                onClick={handleRegisterPayment}
+                disabled={registeringPayment}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+              >
+                {registeringPayment ? 'Registrando pago...' : 'Registrar pago validado'}
+              </button>
+            )}
+          </section>
+        </div>
       )}
 
       {request.status !== 'pending_review' && request.status !== 'approved' && (
