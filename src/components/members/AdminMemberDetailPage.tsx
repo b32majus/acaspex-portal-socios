@@ -55,6 +55,9 @@ export function AdminMemberDetailPage() {
   const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
   const [paymentReceiptUrl, setPaymentReceiptUrl] = useState<string | null>(null);
   const [accreditationUrl, setAccreditationUrl] = useState<string | null>(null);
+  const [registeringPayment, setRegisteringPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (!row || !isSupabaseConfigured()) return;
@@ -158,6 +161,28 @@ export function AdminMemberDetailPage() {
       );
     } finally {
       setTogglingAccess(false);
+    }
+  }
+
+  async function handleRegisterPayment() {
+    if (!row) return;
+    setPaymentError(null);
+    setPaymentFeedback(null);
+    setRegisteringPayment(true);
+    try {
+      const { registerValidatedPayment } = await import('../../lib/paymentActions');
+      const result = await registerValidatedPayment({
+        memberId: row.id,
+      });
+      if (result.ok) {
+        setPaymentFeedback(result.message);
+      } else {
+        setPaymentError(result.message);
+      }
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : 'No se ha podido registrar el pago.');
+    } finally {
+      setRegisteringPayment(false);
     }
   }
 
@@ -469,6 +494,31 @@ export function AdminMemberDetailPage() {
           )}
         </dl>
       </section>
+
+      {row.status === 'active' && row.membership_start && row.paid_until && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="font-serif text-lg text-slate-900">Pago de la cuota</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Registra manualmente como validado el pago de la cuota anual correspondiente al periodo vigente del socio. Esta acción no crea acceso al portal ni envía emails.
+          </p>
+          {paymentError && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">{paymentError}</div>
+          )}
+          {paymentFeedback && (
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">{paymentFeedback}</div>
+          )}
+          {!paymentFeedback && (
+            <button
+              type="button"
+              onClick={handleRegisterPayment}
+              disabled={registeringPayment}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+            >
+              {registeringPayment ? 'Registrando pago...' : 'Registrar pago validado'}
+            </button>
+          )}
+        </section>
+      )}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="font-serif text-lg text-slate-900">Notas internas</h2>
