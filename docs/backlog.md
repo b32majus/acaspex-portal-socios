@@ -1,7 +1,7 @@
 ---
 title: Backlog vivo — ACASPEX Portal Socios
 created: 2026-06-20
-updated: 2026-06-26
+updated: 2026-06-28
 status: living-draft
 owner: Sil + Cora
 project: ACASPEX Portal Socios
@@ -97,9 +97,9 @@ Incluye:
 - calcular periodo de membresía;
 - activar socio.
 
-Estado: candidato MVP v0.1.
+Estado: implementado — H0.9E. ✓
 
-Duda clave: si los justificantes viven en Supabase Storage o siguen temporalmente por email.
+Los justificantes viven en Supabase Storage (`acaspex-payment-receipts`). El pago se registra mediante acción separada desde el detalle de la solicitud aprobada o desde la ficha del socio.
 
 ### M04 — Login y acceso de socios
 
@@ -300,7 +300,7 @@ Pendientes diferidos:
 
 Módulos pendientes:
 - M01 (formulario propio) — parcial: formulario público mock existe, falta conectar a Supabase.
-- M03 (validación de pago manual) — pendiente.
+- M03 (validación de pago manual) — completado H0.9E. ✓
 - M05 (portal privado socios) — parcial: estructura y navegación existen, falta enriquecer.
 - M08 (renovaciones) — pendiente.
 - M09 (Stripe) — fase posterior.

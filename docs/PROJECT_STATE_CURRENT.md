@@ -1,7 +1,7 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
-Última actualización: 2026-06-26  
-Estado de referencia: H0.9D-H — aprobación de solicitudes conectada (signup → member)  
+Última actualización: 2026-06-28  
+Estado de referencia: H0.9E — validación de pago manual completada y validada en staging  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo-main`  
 Rama operativa: `main`  
 Último commit funcional: `66f1462` — feat: add admin signup approval button
@@ -704,15 +704,40 @@ HEAD funcional: `2815207` — docs: close H0.9C functional access block.
 
 ## 10. Siguiente fase
 
-Tras H0.9D (alta pública + aprobación admin):
+### H0.9E — Validación de pago manual / payments ✅ VALIDADO
 
-**H0.9E — Validación de pago manual / payments**
-- Registrar payment en tabla `payments` al aprobar.
-- Validación formal de pago por admin.
-- Vincular payment a member y signup_request.
+**Estado: cierre validado H0.9E — 2026-06-28.**
+
+Implementado y validado en staging:
+
+- Migración 044: `GRANT SELECT, INSERT, UPDATE ON public.payments TO authenticated`.
+- Helper `registerValidatedPayment()` en `src/lib/paymentActions.ts`.
+- UI "Registrar pago validado" desde detalle de solicitud aprobada (`AdminSignupDetailPage`).
+- UI "Registrar pago validado" desde ficha de socio (`AdminMemberDetailPage`).
+- Payment creado con `payment_status = validated`, `payment_method = bank_transfer`.
+- Periodo derivado de `member.membership_start` y `member.paid_until`.
+- `validated_by` y `validated_at` rellenos.
+- Bloqueo de duplicados a nivel de aplicación.
+- RLS admin-only intacta. Sin DELETE. Sin grants a anon.
+- Ambas vías validadas funcionalmente en staging.
+
+Ver: `docs/h09e-payments-flow-20260628.md`.
+
+Deuda: H0.9E-HARD1 — constraint DB de unicidad para payments duplicados (diferido).
+
+Commits del bloque:
+- `48f1c1f` — fix: grant payment access permissions
+- `e97e0ad` — feat: add validated payment registration helper
+- `41b1a02` — feat: add validated payment action to signup detail
+- `26b054e` — feat: add validated payment action to member detail
+
+Tras H0.9E:
+
+**H0.9F — Renovaciones y vencimientos**
+- Extender `paid_until` y crear nuevos `payments` para periodos subsiguientes.
+- Constraint DB de unicidad (HARD1).
 
 **Pendientes diferidos:**
-- H0.9F — Crear acceso al portal desde socio aprobado (auth user + profile).
 - H0.9G — Estados needs_info/rejected en solicitudes.
 - B4 (reenvío/reset password): diferido hasta SMTP-final (D033).
 - SMTP-final: correo corporativo, templates, redirect URLs — con Ana T.

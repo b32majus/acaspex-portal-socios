@@ -56,13 +56,17 @@ Conectar el formulario público `/hazte-socio` a Supabase para crear solicitudes
 
 ## Qué queda fuera de H0.9D
 
-- Aprobar/rechazar solicitud (pendiente de WO futura).
-- Crear member desde solicitud aprobada.
-- Crear payment / validar pago.
+- ~~Crear payment / validar pago~~ → implementado en H0.9E (validado).
 - Crear acceso al portal (auth user + profile).
 - Emails / notificaciones.
 - SMTP-final.
 - Acreditación pública (D016: admin-only hasta decisión explícita).
+
+## Relación con H0.9E
+
+H0.9D crea el miembro administrativo al aprobar una solicitud. H0.9E registra la trazabilidad económica en la tabla `payments` mediante una acción separada "Registrar pago validado" que puede ejecutarse desde el detalle de la solicitud aprobada o desde la ficha del socio.
+
+Ver: `docs/h09e-payments-flow-20260628.md`.
 
 ## Migraciones nuevas
 
