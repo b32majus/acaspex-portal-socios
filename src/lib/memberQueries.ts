@@ -37,6 +37,37 @@ const MEMBER_SELECT = `
   updated_at
 `;
 
+export type MemberValidityStatus = 'vigente' | 'proximo_vencer' | 'vencido' | 'inactivo';
+
+export const RENEWAL_NOTICE_DAYS = 30;
+
+function toIsoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDaysToIsoDate(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return toIsoDate(date);
+}
+
+export function getMemberValidityStatus(
+  member: Pick<MemberRow, 'status' | 'paid_until'>,
+  todayIso = toIsoDate(new Date()),
+): MemberValidityStatus {
+  if (member.status === 'active') {
+    if (!member.paid_until || member.paid_until < todayIso) return 'vencido';
+
+    const noticeLimitIso = addDaysToIsoDate(todayIso, RENEWAL_NOTICE_DAYS);
+    return member.paid_until <= noticeLimitIso ? 'proximo_vencer' : 'vigente';
+  }
+
+  if (member.status === 'expired') return 'vencido';
+
+  return 'inactivo';
+}
+
 export async function fetchAdminMembers(): Promise<MemberRow[]> {
   if (!isSupabaseConfigured() || !supabase) return [];
 
@@ -47,6 +78,51 @@ export async function fetchAdminMembers(): Promise<MemberRow[]> {
 
   if (error) throw error;
   return (data ?? []) as MemberRow[];
+}
+
+export async function fetchMembersByValidityStatus(
+  status: MemberValidityStatus,
+  todayIso = toIsoDate(new Date()),
+): Promise<MemberRow[]> {
+  if (!isSupabaseConfigured() || !supabase) return [];
+
+  const noticeLimitIso = addDaysToIsoDate(todayIso, RENEWAL_NOTICE_DAYS);
+
+  let query = supabase
+    .from('members')
+    .select(MEMBER_SELECT);
+
+  if (status === 'vigente') {
+    query = query
+      .eq('status', 'active')
+      .gt('paid_until', noticeLimitIso)
+      .order('paid_until', { ascending: true });
+  } else if (status === 'proximo_vencer') {
+    query = query
+      .eq('status', 'active')
+      .gte('paid_until', todayIso)
+      .lte('paid_until', noticeLimitIso)
+      .order('paid_until', { ascending: true });
+  } else if (status === 'vencido') {
+    query = query
+      .in('status', ['active', 'expired'])
+      .order('paid_until', { ascending: true });
+  } else {
+    query = query
+      .in('status', ['pending_review', 'inactive', 'cancelled'])
+      .order('updated_at', { ascending: false });
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as MemberRow[];
+  if (status === 'vencido') {
+    return rows.filter((row) => getMemberValidityStatus(row, todayIso) === 'vencido');
+  }
+
+  return rows;
 }
 
 export async function fetchAdminMemberById(memberId: string): Promise<MemberRow | null> {
