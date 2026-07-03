@@ -1,7 +1,7 @@
 ---
 title: Backlog vivo — ACASPEX Portal Socios
 created: 2026-06-20
-updated: 2026-06-28
+updated: 2026-07-03
 status: living-draft
 owner: Sil + Cora
 project: ACASPEX Portal Socios

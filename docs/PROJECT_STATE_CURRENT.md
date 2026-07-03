@@ -1,7 +1,7 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
-Última actualización: 2026-06-28  
-Estado de referencia: H0.9E — validación de pago manual completada y validada en staging  
+Última actualización: 2026-07-03  
+Estado de referencia: H0.9F — acceso al portal desde socio aprobado / pagado  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo-main`  
 Rama operativa: `main`  
 Último commit funcional: `66f1462` — feat: add admin signup approval button
@@ -733,12 +733,26 @@ Commits del bloque:
 
 Tras H0.9E:
 
-**H0.9F — Renovaciones y vencimientos**
-- Extender `paid_until` y crear nuevos `payments` para periodos subsiguientes.
-- Constraint DB de unicidad (HARD1).
+### H0.9F — Acceso portal desde socio aprobado / pagado ✅ DONE
+
+**Estado: cierre documental H0.9F — 2026-07-03.**
+
+H0.9F reutiliza la funcionalidad de acceso al portal implementada en H0.9C. No reimplementa nada; es refinamiento ligero:
+
+- Botón "Crear acceso / Enviar invitación" en `AdminSignupDetailPage` cuando la solicitud está aprobada (H0.9F-B).
+- Indicador read-only de pago validado en `AdminMemberDetailPage` con 5 estados (H0.9F-C).
+- Elegibilidad de acceso se mantiene: `active + paid_until vigente + email`.
+- `payments` es trazabilidad, no gate estricto.
+
+Ver: `docs/h09f-access-flow-20260703.md`.
+
+Commits del bloque:
+- `ec9ef9e` — feat: add member access action to approved signup detail
+- `f08486c` — feat: show validated payment status on member detail
 
 **Pendientes diferidos:**
-- H0.9G — Estados needs_info/rejected en solicitudes.
+- H0.9E-HARD1 — unique index/constraint para payments validated por member + periodo.
+- H0.9G — Renovaciones, vencimientos y control de cuotas.
 - B4 (reenvío/reset password): diferido hasta SMTP-final (D033).
 - SMTP-final: correo corporativo, templates, redirect URLs — con Ana T.
 
