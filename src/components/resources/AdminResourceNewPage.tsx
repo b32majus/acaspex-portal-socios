@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronLeft, ChevronRight, ImageIcon, Upload, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { fetchActiveResourceCategories, resourceSectionLabel, type ResourceCategoryOption } from '../../lib/resourceCategories';
-import { detectResourceTypeFromFile, typeLabel } from '../../lib/resourceHelpers';
+import { detectResourceTypeFromFile, inferResourceType, isYouTubeUrl, typeLabel } from '../../lib/resourceHelpers';
 import { useAuth } from '../../lib/authContext';
 import type { ResourceStatus, ResourceType } from '../../data/mockResources';
 
@@ -260,7 +260,11 @@ export function AdminResourceNewPage() {
               id="new-external-url"
               type="url"
               value={externalUrl}
-              onChange={(e) => setExternalUrl(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setExternalUrl(v);
+                if (isYouTubeUrl(v)) setType('video');
+              }}
               placeholder="https://…"
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />
@@ -298,7 +302,7 @@ export function AdminResourceNewPage() {
                 {file.name} ({(file.size / 1024).toFixed(0)} KB)
               </p>
             )}
-            <p className="mt-1 text-xs text-slate-400">Opcional si el recurso es un enlace externo o vídeo. PNG, JPG, PDF, DOCX, PPTX. Máx. 50 MB.</p>
+            <p className="mt-1 text-xs text-slate-400">Opcional si el recurso es un enlace externo o vídeo. Se detecta automáticamente desde el archivo o desde el enlace externo. PNG, JPG, PDF, DOCX, PPTX. Máx. 50 MB.</p>
           </div>
           <div className="sm:col-span-2 border-t border-slate-100 pt-4">
             <label className="block text-xs font-medium text-slate-500">

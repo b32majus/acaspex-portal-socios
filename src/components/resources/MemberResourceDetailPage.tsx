@@ -7,6 +7,7 @@ import {
   FileText,
   Globe,
   Image,
+  Video,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import {
@@ -198,6 +199,12 @@ export function MemberResourceDetailPage() {
               );
             })()
             )
+          ) : isYouTubeUrl(resource.externalUrl ?? null) ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-rose-50">
+              <Video size={48} className="text-rose-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-rose-700/80">Vídeo</span>
+              <span className="text-[11px] text-slate-500">YouTube</span>
+            </div>
           ) : isExternalLinkResource(resource) ? (
             <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-sky-50">
               <Globe size={48} className="text-sky-400" />
@@ -271,7 +278,7 @@ export function MemberResourceDetailPage() {
             />
           </div>
           <p className="mt-3 text-xs text-slate-500">
-            Vídeo embebido de YouTube. Si no carga, el autor puede haber restringido el acceso.
+            Si el vídeo no se reproduce aquí, ábrelo en YouTube. Los vídeos con restricción de edad o con inserción deshabilitada solo pueden verse en YouTube.
           </p>
         </section>
       )}

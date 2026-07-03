@@ -125,6 +125,17 @@ export function detectResourceTypeFromFile(file: File | null, fallback: Resource
   return typeMap[ext] ?? fallback;
 }
 
+export function inferResourceType(
+  file: File | null,
+  externalUrl: string,
+  currentType?: ResourceType,
+): ResourceType {
+  if (isYouTubeUrl(externalUrl)) return 'video';
+  if (file) return detectResourceTypeFromFile(file, currentType ?? 'document');
+  if (externalUrl.trim()) return 'external_link';
+  return currentType ?? 'document';
+}
+
 const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']);
 
 export function isYouTubeUrl(url: string | null | undefined): boolean {
