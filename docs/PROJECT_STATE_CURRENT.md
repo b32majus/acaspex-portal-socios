@@ -783,8 +783,33 @@ Commits del bloque:
 - Ver `docs/debt-register.md` para el registro operativo completo (severidad, prioridad, recomendación).
 - Resumen de prioridades:
   - **P1**: D033 SMTP-final, D-H09G-002 RPC transaccional, B4 reenvío/reset (post-D033).
-  - **P2**: D-H09G-001 trigger/membership_start NULL, RLS por cuota vencida.
+  - **P2**: D-H09G-001 trigger/membership_start NULL, D-ACCESS-GRACE-001 periodo de gracia, RLS por cuota vencida.
   - **P3**: D-H09G-003 copy renovaciones, D-H09G-004 sintéticos staging, M-PERIODS, M-STRIPE.
+
+### H0.9I-A — Decisiones producto e importación legacy 📝
+
+**Estado: documentación de decisiones — 2026-07-03.**
+
+H0.9I-A no toca código, migraciones, Supabase ni datos. Documenta las decisiones tomadas para orientar los siguientes bloques atómicos.
+
+Ver: `docs/h09i-decisions-legacy-import-20260703.md`.
+
+Decisiones registradas:
+- Las WOs deben ser atómicas, acotadas y seriales.
+- El portal no operará con socios reales hasta después del verano.
+- SMTP-final/D033 queda diferido hasta reunión con Ana T. y configuración del correo corporativo oficial.
+- La validación de justificantes sigue siendo manual por admin/Ana T.; el sistema no valida pagos automáticamente.
+- `membership_start` = fecha histórica de alta como socio de ACASPEX, no alta en portal.
+- `paid_until` = vigencia pagada real. Las renovaciones se calculan desde `paid_until`, no desde hoy.
+- Los socios actuales están en primer año de vigencia; no se necesita lógica compleja de anualidades ahora.
+- Renovaciones sucesivas explícitas permitidas: cada confirmación añade un año más.
+- Periodo de gracia conceptual aceptado: 30 días tras vencimiento antes de bloqueo radical.
+- `membership_periods` no se usa en MVP.
+- Staging no se limpia todavía; se decidirá limpieza controlada antes de importación real.
+- El siguiente bloque funcional recomendado es auditoría/mapeo Excel legacy.
+
+Preguntas para Ana T. / Junta quedan agrupadas en el doc H0.9I-A: SMTP, Excel legacy, cuotas/anualidad, acceso portal, staging y contenido real.
+
 
 ## 11. Estado de este documento
 

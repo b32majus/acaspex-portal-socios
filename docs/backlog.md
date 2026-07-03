@@ -224,7 +224,7 @@ Incluye:
 - carga controlada en Supabase;
 - reporte de errores.
 
-Estado: fase posterior, requiere autorización para datos reales.
+Estado: siguiente bloque recomendado tras H0.9I-A: auditoría/mapeo Excel legacy. Requiere validación con Ana T./Junta antes de importar datos reales.
 
 ### M12 — Diseño visual/UX
 
@@ -292,11 +292,13 @@ Pendientes:
 
 ## 8. Siguiente paso recomendado
 
-Próxima fase prioritaria: **H0.9D — Flujo público de alta real (`/hazte-socio`)**.
-- Conectar formulario público a Supabase.
-- Subida de justificante/acreditación a Storage.
-- Crear `signup_request` con `pending_review`.
-- Validación admin de solicitudes.
+Próxima fase prioritaria: **H0.9J-A — Auditoría/mapeo Excel legacy**.
+- Revisar cabecera real del Excel/base actual de socios.
+- Mapear columnas a `members`, `payments` y campos administrativos.
+- Confirmar `membership_start` como fecha histórica de alta como socio.
+- Confirmar cómo obtener o calcular `paid_until`.
+- Detectar duplicados, socios sin email y estados especiales.
+- No importar datos reales todavía.
 
 Pendientes diferidos:
 - B4 (reenvío/reset password): diferido hasta SMTP-final (D033).
@@ -317,10 +319,23 @@ Módulos pendientes:
 Las prioridades operativas detalladas (P1/P2/P3) están en `docs/debt-register.md`. Resumen:
 
 - **P1**: D033 SMTP-final, D-H09G-002 RPC transaccional, B4 reenvío/reset (post-D033).
-- **P2**: D-H09G-001 trigger/membership_start NULL, RLS por cuota vencida.
+- **P2**: D-H09G-001 trigger/membership_start NULL, D-ACCESS-GRACE-001 periodo de gracia 30 días, RLS por cuota vencida.
 - **P3**: D-H09G-003 copy, D-H09G-004 sintéticos, M-PERIODS, M-STRIPE.
 
 Estado de los módulos del backlog (M01-M12) actualizado arriba.
+
+## Decisiones H0.9I-A
+
+Ver `docs/h09i-decisions-legacy-import-20260703.md`. Resumen:
+
+- `membership_start` = alta histórica como socio, no alta en portal.
+- `paid_until` = vigencia pagada real.
+- Validación de justificantes = manual por admin/Ana T.
+- SMTP-final se pospone hasta reunión con Ana T. y correo corporativo.
+- Periodo de gracia conceptual aceptado: 30 días.
+- No usar `membership_periods` en MVP.
+- No limpiar staging todavía.
+- Próximo bloque recomendado: H0.9J-A auditoría/mapeo Excel legacy.
 
 ## 9. Pendientes detectados durante H0.7 — Auth/login/sesión
 

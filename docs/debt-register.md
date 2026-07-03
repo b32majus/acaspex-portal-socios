@@ -13,6 +13,7 @@ Documento operativo que consolida la deuda técnica, de producto, de datos y de 
 | D-H09G-002 | Operación no transaccional en renovación | técnica/datos | open | media-alta | **P1** |
 | D-H09G-001 | Trigger 033 y `membership_start` NULL en reactivaciones | datos/producto | open | media | **P2** |
 | RLS-H0.9 | RLS que bloquee por cuota vencida | seguridad/producto | deferred | media | **P2** |
+| D-ACCESS-GRACE-001 | Periodo de gracia tras vencimiento | producto/acceso | accepted_pending_implementation | media | **P2** |
 | D-H09E-001 | DELETE hardcoded en migración 045 | higiene migraciones | documented_observation | baja-media | **P3** |
 | D-H09G-003 | Renovaciones sucesivas explícitas | producto/UX | open | baja | **P3** |
 | D-H09G-004 | Sintéticos staging sin limpiar | datos | open | baja | **P3** |
@@ -195,6 +196,34 @@ Documento operativo que consolida la deuda técnica, de producto, de datos y de 
 - **Handoffs relacionados**:
   - `20260703-0009-h09g-a-verify-renewals-audit-handoff.md`
 
+
+### D-ACCESS-GRACE-001 — Periodo de gracia tras vencimiento
+
+- **Tipo**: producto/acceso
+- **Estado**: accepted_pending_implementation
+- **Severidad**: media
+- **Prioridad sugerida**: P2
+- **Bloque origen**: H0.9I-A (decisión producto)
+- **Descripción**: se acepta conceptualmente un periodo de gracia tras `paid_until` antes de bloquear acceso de forma radical.
+- **Decisión actual**: propuesta aceptada de 30 días de margen.
+- **Regla futura propuesta**:
+  - hasta `paid_until`: cuota vigente;
+  - de `paid_until + 1` a `paid_until + 30`: vencido en gracia, acceso permitido con aviso;
+  - después de `paid_until + 30`: acceso bloqueado.
+- **Impacto**: evita cortar acceso de forma abrupta y da margen operativo a secretaría y al socio.
+- **Opciones**:
+  - A. Implementar gracia calculada sin columna nueva (`paid_until + 30 días`).
+  - B. Añadir campo configurable si la Junta quiere variar el margen por socio/caso.
+  - C. Mantener bloqueo inmediato (descartado conceptualmente por ahora).
+- **Recomendación**: documentar y abordar en WO futura de acceso/vigencia. No mezclar con importación legacy ni SMTP.
+- **Cuándo abordarla**: antes de explotación real con socios si se quiere bloqueo automático por cuota.
+- **Archivos relacionados**:
+  - `src/lib/identityContext.tsx`
+  - `src/lib/memberQueries.ts`
+  - `src/components/members/AdminMembersPage.tsx`
+- **Handoffs relacionados**:
+  - `20260703-0016-h09h-debt-register-handoff.md`
+
 ### RLS-H0.9 — RLS por cuota vencida
 
 - **Tipo**: seguridad/producto
@@ -247,6 +276,19 @@ Documento operativo que consolida la deuda técnica, de producto, de datos y de 
 - **Handoffs relacionados**:
   - `20260703-0007-h09e-hard1-payments-unique-index-handoff.md`
 
+## Decisiones producto H0.9I-A
+
+Ver `docs/h09i-decisions-legacy-import-20260703.md`. Decisiones principales:
+
+- `membership_start` = fecha histórica de alta como socio de ACASPEX, no alta en portal.
+- `paid_until` = fecha hasta la que la cuota está pagada.
+- La validación del justificante sigue siendo manual por admin/Ana T.
+- Renovaciones sucesivas explícitas permitidas: cada confirmación añade un año.
+- Periodo de gracia conceptual aceptado: 30 días tras vencimiento.
+- No usar `membership_periods` en MVP.
+- No limpiar staging todavía.
+- SMTP-final queda diferido hasta reunión con Ana T. y correo corporativo.
+
 ## Priorización recomendada
 
 ### P1 (abordar pronto)
@@ -258,7 +300,8 @@ Documento operativo que consolida la deuda técnica, de producto, de datos y de 
 ### P2 (decidir y abordar)
 
 1. **D-H09G-001** (trigger/membership_start NULL) — revisar si hay socios reales importados sin `membership_start`.
-2. **RLS-H0.9** (RLS por cuota vencida) — antes de producción con recursos privados sensibles.
+2. **D-ACCESS-GRACE-001** (periodo de gracia 30 días) — decisión aceptada, pendiente de implementar.
+3. **RLS-H0.9** (RLS por cuota vencida) — antes de producción con recursos privados sensibles.
 
 ### P3 (cuando se decida)
 
