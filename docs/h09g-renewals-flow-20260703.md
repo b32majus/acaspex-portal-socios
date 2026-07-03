@@ -143,17 +143,36 @@ registerValidatedPaymentForRenewal(input: {
 - B. Ajustar trigger para no rellenar `membership_start` en UPDATE.
 - C. Mantener como está y documentarlo como saneamiento de datos incompletos.
 
-### D-H09G-002 — Operación no transaccional
+### D-H09G-002 — Operación no transaccional — CERRADA en H0.9I-D/E
 
-`registerValidatedPaymentForRenewal` ejecuta `INSERT payments` y `UPDATE members` en dos llamadas separadas. Si la segunda falla, el payment queda registrado pero el member no se actualiza. No se hace DELETE compensatorio. **Deuda**: implementar RPC transaccional cuando se decida.
+Resuelta en commit `dc4996a` (H0.9I-D). Implementada la función PostgreSQL `public.register_validated_renewal_payment(uuid, numeric, text, text)` en migración 046. La RPC ejecuta `INSERT payments` + `UPDATE members` en una sola transacción atómica. Validada en staging con 10 casos (H0.9I-E) → `verified_with_observations`.
+
+Flujo actual del frontend:
+1. Admin confirma renovación en `AdminMemberDetailPage`.
+2. `registerValidatedPaymentForRenewal` en `src/lib/paymentActions.ts` llama a `supabase.rpc('register_validated_renewal_payment', {...})`.
+3. La RPC valida admin (`auth.uid()` + `public.is_admin()`), bloquea el member con `select ... for update`, calcula el nuevo periodo, inserta el payment, actualiza el member. Todo en una sola transacción.
+4. Si cualquier paso falla, rollback completo.
+5. Helper mapea errores: `duplicate_payment_period` (23505), `member_not_found` (P0002), `member_status_invalid`/`member_missing_dates`/`invalid_amount` (P0001), `no_session` (28000), `forbidden_not_admin` (42501), `renewal_rpc_failed` (fallback).
+
+Mantener reglas originales:
+- Renovaciones sucesivas permitidas (cada click +12m desde `paid_until` actual).
+- `paid_until + 12 meses`. No desde `today`.
+- No emails automáticos.
+- No DELETE.
+- No `membership_periods`.
+- No automatiza validación de justificantes (sigue manual por admin/Ana T).
+- Si `expired`, pasa a `active`.
+- No toca `membership_start` explícitamente.
+
+Ver detalles completos en `docs/debt-register.md` y handoffs `20260703-0019-h09i-d` y `20260703-0020-h09i-e`.
 
 ### D-H09G-003 — Renovaciones sucesivas explícitas
 
-Cada click confirmado renueva un año más (helper calcula desde `paid_until` actual). La UI ya bloquea click concurrente, pero una segunda renovación posterior es posible y puede ser legítima. **Deuda**: copy adicional o aviso si ya se renovó recientemente.
+Cada click confirmado renueva un año más (helper calcula desde `paid_until` actual). La UI ya bloquea click concurrente, pero una segunda renovación posterior es posible y puede ser legítima. **Deuda**: copy adicional o aviso si ya se renovó recientemente. Copy mejorado en H0.9I-B (commit `8e2e781`): la UI ahora comunica explícitamente que cada confirmación añade un año más a la vigencia actual.
 
 ### D-H09G-004 — Sintéticos staging
 
-`a7e43725` (ACX-0010) y `e26ef8a7` (ACX-0011) quedan documentados en staging. Pagos `06ef8d0d` y `c9369085` también. **No limpiar sin autorización explícita.**
+Sintéticos de H0.9G-F (ACX-0010, ACX-0011) + nuevos de H0.9I-E (ACX-0012 a ACX-0015) + pagos sintéticos (`06ef8d0d`, `c9369085`, `3c98b2c9`, `06abe8ca`, `7fb10b66`, `34cb02b5`, `69dff25b`). Total 6 sintéticos en staging. **No limpiar con DELETE sin autorización explícita.**
 
 ## 9. Qué NO incluye H0.9G
 
@@ -164,13 +183,24 @@ Cada click confirmado renueva un año más (helper calcula desde `paid_until` ac
 - ❌ RLS que bloquee por `paid_until` vencido (queda como en IdentityProvider, decisión separada)
 - ❌ Limpieza automática de sintéticos staging
 - ❌ Edición manual avanzada de periodos
-- ❌ RPC transaccional
+- ✅ RPC transaccional (implementada en H0.9I-D)
 
-## 10. Recomendación siguiente
+## 10. Hardening posterior (H0.9I)
 
-H0.9G queda cerrado con observaciones. Posibles siguientes bloques:
+| Sub-WO | Estado | Commit |
+|--------|--------|--------|
+| H0.9I-A | (auditoría previa, no en repo) | — |
+| H0.9I-B | done — copy renovaciones sucesivas | `8e2e781` |
+| H0.9I-C | designed_go — diseño RPC | (handoff) |
+| H0.9I-D | accepted — RPC implementada | `dc4996a` |
+| H0.9I-E | verified_with_observations — staging 10 casos | (handoff) |
+| H0.9I-F | done — cierre documental (este) | (commit actual) |
 
-- **H0.9H** — Documentación de deudas (D-H09G-001 a 004 + SMTP-final + RPC transaccional) en backlog único.
+## 11. Recomendación siguiente
+
+H0.9G + H0.9I cerrados con observaciones. Posibles siguientes bloques:
+
+- **H0.9J** — Auditoría/mapeo Excel legacy (importación). D033 SMTP-final sigue bloqueante para emails reales.
 - **D033 SMTP-final** — Configurar correo corporativo con Ana T.
 - **Limpieza staging autorizada** — Borrar sintéticos ACX-0010/ACX-0011 si se autoriza.
 - **RPC transaccional pagos/renovaciones** — Resolver D-H09G-002 y homogeneizar con `registerValidatedPayment`.

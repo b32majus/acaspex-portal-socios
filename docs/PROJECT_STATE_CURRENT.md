@@ -782,9 +782,33 @@ Commits del bloque:
 **Pendientes diferidos:**
 - Ver `docs/debt-register.md` para el registro operativo completo (severidad, prioridad, recomendación).
 - Resumen de prioridades:
-  - **P1**: D033 SMTP-final, D-H09G-002 RPC transaccional, B4 reenvío/reset (post-D033).
+  - **P1**: D033 SMTP-final, B4 reenvío/reset (post-D033).
   - **P2**: D-H09G-001 trigger/membership_start NULL, D-ACCESS-GRACE-001 periodo de gracia, RLS por cuota vencida.
   - **P3**: D-H09G-003 copy renovaciones, D-H09G-004 sintéticos staging, M-PERIODS, M-STRIPE.
+  - **Cerradas**: D-H09G-002 (RPC transaccional, `dc4996a`), H0.9E-HARD1 (unique index, `865dde6`).
+
+### H0.9I — Hardening renovación de cuota ✅
+
+**Estado: cierre H0.9I — 2026-07-03.**
+
+H0.9I es el bloque de hardening posterior a H0.9G para mejorar la calidad del flujo de renovación.
+
+Sub-bloques completados:
+- **H0.9I-B** (commit `8e2e781`): copy de renovaciones sucesivas mejorado. La UI comunica explícitamente que cada confirmación añade un año más a la vigencia actual, calculado desde `paid_until` actual (no desde `today`).
+- **H0.9I-C** (handoff): diseño de RPC transaccional para resolver D-H09G-002.
+- **H0.9I-D** (commit `dc4996a`): implementación de `public.register_validated_renewal_payment(uuid, numeric, text, text)` en migración 046. `security definer` + `set search_path = public` + `auth.uid()` + `public.is_admin()` + `select ... for update`. `registerValidatedPaymentForRenewal` en `paymentActions.ts` ahora llama a `supabase.rpc(...)`.
+- **H0.9I-E** (handoff): validación staging con 10 casos → `verified_with_observations`. 0 fallos de diseño. Atomicidad confirmada.
+- **H0.9I-F** (commit actual): cierre documental. D-H09G-002 marcada como `closed` en `debt-register.md`.
+
+Ver: `docs/h09g-renewals-flow-20260703.md` y `docs/debt-register.md`.
+
+Commits del bloque:
+- `8e2e781` — fix: clarify successive renewal copy
+- `dc4996a` — feat: add transactional renewal payment rpc
+
+**Próxima decisión recomendada**:
+- **H0.9J-A** auditoría/mapeo Excel legacy (importación) si se prioriza importación.
+- **D033 SMTP-final** cuando haya reunión con Ana T (P1, bloqueante para emails reales y B4).
 
 ### H0.9I-A — Decisiones producto e importación legacy 📝
 

@@ -314,13 +314,16 @@ Módulos pendientes:
 - M11 (importación Excel) — fase posterior, requiere datos reales.
 - M12 (diseño UX) — pendiente.
 
-## Próximos bloques priorizados (post-H0.9G)
+## Próximos bloques priorizados (post-H0.9G + post-H0.9I)
 
 Las prioridades operativas detalladas (P1/P2/P3) están en `docs/debt-register.md`. Resumen:
 
-- **P1**: D033 SMTP-final, D-H09G-002 RPC transaccional, B4 reenvío/reset (post-D033).
+- **RPC transaccional de renovación** (D-H09G-002) — **completada en H0.9I-D**, validada en H0.9I-E. Cerrada.
+- **P1**: D033 SMTP-final, B4 reenvío/reset (post-D033).
 - **P2**: D-H09G-001 trigger/membership_start NULL, D-ACCESS-GRACE-001 periodo de gracia 30 días, RLS por cuota vencida.
-- **P3**: D-H09G-003 copy, D-H09G-004 sintéticos, M-PERIODS, M-STRIPE.
+- **P3**: D-H09G-003 copy, D-H09G-004 sintéticos (limpieza controlada futura), M-PERIODS, M-STRIPE.
+
+**Próximo bloque recomendado**: H0.9J-A — Auditoría/mapeo Excel legacy (importación). D033 SMTP-final sigue bloqueante para emails reales.
 
 Estado de los módulos del backlog (M01-M12) actualizado arriba.
 

@@ -10,15 +10,15 @@ Documento operativo que consolida la deuda técnica, de producto, de datos y de 
 |----|--------|------|--------|-----------|-----------|
 | D033 | SMTP-final / correo corporativo | infra/comunicación | open | alta para emails reales | **P1** |
 | B4 | Reenvío/reset password | producto/auth | blocked_by_D033 | media | **P1** (post-D033) |
-| D-H09G-002 | Operación no transaccional en renovación | técnica/datos | open | media-alta | **P1** |
 | D-H09G-001 | Trigger 033 y `membership_start` NULL en reactivaciones | datos/producto | open | media | **P2** |
+| D-ACCESS-GRACE-001 | Periodo de gracia tras vencimiento | producto | open | media | **P2** |
 | RLS-H0.9 | RLS que bloquee por cuota vencida | seguridad/producto | deferred | media | **P2** |
-| D-ACCESS-GRACE-001 | Periodo de gracia tras vencimiento | producto/acceso | accepted_pending_implementation | media | **P2** |
 | D-H09E-001 | DELETE hardcoded en migración 045 | higiene migraciones | documented_observation | baja-media | **P3** |
 | D-H09G-003 | Renovaciones sucesivas explícitas | producto/UX | open | baja | **P3** |
 | D-H09G-004 | Sintéticos staging sin limpiar | datos | open | baja | **P3** |
 | M-PERIODS | `membership_periods` no usada | arquitectura | deferred | baja | **P3** |
 | M-STRIPE | Pagos online / Stripe / TPV | producto/infra | future | no aplica MVP | **P3** |
+| D-H09G-002 | Operación no transaccional en renovación | técnica/datos | **closed** | resuelta | — |
 | H0.9E-HARD1 | Unique index payments validated por periodo | técnica | **closed** | resuelta | — |
 
 ## Deudas
@@ -50,24 +50,33 @@ Documento operativo que consolida la deuda técnica, de producto, de datos y de 
 ### D-H09G-002 — Operación no transaccional en renovación
 
 - **Tipo**: técnica/datos
-- **Estado**: open
-- **Severidad**: media-alta
-- **Prioridad sugerida**: P1
+- **Estado**: **closed**
+- **Severidad**: resuelta
+- **Prioridad sugerida**: —
 - **Bloque origen**: H0.9G-D
-- **Descripción**: `registerValidatedPaymentForRenewal` ejecuta `INSERT payments` y `UPDATE members` en dos llamadas separadas (sin RPC transaccional).
-- **Impacto**: si `UPDATE members` falla tras `INSERT payments`, el payment queda validado pero `member.paid_until` no se actualiza. No se hace DELETE compensatorio. El admin recibe `code: 'member_update_failed'` y debe actualizar manualmente.
-- **Decisión actual**: deuda aceptada; se documenta el riesgo en el handoff de H0.9G-D.
-- **Opciones**:
-  - A. Crear RPC PostgreSQL transaccional (`register_renewal_payment(member_id, ...)`).
-  - B. Edge Function con service_role que haga ambas operaciones en una sola llamada.
-  - C. Mantener como está hasta volumen real.
-- **Recomendación**: resolver antes de producción real con volumen o antes de automatizar pagos online (Stripe).
-- **Cuándo abordarla**: P1, especialmente si se decide registrar renovaciones reales con frecuencia.
+- **Cierre (H0.9I-D + H0.9I-E)**:
+  - Implementado en `dc4996a` (H0.9I-D).
+  - Migración 046: `supabase/migrations/20260704000046_046_acaspex_register_validated_renewal_payment_rpc.sql`.
+  - Función PostgreSQL: `public.register_validated_renewal_payment(uuid, numeric, text, text) returns public.payments`.
+  - `security definer` + `set search_path = public` + `auth.uid()` + `public.is_admin()` + `select ... for update`.
+  - `registerValidatedPaymentForRenewal` ahora llama a `supabase.rpc('register_validated_renewal_payment', {...})` en `src/lib/paymentActions.ts`.
+  - Validado en staging con `verified_with_observations` (H0.9I-E): 10 casos, 0 fallos.
+  - Helper/RPC verificados; UI navegador no probada (fuera de scope).
+- **Descripción histórica** (referencia): `registerValidatedPaymentForRenewal` original ejecutaba `INSERT payments` y `UPDATE members` en dos llamadas separadas (sin RPC transaccional). Si `UPDATE members` fallaba tras `INSERT payments`, el payment quedaba validado pero `member.paid_until` no se actualizaba. No se hacía DELETE compensatorio. El admin recibía `code: 'member_update_failed'`.
+- **Impacto del cierre**: 0 atomicidad rota. INSERT + UPDATE en una sola transacción; si cualquier paso falla, rollback completo.
+- **Validación del justificante**: la RPC NO automatiza validación de justificantes. La acción sigue requiriendo validación humana manual por admin/Ana T antes de registrar la renovación.
+- **Observaciones**:
+  - UI navegador no probada; helper/RPC verificados.
+  - Staging generó 4 sintéticos nuevos (ACX-0012, ACX-0013, ACX-0014, ACX-0015) y 5 payments nuevos durante H0.9I-E. Quedan documentados.
+  - `membership_periods` no se toca por código; el handoff reportó sin cambios.
+  - `member_update_failed` queda como código inalcanzable en la nueva ruta. Considerar limpieza futura de la UI.
 - **Archivos relacionados**:
+  - `supabase/migrations/20260704000046_046_acaspex_register_validated_renewal_payment_rpc.sql`
   - `src/lib/paymentActions.ts` (`registerValidatedPaymentForRenewal`)
-  - `supabase/functions/` (si se opta por opción B)
 - **Handoffs relacionados**:
   - `20260703-0011-h09g-d-renewal-payment-helper-handoff.md`
+  - `20260703-0019-h09i-d-renewal-rpc-implementation-handoff.md`
+  - `20260703-0020-h09i-e-renewal-rpc-staging-validation-handoff.md`
 
 ### D-H09G-003 — Renovaciones sucesivas explícitas
 
@@ -294,8 +303,7 @@ Ver `docs/h09i-decisions-legacy-import-20260703.md`. Decisiones principales:
 ### P1 (abordar pronto)
 
 1. **D033 SMTP-final** — bloqueante para emails reales, invitaciones, B4.
-2. **D-H09G-002** (RPC transaccional) — si se van a registrar renovaciones reales con frecuencia.
-3. **B4** (reenvío/reset password) — post-D033.
+2. **B4** (reenvío/reset password) — post-D033.
 
 ### P2 (decidir y abordar)
 
@@ -310,3 +318,8 @@ Ver `docs/h09i-decisions-legacy-import-20260703.md`. Decisiones principales:
 3. **D-H09E-001** (DELETE hardcoded) — sin acción, solo documentar.
 4. **M-PERIODS** (membership_periods no usada) — decidir si se necesita.
 5. **M-STRIPE** (pagos online) — fase posterior, decisión de negocio.
+
+### Cerradas
+
+- **D-H09G-002** — RPC transaccional. Resuelta en `dc4996a` (H0.9I-D). Validada en H0.9I-E.
+- **H0.9E-HARD1** — Unique index payments. Resuelta en `865dde6`.
