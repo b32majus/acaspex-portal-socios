@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import {
   categoryLabel,
   formatResourceDate,
+  getEffectiveResourceType,
   resourceStatusBadgeClass,
   resourceStatusLabel,
   typeLabel,
@@ -234,6 +235,7 @@ export function AdminResourcesPage() {
                   const statusBadge = resourceStatusBadgeClass[resource.status] ?? 'bg-slate-100 text-slate-600';
                   const isReal = resource.id.length === 36 && resource.id.includes('-');
                   const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
+                  const effectiveType = getEffectiveResourceType(resource);
                   return (
                     <tr key={resource.id} className="hover:bg-slate-50/60">
                       <td className="py-3 font-medium text-slate-900">
@@ -241,7 +243,7 @@ export function AdminResourcesPage() {
                         {isReal && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" title="Recurso real" />}
                       </td>
                       <td className="py-3 text-slate-600">{categoryLabel[resource.category] ?? resource.category}</td>
-                      <td className="py-3 text-slate-600">{typeLabel[resource.type] ?? resource.type}</td>
+                      <td className="py-3 text-slate-600">{typeLabel[effectiveType] ?? effectiveType}</td>
                       <td className="py-3">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge}`}>
                           {resourceStatusLabel[resource.status] ?? resource.status}

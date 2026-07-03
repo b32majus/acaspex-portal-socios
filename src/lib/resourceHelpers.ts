@@ -177,3 +177,14 @@ export function getYouTubeEmbedUrl(url: string | null | undefined): string | nul
   const id = getYouTubeVideoId(url || '');
   return id ? `https://www.youtube.com/embed/${id}` : null;
 }
+
+export function isYouTubeResource(resource: { externalUrl?: string | null } | null | undefined): boolean {
+  return isYouTubeUrl(resource?.externalUrl ?? null);
+}
+
+export function getEffectiveResourceType(
+  resource: { type?: string; externalUrl?: string | null } | null | undefined,
+): ResourceType {
+  if (isYouTubeResource(resource)) return 'video';
+  return (resource?.type as ResourceType) ?? 'document';
+}

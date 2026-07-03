@@ -58,7 +58,7 @@ import type { SignupFormState as RealSignupFormState } from '../lib/signupReques
 import { fetchActiveResourceCategories, getResourceCategoryIcon, type ResourceCategoryOption } from '../lib/resourceCategories';
 import { useAuth } from '../lib/authContext';
 import { useIdentity } from '../lib/identityContext';
-import { categoryLabel, typeLabel, resourceStatusLabel, resourceStatusBadgeClass, typeIconMap, formatResourceDate, isImageResource, isPdfResource, isOfficeResource, isExternalLinkResource, isPreviewableResource, isDownloadOnlyResource } from '../lib/resourceHelpers';
+import { categoryLabel, typeLabel, resourceStatusLabel, resourceStatusBadgeClass, typeIconMap, formatResourceDate, getEffectiveResourceType, isImageResource, isPdfResource, isOfficeResource, isExternalLinkResource, isPreviewableResource, isDownloadOnlyResource } from '../lib/resourceHelpers';
 import type { ResourceLike } from '../lib/resourceHelpers';
 import { MockCover } from '../components/resources/MockCover';
 import PdfCoverPreview from '../components/resources/PdfCoverPreview';
@@ -560,7 +560,8 @@ type ResourceCardProps = {
 };
 
 function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
-  const TypeIcon = typeIconMap[resource.type] ?? FileText;
+  const effectiveType = getEffectiveResourceType(resource);
+  const TypeIcon = typeIconMap[effectiveType] ?? FileText;
   const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
   const resourceCategoryName = (resource as typeof resource & { categoryName?: string }).categoryName;
 
@@ -578,7 +579,7 @@ function ResourceCard({ resource, showPreview = true }: ResourceCardProps) {
           </span>
           <span className="inline-flex items-center gap-1 text-xs text-slate-500">
             <TypeIcon size={12} />
-            {typeLabel[resource.type] ?? resource.type}
+            {typeLabel[effectiveType] ?? effectiveType}
           </span>
         </div>
         <h3 className="font-serif text-base font-medium leading-snug text-slate-900">

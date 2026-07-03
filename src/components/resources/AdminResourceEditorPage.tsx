@@ -7,6 +7,9 @@ import {
   resourceStatusBadgeClass,
   resourceStatusLabel,
   detectResourceTypeFromFile,
+  getEffectiveResourceType,
+  inferResourceType,
+  isYouTubeUrl,
   typeLabel,
 } from '../../lib/resourceHelpers';
 import {
@@ -407,9 +410,9 @@ export function AdminResourceEditorPage() {
               Tipo de material
             </label>
             <div className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-              {typeLabel[type] ?? type}
+              {typeLabel[getEffectiveResourceType({ type, externalUrl })] ?? type}
             </div>
-            <p className="mt-1 text-xs text-slate-400">Se detecta automáticamente al sustituir el archivo.</p>
+            <p className="mt-1 text-xs text-slate-400">Se detecta automáticamente desde el archivo o desde el enlace externo.</p>
           </div>
           <div>
             <label htmlFor="resource-status" className="block text-xs font-medium text-slate-500">
@@ -472,7 +475,11 @@ export function AdminResourceEditorPage() {
               id="resource-external-url"
               type="url"
               value={externalUrl}
-              onChange={(e) => setExternalUrl(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setExternalUrl(v);
+                if (isYouTubeUrl(v)) setType('video');
+              }}
               placeholder="https://…"
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />

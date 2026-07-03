@@ -13,11 +13,13 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import {
   categoryLabel,
   formatResourceDate,
+  getEffectiveResourceType,
   getYouTubeEmbedUrl,
   isExternalLinkResource,
   isImageResource,
   isOfficeResource,
   isPdfResource,
+  isYouTubeResource,
   isYouTubeUrl,
   typeIconMap,
   typeLabel,
@@ -144,9 +146,11 @@ export function MemberResourceDetailPage() {
     );
   }
 
-  const TypeIcon = typeIconMap[resource.type] ?? FileText;
+  const effectiveType = getEffectiveResourceType(resource);
+  const TypeIcon = typeIconMap[effectiveType] ?? FileText;
   const visibilityLabel = resource.category === 'corporativo' ? 'Junta Directiva' : 'Socios';
   const backPath = resource.category === 'corporativo' ? '/socios/material-corporativo' : '/socios/recursos';
+  const isYouTube = isYouTubeResource(resource);
 
   return (
     <div className="space-y-8">
@@ -157,69 +161,86 @@ export function MemberResourceDetailPage() {
         {resource.category === 'corporativo' ? 'Volver a Material Corporativo' : 'Volver al centro de conocimiento'}
       </Link>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="aspect-[2/1] overflow-hidden bg-slate-100">
-          {isImageResource(resource) && signedUrl ? (
-            <img src={signedUrl} alt={resource.title} className="h-full w-full object-contain" />
-          ) : isImageResource(resource) ? (
-            <div className="flex h-full w-full items-center justify-center">
-              <Image size={48} className="text-slate-300" />
-            </div>
-          ) : isPdfResource(resource) ? (
-            signedUrl ? (
-              <iframe
-                src={signedUrl}
-                title={resource.title}
-                className="h-full w-full"
-                style={{ border: 'none' }}
-              />
-            ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-rose-50">
-              <FileText size={48} className="text-rose-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-rose-700/80">Documento PDF</span>
-            </div>
-          )
-          ) : isOfficeResource(resource) ? (
-            coverImageUrl ? (
-              <img src={coverImageUrl} alt={resource.title} className="h-full w-full object-contain" />
-            ) : (
-            (() => {
-              const ext = resource.filePath?.split('.').pop()?.toLowerCase() ?? '';
-              const isWord = ext === 'docx' || ext === 'doc';
-              const isPpt = ext === 'pptx' || ext === 'ppt';
-              const label = isWord ? 'Documento Word' : isPpt ? 'Presentación PowerPoint' : 'Documento';
-              const icon = isWord ? FileText : isPpt ? BookOpen : FileText;
-              const tone = isWord ? 'text-blue-400' : isPpt ? 'text-amber-500' : 'text-slate-400';
-              const Icon = icon;
-              return (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-slate-50">
-                  <Icon size={48} className={tone} />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-600/80">{label}</span>
-                </div>
-              );
-            })()
+      {!isYouTube && (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="aspect-[2/1] overflow-hidden bg-slate-100">
+            {isImageResource(resource) && signedUrl ? (
+              <img src={signedUrl} alt={resource.title} className="h-full w-full object-contain" />
+            ) : isImageResource(resource) ? (
+              <div className="flex h-full w-full items-center justify-center">
+                <Image size={48} className="text-slate-300" />
+              </div>
+            ) : isPdfResource(resource) ? (
+              signedUrl ? (
+                <iframe
+                  src={signedUrl}
+                  title={resource.title}
+                  className="h-full w-full"
+                  style={{ border: 'none' }}
+                />
+              ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-rose-50">
+                <FileText size={48} className="text-rose-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-rose-700/80">Documento PDF</span>
+              </div>
             )
-          ) : isYouTubeUrl(resource.externalUrl ?? null) ? (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-rose-50">
-              <Video size={48} className="text-rose-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-rose-700/80">Vídeo</span>
-              <span className="text-[11px] text-slate-500">YouTube</span>
-            </div>
-          ) : isExternalLinkResource(resource) ? (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-sky-50">
-              <Globe size={48} className="text-sky-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-sky-700/80">Enlace externo</span>
-              <span className="text-[11px] text-slate-500">Usa "Abrir recurso" para visitarlo</span>
-            </div>
-          ) : (
-            <MockCover resource={resource} />
-          )}
-        </div>
-        <div className="p-6 sm:p-8">
-          <h1 className="text-2xl font-semibold text-slate-900">{resource.title}</h1>
-          <p className="mt-1 text-slate-600">{resource.subtitle}</p>
-        </div>
-      </section>
+            ) : isOfficeResource(resource) ? (
+              coverImageUrl ? (
+                <img src={coverImageUrl} alt={resource.title} className="h-full w-full object-contain" />
+              ) : (
+              (() => {
+                const ext = resource.filePath?.split('.').pop()?.toLowerCase() ?? '';
+                const isWord = ext === 'docx' || ext === 'doc';
+                const isPpt = ext === 'pptx' || ext === 'ppt';
+                const label = isWord ? 'Documento Word' : isPpt ? 'Presentación PowerPoint' : 'Documento';
+                const icon = isWord ? FileText : isPpt ? BookOpen : FileText;
+                const tone = isWord ? 'text-blue-400' : isPpt ? 'text-amber-500' : 'text-slate-400';
+                const Icon = icon;
+                return (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-slate-50">
+                    <Icon size={48} className={tone} />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-600/80">{label}</span>
+                  </div>
+                );
+              })()
+              )
+            ) : isExternalLinkResource(resource) ? (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-sky-50">
+                <Globe size={48} className="text-sky-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-sky-700/80">Enlace externo</span>
+                <span className="text-[11px] text-slate-500">Usa "Abrir recurso" para visitarlo</span>
+              </div>
+            ) : (
+              <MockCover resource={resource} />
+            )}
+          </div>
+          <div className="p-6 sm:p-8">
+            <h1 className="text-2xl font-semibold text-slate-900">{resource.title}</h1>
+            <p className="mt-1 text-slate-600">{resource.subtitle}</p>
+          </div>
+        </section>
+      )}
+
+      {isYouTube && (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
+            <iframe
+              src={getYouTubeEmbedUrl(resource.externalUrl) || ''}
+              title={resource.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
+          <div className="p-6 sm:p-8">
+            <h1 className="text-2xl font-semibold text-slate-900">{resource.title}</h1>
+            <p className="mt-1 text-slate-600">{resource.subtitle}</p>
+            <p className="mt-3 text-xs text-slate-500">
+              Si el vídeo no se reproduce aquí, ábrelo en YouTube. Los vídeos con restricción de edad o con inserción deshabilitada solo pueden verse en YouTube.
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -233,7 +254,7 @@ export function MemberResourceDetailPage() {
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Tipo</p>
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-slate-700">
               <TypeIcon size={14} className="text-slate-400" />
-              {typeLabel[resource.type] ?? resource.type}
+              {typeLabel[effectiveType] ?? effectiveType}
             </p>
           </div>
           <div>
@@ -263,23 +284,6 @@ export function MemberResourceDetailPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Descripción</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-700">{resource.description}</p>
-        </section>
-      )}
-
-      {resource.externalUrl && isYouTubeUrl(resource.externalUrl) && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="relative w-full overflow-hidden rounded-xl" style={{ paddingTop: '56.25%' }}>
-            <iframe
-              src={getYouTubeEmbedUrl(resource.externalUrl) || ''}
-              title={resource.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              className="absolute inset-0 h-full w-full"
-            />
-          </div>
-          <p className="mt-3 text-xs text-slate-500">
-            Si el vídeo no se reproduce aquí, ábrelo en YouTube. Los vídeos con restricción de edad o con inserción deshabilitada solo pueden verse en YouTube.
-          </p>
         </section>
       )}
 
