@@ -810,6 +810,30 @@ Commits del bloque:
 - **H0.9J-A** auditoría/mapeo Excel legacy (importación) si se prioriza importación.
 - **D033 SMTP-final** cuando haya reunión con Ana T (P1, bloqueante para emails reales y B4).
 
+### H0.9J — Importación legacy (preparación) 📋
+
+**Estado: preparación documental — 2026-07-03.**
+
+H0.9J es el bloque de preparación para importar el Excel legacy de socios ACASPEX que custodia la Junta.
+
+Sub-bloques completados:
+- **H0.9J-A** (handoff): auditoría del documento de cabeceras legacy contra el schema actual y las decisiones H0.9I-A. Status: `audited_header_only_waiting_board_file`.
+- **H0.9J-B** (docs actuales): plantilla canónica de columnas + checklist para Junta/Ana T. Sin datos personales. Sin scripts.
+
+Archivos creados:
+- `docs/migration/legacy-import-canonical-template-20260703.md`
+- `docs/migration/legacy-import-board-checklist-20260703.md`
+
+**Bloqueos para migración real**:
+- Excel real NO está en repo. Lo custodia la Junta.
+- Faltan decisiones críticas: `membership_start`, `paid_until`, status inicial, payments históricos, RGPD.
+
+**Próximo bloque recomendado**:
+- **H0.9J-C** dry-run validator — solo cuando Junta/Ana T. facilite cabecera + muestra (ficticia o anonimizada) Y se hayan validado los criterios go/no-go del checklist.
+- Si no hay muestra disponible, esperar a la reunión prevista con Ana T. (~2 semanas).
+
+No hacer H0.9J-C todavía.
+
 ### H0.9I-A — Decisiones producto e importación legacy 📝
 
 **Estado: documentación de decisiones — 2026-07-03.**

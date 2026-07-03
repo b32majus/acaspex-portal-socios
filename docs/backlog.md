@@ -323,7 +323,7 @@ Las prioridades operativas detalladas (P1/P2/P3) están en `docs/debt-register.m
 - **P2**: D-H09G-001 trigger/membership_start NULL, D-ACCESS-GRACE-001 periodo de gracia 30 días, RLS por cuota vencida.
 - **P3**: D-H09G-003 copy, D-H09G-004 sintéticos (limpieza controlada futura), M-PERIODS, M-STRIPE.
 
-**Próximo bloque recomendado**: H0.9J-A — Auditoría/mapeo Excel legacy (importación). D033 SMTP-final sigue bloqueante para emails reales.
+**Próximo bloque recomendado**: H0.9J-C — Dry-run validator, solo cuando se disponga de muestra (ficticia o anonimizada) y se hayan validado los criterios go/no-go del checklist Junta. D033 SMTP-final sigue bloqueante para emails reales.
 
 Estado de los módulos del backlog (M01-M12) actualizado arriba.
 
