@@ -198,11 +198,14 @@ Sintéticos de H0.9G-F (ACX-0010, ACX-0011) + nuevos de H0.9I-E (ACX-0012 a ACX-
 
 ## 11. Recomendación siguiente
 
-H0.9G + H0.9I cerrados con observaciones. Posibles siguientes bloques:
+H0.9G + H0.9I quedan cerrados con observaciones.
 
-- **H0.9J** — Auditoría/mapeo Excel legacy (importación). D033 SMTP-final sigue bloqueante para emails reales.
-- **D033 SMTP-final** — Configurar correo corporativo con Ana T.
-- **Limpieza staging autorizada** — Borrar sintéticos ACX-0010/ACX-0011 si se autoriza.
-- **RPC transaccional pagos/renovaciones** — Resolver D-H09G-002 y homogeneizar con `registerValidatedPayment`.
+Bloques posibles siguientes:
 
-Recomendación principal: **H0.9H** para consolidar deudas en el backlog.
+- **H0.9J-A — Auditoría/mapeo Excel legacy**: preparar importación de socios actuales desde Excel sin importar datos reales todavía.
+- **D033 SMTP-final**: configurar correo corporativo con Ana T. cuando se celebre la reunión prevista.
+- **Limpieza staging autorizada**: solo si se aprueba una WO específica de limpieza controlada; no hacer DELETE fuera de esa WO.
+- **D-ACCESS-GRACE-001**: diseño/implementación futura del periodo de gracia 30 días antes de bloqueo por cuota vencida.
+- **RLS-H0.9**: decisión futura sobre enforcement backend de cuota vencida.
+
+Recomendación principal actual: **H0.9J-A — Auditoría/mapeo Excel legacy**, salvo que la reunión con Ana T. habilite antes D033 SMTP-final.
