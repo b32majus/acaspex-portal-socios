@@ -42,12 +42,12 @@ export function AdminResourceNewPage() {
       setFeedback({ type: 'error', message: 'El sistema de almacenamiento no está configurado.' });
       return;
     }
-    if (!file) {
-      setFeedback({ type: 'error', message: 'Selecciona un archivo para subir.' });
-      return;
-    }
     if (!title.trim()) {
       setFeedback({ type: 'error', message: 'El título es obligatorio.' });
+      return;
+    }
+    if (!file && !externalUrl.trim()) {
+      setFeedback({ type: 'error', message: 'Añade un archivo o un enlace externo para guardar el recurso.' });
       return;
     }
 
@@ -55,19 +55,23 @@ export function AdminResourceNewPage() {
     setFeedback(null);
 
     try {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
       const sectionPath = section === 'corporate_material' ? 'corporativo' : section;
-      const storagePath = `${sectionPath}/2026/${crypto.randomUUID()}-${safeName}`;
+      let storagePath: string | null = null;
 
-      const { error: uploadError } = await supabase!
-        .storage
-        .from('acaspex-resource-files')
-        .upload(storagePath, file, {
-          contentType: file.type,
-          upsert: false,
-        });
+      if (file) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+        storagePath = `${sectionPath}/2026/${crypto.randomUUID()}-${safeName}`;
 
-      if (uploadError) throw new Error(uploadError.message);
+        const { error: uploadError } = await supabase!
+          .storage
+          .from('acaspex-resource-files')
+          .upload(storagePath, file, {
+            contentType: file.type,
+            upsert: false,
+          });
+
+        if (uploadError) throw new Error(uploadError.message);
+      }
 
       let coverPath: string | null = null;
       if (coverFile) {
@@ -80,7 +84,7 @@ export function AdminResourceNewPage() {
             upsert: false,
           });
         if (coverError) {
-          await supabase!.storage.from('acaspex-resource-files').remove([storagePath]);
+          if (storagePath) await supabase!.storage.from('acaspex-resource-files').remove([storagePath]);
           throw new Error('Error al subir portada: ' + coverError.message);
         }
       }
@@ -104,9 +108,10 @@ export function AdminResourceNewPage() {
         .single();
 
       if (resourceError) {
-        const toRemove = [storagePath];
+        const toRemove: string[] = [];
+        if (storagePath) toRemove.push(storagePath);
         if (coverPath) toRemove.push(coverPath);
-        await supabase!.storage.from('acaspex-resource-files').remove(toRemove);
+        if (toRemove.length > 0) await supabase!.storage.from('acaspex-resource-files').remove(toRemove);
         throw new Error(resourceError.message);
       }
 
@@ -249,7 +254,7 @@ export function AdminResourceNewPage() {
           </div>
           <div>
             <label htmlFor="new-external-url" className="block text-xs font-medium text-slate-500">
-              Enlace externo (opcional)
+              Enlace externo
             </label>
             <input
               id="new-external-url"
@@ -259,6 +264,7 @@ export function AdminResourceNewPage() {
               placeholder="https://…"
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
             />
+            <p className="mt-1 text-xs text-slate-400">Para vídeos de YouTube, recursos externos o materiales alojados fuera del portal.</p>
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="new-description" className="block text-xs font-medium text-slate-500">
@@ -274,7 +280,7 @@ export function AdminResourceNewPage() {
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="new-file" className="block text-xs font-medium text-slate-500">
-              Archivo *
+              Archivo
             </label>
             <input
               id="new-file"
@@ -292,7 +298,7 @@ export function AdminResourceNewPage() {
                 {file.name} ({(file.size / 1024).toFixed(0)} KB)
               </p>
             )}
-            <p className="mt-1 text-xs text-slate-400">PNG, JPG, PDF, DOCX, PPTX. Máx. 50 MB.</p>
+            <p className="mt-1 text-xs text-slate-400">Opcional si el recurso es un enlace externo o vídeo. PNG, JPG, PDF, DOCX, PPTX. Máx. 50 MB.</p>
           </div>
           <div className="sm:col-span-2 border-t border-slate-100 pt-4">
             <label className="block text-xs font-medium text-slate-500">

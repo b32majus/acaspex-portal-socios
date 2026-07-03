@@ -124,3 +124,45 @@ export function detectResourceTypeFromFile(file: File | null, fallback: Resource
   };
   return typeMap[ext] ?? fallback;
 }
+
+const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']);
+
+export function isYouTubeUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    return YOUTUBE_HOSTS.has(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+export function getYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    if (host === 'youtu.be') {
+      return u.pathname.replace(/^\//, '').split('/')[0] || null;
+    }
+    if (host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com') {
+      if (u.pathname.startsWith('/embed/')) {
+        return u.pathname.split('/')[2] || null;
+      }
+      if (u.pathname === '/watch') {
+        return u.searchParams.get('v');
+      }
+      if (u.pathname.startsWith('/shorts/')) {
+        return u.pathname.split('/')[2] || null;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function getYouTubeEmbedUrl(url: string | null | undefined): string | null {
+  const id = getYouTubeVideoId(url || '');
+  return id ? `https://www.youtube.com/embed/${id}` : null;
+}

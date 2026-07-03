@@ -12,10 +12,12 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import {
   categoryLabel,
   formatResourceDate,
+  getYouTubeEmbedUrl,
   isExternalLinkResource,
   isImageResource,
   isOfficeResource,
   isPdfResource,
+  isYouTubeUrl,
   typeIconMap,
   typeLabel,
 } from '../../lib/resourceHelpers';
@@ -257,6 +259,23 @@ export function MemberResourceDetailPage() {
         </section>
       )}
 
+      {resource.externalUrl && isYouTubeUrl(resource.externalUrl) && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="relative w-full overflow-hidden rounded-xl" style={{ paddingTop: '56.25%' }}>
+            <iframe
+              src={getYouTubeEmbedUrl(resource.externalUrl) || ''}
+              title={resource.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
+          <p className="mt-3 text-xs text-slate-500">
+            Vídeo embebido de YouTube. Si no carga, el autor puede haber restringido el acceso.
+          </p>
+        </section>
+      )}
+
       {isOfficeResource(resource) && resource.filePath && (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
@@ -276,7 +295,18 @@ export function MemberResourceDetailPage() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap gap-3">
-          {isExternalLinkResource(resource) && resource.externalUrl && (
+          {resource.externalUrl && isYouTubeUrl(resource.externalUrl) && (
+            <a
+              href={resource.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              Abrir en YouTube
+              <ChevronRight size={14} />
+            </a>
+          )}
+          {resource.externalUrl && !isYouTubeUrl(resource.externalUrl) && (
             <a
               href={resource.externalUrl}
               target="_blank"
