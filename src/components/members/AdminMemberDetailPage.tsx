@@ -7,6 +7,7 @@ import { fetchMemberAccessProfile, type MemberAccessProfile } from '../../lib/me
 import { createMemberAccess, updateMemberAccessStatus } from '../../lib/memberAccessActions';
 import { mapMemberRowToForm, type MemberFormState, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, documentTypeOptions } from '../../lib/memberFormOptions';
+import { fetchValidatedPaymentForMemberPeriod, type ValidatedPaymentForPeriodResult, type ValidatedPaymentStatus } from '../../lib/paymentQueries';
 import { MemberForm } from './MemberForm';
 
 const statusLabelMap = Object.fromEntries(memberStatusOptions.map(o => [o.value, o.label]));
@@ -58,6 +59,8 @@ export function AdminMemberDetailPage() {
   const [registeringPayment, setRegisteringPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
+  const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
+  const [paymentStatusResult, setPaymentStatusResult] = useState<ValidatedPaymentForPeriodResult | null>(null);
 
   useEffect(() => {
     if (!row || !isSupabaseConfigured()) return;
@@ -97,6 +100,22 @@ export function AdminMemberDetailPage() {
       .catch(() => setError('No se pudo cargar el socio.'))
       .finally(() => setLoading(false));
   }, [memberId]);
+
+  useEffect(() => {
+    if (!row?.id || !row.membership_start || !row.paid_until) {
+      setPaymentStatusResult({ ok: false, status: 'not_applicable', message: 'El pago no puede evaluarse porque el socio no tiene periodo de vigencia definido.' });
+      return;
+    }
+    setPaymentStatusLoading(true);
+    fetchValidatedPaymentForMemberPeriod({
+      memberId: row.id,
+      membershipStart: row.membership_start,
+      paidUntil: row.paid_until,
+    })
+      .then((result) => setPaymentStatusResult(result))
+      .catch(() => setPaymentStatusResult({ ok: false, status: 'error', message: 'No se pudo consultar el estado de pago.' }))
+      .finally(() => setPaymentStatusLoading(false));
+  }, [row?.id, row?.membership_start, row?.paid_until]);
 
   function mapAccessError(response: { code?: string; message?: string }): string {
     const code = response.code ?? '';
@@ -176,6 +195,12 @@ export function AdminMemberDetailPage() {
       });
       if (result.ok) {
         setPaymentFeedback(result.message);
+        const refreshed = await fetchValidatedPaymentForMemberPeriod({
+          memberId: row.id,
+          membershipStart: row.membership_start,
+          paidUntil: row.paid_until,
+        });
+        setPaymentStatusResult(refreshed);
       } else {
         setPaymentError(result.message);
       }
@@ -501,6 +526,68 @@ export function AdminMemberDetailPage() {
           <p className="mt-2 text-sm text-slate-600">
             Registra manualmente como validado el pago de la cuota anual correspondiente al periodo vigente del socio. Esta acción no crea acceso al portal ni envía emails.
           </p>
+
+          <div className="mt-4">
+            {paymentStatusLoading && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+                Comprobando pago…
+              </div>
+            )}
+            {!paymentStatusLoading && paymentStatusResult?.status === 'validated' && paymentStatusResult.payment && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4">
+                <p className="text-sm font-semibold text-emerald-800">Pago validado</p>
+                <dl className="mt-2 grid gap-2 text-xs text-slate-700 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-slate-500">Importe</dt>
+                    <dd className="mt-0.5 font-medium text-slate-900">{paymentStatusResult.payment.amount} €</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Validado el</dt>
+                    <dd className="mt-0.5 font-medium text-slate-900">{formatDate(paymentStatusResult.payment.validated_at)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Método</dt>
+                    <dd className="mt-0.5 font-medium text-slate-900">Transferencia bancaria</dd>
+                  </div>
+                  {paymentStatusResult.payment.receipt_file_path && (
+                    <div>
+                      <dt className="text-slate-500">Justificante</dt>
+                      <dd className="mt-0.5 font-medium text-slate-900">Justificante registrado</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            )}
+            {!paymentStatusLoading && paymentStatusResult?.status === 'missing' && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-4">
+                <p className="text-sm font-semibold text-amber-800">Sin pago validado</p>
+                <p className="mt-1 text-xs text-slate-700">{paymentStatusResult.message}</p>
+                <p className="mt-2 text-xs text-slate-500">
+                  Puedes registrar el pago validado desde esta ficha si ya se ha revisado la transferencia.
+                </p>
+              </div>
+            )}
+            {!paymentStatusLoading && paymentStatusResult?.status === 'duplicate' && (
+              <div className="rounded-lg border border-orange-200 bg-orange-50/60 p-4">
+                <p className="text-sm font-semibold text-orange-800">Revisar duplicados</p>
+                <p className="mt-1 text-xs text-slate-700">Hay más de un pago validado para este periodo. Revisar duplicados.</p>
+                <p className="mt-1 text-xs text-slate-500">No se ha borrado ni modificado nada automáticamente.</p>
+              </div>
+            )}
+            {!paymentStatusLoading && paymentStatusResult?.status === 'not_applicable' && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-700">No evaluable</p>
+                <p className="mt-1 text-xs text-slate-500">{paymentStatusResult.message}</p>
+              </div>
+            )}
+            {!paymentStatusLoading && paymentStatusResult?.status === 'error' && (
+              <div className="rounded-lg border border-red-200 bg-red-50/60 p-4">
+                <p className="text-sm font-semibold text-red-800">No se pudo consultar el pago</p>
+                <p className="mt-1 text-xs text-slate-700">{paymentStatusResult.message}</p>
+              </div>
+            )}
+          </div>
+
           {paymentError && (
             <div className="mt-3 rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">{paymentError}</div>
           )}
