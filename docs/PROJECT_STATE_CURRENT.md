@@ -723,7 +723,7 @@ Implementado y validado en staging:
 
 Ver: `docs/h09e-payments-flow-20260628.md`.
 
-Deuda: H0.9E-HARD1 — constraint DB de unicidad para payments duplicados (diferido).
+H0.9E-HARD1 → completado en `865dde6` (migración 045). Índice único parcial `payments_validated_member_period_uidx` activo en staging.
 
 Commits del bloque:
 - `48f1c1f` — fix: grant payment access permissions
@@ -780,12 +780,11 @@ Commits del bloque:
 - `b00c3c6` — fix: clarify renewal period copy
 
 **Pendientes diferidos:**
-- D-H09G-001 — Trigger 033 y `membership_start` NULL en reactivaciones.
-- D-H09G-002 — Operación no transaccional (`registerValidatedPaymentForRenewal`).
-- D-H09G-003 — Renovaciones sucesivas explícitas (copy/control).
-- D-H09G-004 — Sintéticos staging (ACX-0010, ACX-0011) sin limpiar.
-- B4 (reenvío/reset password): diferido hasta SMTP-final (D033).
-- SMTP-final: correo corporativo, templates, redirect URLs — con Ana T.
+- Ver `docs/debt-register.md` para el registro operativo completo (severidad, prioridad, recomendación).
+- Resumen de prioridades:
+  - **P1**: D033 SMTP-final, D-H09G-002 RPC transaccional, B4 reenvío/reset (post-D033).
+  - **P2**: D-H09G-001 trigger/membership_start NULL, RLS por cuota vencida.
+  - **P3**: D-H09G-003 copy renovaciones, D-H09G-004 sintéticos staging, M-PERIODS, M-STRIPE.
 
 ## 11. Estado de este documento
 

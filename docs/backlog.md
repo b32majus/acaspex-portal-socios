@@ -179,7 +179,9 @@ Incluye:
 
 Estado: implementado — H0.9G. ✓
 
-Vista admin con filtro y columna de vigencia. Renovación manual como acción explícita. Emails siguen diferidos a SMTP-final (D033). Validación staging documentada con observaciones. Deudas: D-H09G-001 a D-H09G-004 (ver PROJECT_STATE_CURRENT.md).
+Vista admin con filtro y columna de vigencia. Renovación manual como acción explícita. Emails siguen diferidos a SMTP-final (D033). Validación staging documentada con observaciones.
+
+**Deudas detalladas**: ver `docs/debt-register.md` (D-H09G-001 a D-H09G-004, D033, B4, etc.).
 
 ### M09 — Stripe Checkout
 
@@ -309,6 +311,16 @@ Módulos pendientes:
 - M10 (emails) — fase posterior, depende de SMTP-final.
 - M11 (importación Excel) — fase posterior, requiere datos reales.
 - M12 (diseño UX) — pendiente.
+
+## Próximos bloques priorizados (post-H0.9G)
+
+Las prioridades operativas detalladas (P1/P2/P3) están en `docs/debt-register.md`. Resumen:
+
+- **P1**: D033 SMTP-final, D-H09G-002 RPC transaccional, B4 reenvío/reset (post-D033).
+- **P2**: D-H09G-001 trigger/membership_start NULL, RLS por cuota vencida.
+- **P3**: D-H09G-003 copy, D-H09G-004 sintéticos, M-PERIODS, M-STRIPE.
+
+Estado de los módulos del backlog (M01-M12) actualizado arriba.
 
 ## 9. Pendientes detectados durante H0.7 — Auth/login/sesión
 
