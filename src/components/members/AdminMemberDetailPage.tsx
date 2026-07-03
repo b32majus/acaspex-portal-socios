@@ -61,6 +61,9 @@ export function AdminMemberDetailPage() {
   const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
   const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
   const [paymentStatusResult, setPaymentStatusResult] = useState<ValidatedPaymentForPeriodResult | null>(null);
+  const [renewingPayment, setRenewingPayment] = useState(false);
+  const [renewalError, setRenewalError] = useState<string | null>(null);
+  const [renewalFeedback, setRenewalFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (!row || !isSupabaseConfigured()) return;
@@ -208,6 +211,71 @@ export function AdminMemberDetailPage() {
       setPaymentError(err instanceof Error ? err.message : 'No se ha podido registrar el pago.');
     } finally {
       setRegisteringPayment(false);
+    }
+  }
+
+  function mapRenewalError(code: string | undefined, fallback: string): string {
+    switch (code) {
+      case 'member_status_invalid':
+        return 'Este socio no está en un estado renovable.';
+      case 'duplicate_payment_period':
+        return 'Ya existe un pago validado para este periodo.';
+      case 'member_update_failed':
+        return 'El pago se ha registrado, pero no se pudo actualizar la vigencia. Revisa paid_until manualmente.';
+      case 'member_missing_dates':
+        return 'El socio no tiene paid_until definido. No se puede calcular el siguiente periodo.';
+      case 'invalid_amount':
+        return 'El importe debe ser mayor que cero.';
+      case 'no_session':
+        return 'No hay sesión de administrador activa.';
+      case 'not_configured':
+        return 'Supabase no está configurado.';
+      case 'insert_failed':
+        return 'No se ha podido registrar el pago de renovación.';
+      default:
+        return fallback || 'No se pudo registrar la renovación.';
+    }
+  }
+
+  async function handleRegisterRenewal() {
+    if (!row || !row.paid_until) return;
+    if (!window.confirm(
+      `Vas a registrar la renovación anual de la cuota para ${row.first_name} ${row.last_name_1}.\n\n` +
+      `paid_until actual: ${row.paid_until}\n` +
+      `Nuevo paid_until: ${row.paid_until} + 12 meses (calculado por el helper)\n\n` +
+      `Se registrará un nuevo pago validado y se actualizará la vigencia del socio. ` +
+      `No se borran pagos anteriores y no se envía ningún email.`,
+    )) {
+      return;
+    }
+
+    setRenewalError(null);
+    setRenewalFeedback(null);
+    setRenewingPayment(true);
+    try {
+      const { registerValidatedPaymentForRenewal } = await import('../../lib/paymentActions');
+      const result = await registerValidatedPaymentForRenewal({
+        memberId: row.id,
+      });
+      if (result.ok) {
+        setRenewalFeedback(result.message);
+        const refreshedMember = await fetchAdminMemberById(row.id);
+        if (refreshedMember) setRow(refreshedMember);
+        if (refreshedMember?.membership_start && refreshedMember.paid_until) {
+          const refreshed = await fetchValidatedPaymentForMemberPeriod({
+            memberId: refreshedMember.id,
+            membershipStart: refreshedMember.membership_start,
+            paidUntil: refreshedMember.paid_until,
+          });
+          setPaymentStatusResult(refreshed);
+        }
+      } else {
+        setRenewalError(mapRenewalError(result.code, result.message));
+      }
+    } catch (err) {
+      setRenewalError(err instanceof Error ? err.message : 'No se pudo registrar la renovación.');
+    } finally {
+      setRenewingPayment(false);
     }
   }
 
@@ -602,6 +670,54 @@ export function AdminMemberDetailPage() {
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
             >
               {registeringPayment ? 'Registrando pago...' : 'Registrar pago validado'}
+            </button>
+          )}
+        </section>
+      )}
+
+      {(row.status === 'active' || row.status === 'expired') && row.paid_until && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="font-serif text-lg text-slate-900">Renovación de cuota</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Registra manualmente la renovación anual de la cuota del socio. Se añadirá un nuevo pago validado
+            y se actualizará paid_until (12 meses desde la fecha actual). No se borran pagos anteriores y no se envía ningún email.
+          </p>
+          <div className="mt-3 grid gap-2 text-xs text-slate-700 sm:grid-cols-2">
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">paid_until actual</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">{row.paid_until}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Nuevo paid_until (estimado)</dt>
+              <dd className="mt-0.5 font-medium text-slate-900">
+                {(() => {
+                  const [y, m, d] = row.paid_until!.split('-').map(Number);
+                  const date = new Date(Date.UTC(y, m - 1, d));
+                  date.setUTCMonth(date.getUTCMonth() + 12);
+                  return date.toISOString().slice(0, 10);
+                })()}
+              </dd>
+            </div>
+          </div>
+
+          {renewalError && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">
+              {renewalError}
+            </div>
+          )}
+          {renewalFeedback && (
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">
+              {renewalFeedback}
+            </div>
+          )}
+          {!renewalFeedback && (
+            <button
+              type="button"
+              onClick={handleRegisterRenewal}
+              disabled={renewingPayment}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+            >
+              {renewingPayment ? 'Registrando renovación...' : 'Registrar renovación'}
             </button>
           )}
         </section>
