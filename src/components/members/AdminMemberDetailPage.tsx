@@ -28,6 +28,13 @@ function formatDate(value: string | null | undefined): string {
   return isNaN(d.getTime()) ? value : d.toLocaleDateString('es-ES');
 }
 
+function addMonthsIso(isoDate: string, months: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCMonth(date.getUTCMonth() + months);
+  return date.toISOString().slice(0, 10);
+}
+
 export function AdminMemberDetailPage() {
   const { memberId } = useParams<{ memberId: string }>();
   const navigate = useNavigate();
@@ -239,10 +246,11 @@ export function AdminMemberDetailPage() {
 
   async function handleRegisterRenewal() {
     if (!row || !row.paid_until) return;
+    const newPaidUntil = addMonthsIso(row.paid_until, 12);
     if (!window.confirm(
       `Vas a registrar la renovación anual de la cuota para ${row.first_name} ${row.last_name_1}.\n\n` +
       `paid_until actual: ${row.paid_until}\n` +
-      `Nuevo paid_until: ${row.paid_until} + 12 meses (calculado por el helper)\n\n` +
+      `Nuevo paid_until: ${newPaidUntil} (= ${row.paid_until} + 12 meses)\n\n` +
       `Se registrará un nuevo pago validado y se actualizará la vigencia del socio. ` +
       `No se borran pagos anteriores y no se envía ningún email.`,
     )) {
@@ -680,7 +688,7 @@ export function AdminMemberDetailPage() {
           <h2 className="font-serif text-lg text-slate-900">Renovación de cuota</h2>
           <p className="mt-2 text-sm text-slate-600">
             Registra manualmente la renovación anual de la cuota del socio. Se añadirá un nuevo pago validado
-            y se actualizará paid_until (12 meses desde la fecha actual). No se borran pagos anteriores y no se envía ningún email.
+            y se actualizará paid_until a 12 meses desde el paid_until actual (no desde hoy). No se borran pagos anteriores y no se envía ningún email.
           </p>
           <div className="mt-3 grid gap-2 text-xs text-slate-700 sm:grid-cols-2">
             <div>
@@ -689,14 +697,7 @@ export function AdminMemberDetailPage() {
             </div>
             <div>
               <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Nuevo paid_until (estimado)</dt>
-              <dd className="mt-0.5 font-medium text-slate-900">
-                {(() => {
-                  const [y, m, d] = row.paid_until!.split('-').map(Number);
-                  const date = new Date(Date.UTC(y, m - 1, d));
-                  date.setUTCMonth(date.getUTCMonth() + 12);
-                  return date.toISOString().slice(0, 10);
-                })()}
-              </dd>
+              <dd className="mt-0.5 font-medium text-slate-900">{addMonthsIso(row.paid_until!, 12)}</dd>
             </div>
           </div>
 
