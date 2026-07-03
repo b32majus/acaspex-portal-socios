@@ -193,97 +193,75 @@ export async function registerValidatedPaymentForRenewal(
       return { ok: false, code: 'no_session', message: 'No hay sesión de administrador activa.' };
     }
 
-    const member = await fetchAdminMemberById(input.memberId);
-    if (!member) {
-      return { ok: false, code: 'member_not_found', message: 'Socio no encontrado.' };
-    }
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      'register_validated_renewal_payment',
+      {
+        p_member_id: input.memberId,
+        p_amount: input.amount ?? null,
+        p_receipt_file_path: input.receiptFilePath ?? null,
+        p_notes: input.notes ?? null,
+      },
+    );
 
-    if (member.status !== 'active' && member.status !== 'expired') {
+    if (rpcError) {
+      const detail = `${rpcError.details ?? ''} ${rpcError.message ?? ''}`.toLowerCase();
+      const errcode = (rpcError as { code?: string }).code ?? '';
+
+      if (errcode === '23505' || detail.includes('payments_validated_member_period_uidx')) {
+        return {
+          ok: false,
+          code: 'duplicate_payment_period',
+          message: 'Ya existe un pago validado para este periodo.',
+        };
+      }
+      if (errcode === 'P0002' || detail.includes('member_not_found')) {
+        return { ok: false, code: 'member_not_found', message: 'Socio no encontrado.' };
+      }
+      if (detail.includes('member_status_invalid')) {
+        return {
+          ok: false,
+          code: 'member_status_invalid',
+          message: 'Solo se puede renovar la cuota de un socio en estado activo o vencido.',
+        };
+      }
+      if (detail.includes('member_missing_dates')) {
+        return {
+          ok: false,
+          code: 'member_missing_dates',
+          message: 'El socio no tiene paid_until definido. No se puede calcular el siguiente periodo.',
+        };
+      }
+      if (detail.includes('invalid_amount')) {
+        return {
+          ok: false,
+          code: 'invalid_amount',
+          message: 'El importe debe ser mayor que cero.',
+        };
+      }
+      if (errcode === '28000' || detail.includes('no_session')) {
+        return { ok: false, code: 'no_session', message: 'No hay sesión de administrador activa.' };
+      }
+      if (errcode === '42501' || detail.includes('forbidden_not_admin')) {
+        return { ok: false, code: 'no_session', message: 'No tienes permisos de administración.' };
+      }
       return {
         ok: false,
-        code: 'member_status_invalid',
-        message: 'Solo se puede renovar la cuota de un socio en estado activo o vencido.',
+        code: 'renewal_rpc_failed',
+        message: (rpcError as { message?: string }).message || 'No se ha podido registrar la renovación.',
       };
     }
 
-    if (!member.paid_until) {
+    if (!rpcData) {
       return {
         ok: false,
-        code: 'member_missing_dates',
-        message: 'El socio no tiene paid_until definido. No se puede calcular el siguiente periodo.',
-      };
-    }
-
-    const newPeriodStart = addDaysIso(member.paid_until, 1);
-    const newPeriodEnd = addMonthsIso(member.paid_until, 12);
-
-    let amount = input.amount ?? member.fee_amount ?? null;
-    if (amount === null) {
-      amount = getFeeAmountForMemberProfile(member.member_profile);
-    }
-
-    if (amount <= 0) {
-      return { ok: false, code: 'invalid_amount', message: 'El importe debe ser mayor que cero.' };
-    }
-
-    const now = new Date().toISOString();
-
-    const paymentPayload = {
-      member_id: input.memberId,
-      signup_request_id: null,
-      amount,
-      payment_method: 'bank_transfer' as const,
-      payment_status: 'validated' as const,
-      payment_period_start: newPeriodStart,
-      payment_period_end: newPeriodEnd,
-      paid_until: newPeriodEnd,
-      receipt_file_path: input.receiptFilePath ?? null,
-      validated_by: userId,
-      validated_at: now,
-      notes: input.notes ?? null,
-    };
-
-    const { data: newPayment, error: insertError } = await supabase
-      .from('payments')
-      .insert(paymentPayload)
-      .select(PAYMENT_SELECT)
-      .single();
-
-    if (insertError || !newPayment) {
-      const code = insertError?.message?.includes('payments_validated_member_period_uidx')
-        ? 'duplicate_payment_period'
-        : 'insert_failed';
-      const message = code === 'duplicate_payment_period'
-        ? 'Ya existe un pago validado para este periodo.'
-        : insertError?.message || 'No se ha podido registrar el pago de renovación.';
-      return { ok: false, code, message };
-    }
-
-    const memberUpdate: { paid_until: string; status?: 'active' } = {
-      paid_until: newPeriodEnd,
-    };
-    if (member.status === 'expired') {
-      memberUpdate.status = 'active';
-    }
-
-    const { error: updateError } = await supabase
-      .from('members')
-      .update(memberUpdate)
-      .eq('id', input.memberId);
-
-    if (updateError) {
-      return {
-        ok: false,
-        code: 'member_update_failed',
-        payment: newPayment as unknown as PaymentRow,
-        message:
-          'Pago de renovación registrado, pero no se pudo actualizar la vigencia del socio. Revisa manualmente paid_until.',
+        code: 'renewal_rpc_failed',
+        message: 'No se ha podido registrar la renovación.',
       };
     }
 
     return {
       ok: true,
-      payment: newPayment as unknown as PaymentRow,
+      payment: rpcData as unknown as PaymentRow,
       message: 'Renovación registrada correctamente.',
     };
   } catch (e: unknown) {
