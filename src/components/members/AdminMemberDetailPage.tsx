@@ -248,9 +248,10 @@ export function AdminMemberDetailPage() {
     if (!row || !row.paid_until) return;
     const newPaidUntil = addMonthsIso(row.paid_until, 12);
     if (!window.confirm(
-      `Vas a registrar la renovación anual de la cuota para ${row.first_name} ${row.last_name_1}.\n\n` +
+      `Vas a registrar una renovación anual para ${row.first_name} ${row.last_name_1}.\n\n` +
       `paid_until actual: ${row.paid_until}\n` +
-      `Nuevo paid_until: ${newPaidUntil} (= ${row.paid_until} + 12 meses)\n\n` +
+      `Nuevo paid_until: ${newPaidUntil} (= paid_until actual + 12 meses)\n\n` +
+      `Esta acción añadirá un año más a la vigencia actual. Si se confirma otra renovación más adelante, se añadirá otro año adicional.\n\n` +
       `Se registrará un nuevo pago validado y se actualizará la vigencia del socio. ` +
       `No se borran pagos anteriores y no se envía ningún email.`,
     )) {
@@ -687,8 +688,7 @@ export function AdminMemberDetailPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="font-serif text-lg text-slate-900">Renovación de cuota</h2>
           <p className="mt-2 text-sm text-slate-600">
-            Registra manualmente la renovación anual de la cuota del socio. Se añadirá un nuevo pago validado
-            y se actualizará paid_until a 12 meses desde el paid_until actual (no desde hoy). No se borran pagos anteriores y no se envía ningún email.
+            Esta acción añadirá un año más a la vigencia actual del socio, calculado desde el paid_until actual, no desde hoy. Si más adelante se registra otra renovación, se añadirá otro año adicional. No se borran pagos anteriores y no se envía ningún email.
           </p>
           <div className="mt-3 grid gap-2 text-xs text-slate-700 sm:grid-cols-2">
             <div>
