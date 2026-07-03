@@ -2692,6 +2692,9 @@ export function AdminSignupDetailPage() {
   const [registeringPayment, setRegisteringPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
+  const [creatingAccess, setCreatingAccess] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const [accessFeedback, setAccessFeedback] = useState<string | null>(null);
 
   async function handleApprove() {
     if (!signupId) return;
@@ -2740,6 +2743,29 @@ export function AdminSignupDetailPage() {
       setPaymentError(err instanceof Error ? err.message : 'No se ha podido registrar el pago.');
     } finally {
       setRegisteringPayment(false);
+    }
+  }
+
+  async function handleCreateAccess() {
+    if (!request?.approved_member_id) return;
+    setAccessError(null);
+    setAccessFeedback(null);
+    setCreatingAccess(true);
+    try {
+      const { createMemberAccess } = await import('../lib/memberAccessActions');
+      const result = await createMemberAccess(request.approved_member_id);
+      if (result.ok) {
+        setAccessFeedback(result.already_exists
+          ? 'El socio ya tiene acceso creado.'
+          : result.message || 'Acceso creado correctamente.'
+        );
+      } else {
+        setAccessError(result.message || 'No se ha podido crear el acceso.');
+      }
+    } catch (err) {
+      setAccessError(err instanceof Error ? err.message : 'No se ha podido crear el acceso.');
+    } finally {
+      setCreatingAccess(false);
     }
   }
 
@@ -3027,6 +3053,32 @@ export function AdminSignupDetailPage() {
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
               >
                 {registeringPayment ? 'Registrando pago...' : 'Registrar pago validado'}
+              </button>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="font-serif text-lg text-slate-900">Acceso al portal</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Crea el acceso al portal para el socio vinculado a esta solicitud. Esta acción no valida pagos ni modifica la cuota.
+            </p>
+            <p className="mt-2 text-xs text-amber-700">
+              El correo corporativo/SMTP está pendiente de configuración final. La cuenta puede crearse aunque la invitación por email no se entregue todavía.
+            </p>
+            {accessError && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50/60 p-3 text-xs text-red-700">{accessError}</div>
+            )}
+            {accessFeedback && (
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">{accessFeedback}</div>
+            )}
+            {!accessFeedback && (
+              <button
+                type="button"
+                onClick={handleCreateAccess}
+                disabled={creatingAccess}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+              >
+                {creatingAccess ? 'Creando acceso...' : 'Crear acceso / Enviar invitación'}
               </button>
             )}
           </section>
