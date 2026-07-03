@@ -1,12 +1,54 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Filter, Plus, Search } from 'lucide-react';
-import { fetchAdminMembers } from '../../lib/memberQueries';
+import { fetchAdminMembers, getMemberValidityStatus, RENEWAL_NOTICE_DAYS, type MemberValidityStatus } from '../../lib/memberQueries';
 import { mapMemberRowToForm, type MemberRow } from '../../lib/memberFormModel';
 import { memberStatusOptions, memberProfileOptions, professionalCategoryOptions, organizationOptions } from '../../lib/memberFormOptions';
 
 const statusLabelMap = Object.fromEntries(memberStatusOptions.map(o => [o.value, o.label]));
 const profileLabelMap = Object.fromEntries(memberProfileOptions.map(o => [o.value, o.label]));
+
+type ValidityFilter = 'all' | MemberValidityStatus;
+
+const validityLabelMap: Record<MemberValidityStatus, string> = {
+  vigente: 'Cuota vigente',
+  proximo_vencer: 'Próximo a vencer',
+  vencido: 'Cuota vencida',
+  inactivo: 'Inactivo',
+};
+
+const validityBadgeClass: Record<MemberValidityStatus, string> = {
+  vigente: 'bg-emerald-100 text-emerald-800',
+  proximo_vencer: 'bg-amber-100 text-amber-700',
+  vencido: 'bg-red-100 text-red-700',
+  inactivo: 'bg-slate-100 text-slate-600',
+};
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysBetween(fromIso: string, toIso: string): number {
+  const [fy, fm, fd] = fromIso.split('-').map(Number);
+  const [ty, tm, td] = toIso.split('-').map(Number);
+  const from = Date.UTC(fy, fm - 1, fd);
+  const to = Date.UTC(ty, tm - 1, td);
+  return Math.round((to - from) / 86_400_000);
+}
+
+function formatValidityDetail(member: MemberRow, today: string): string {
+  const validity = getMemberValidityStatus(member, today);
+  if (validity === 'inactivo') return '—';
+  if (!member.paid_until) return '—';
+  const days = daysBetween(today, member.paid_until);
+  if (days === 0) return 'Vence hoy';
+  if (days > 0) {
+    if (days <= RENEWAL_NOTICE_DAYS) return `Quedan ${days} días`;
+    return `Quedan ${days} días`;
+  }
+  const elapsed = Math.abs(days);
+  return `Venció hace ${elapsed} ${elapsed === 1 ? 'día' : 'días'}`;
+}
 
 export function AdminMembersPage() {
   const [rows, setRows] = useState<MemberRow[]>([]);
@@ -18,6 +60,7 @@ export function AdminMembersPage() {
   const [profileFilter, setProfileFilter] = useState<string>('all');
   const [organizationFilter, setOrganizationFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [validityFilter, setValidityFilter] = useState<ValidityFilter>('all');
 
   useEffect(() => {
     fetchAdminMembers()
@@ -27,6 +70,7 @@ export function AdminMembersPage() {
   }, []);
 
   const filtered = useMemo(() => {
+    const today = todayIso();
     return rows.filter((row) => {
       const form = mapMemberRowToForm(row);
       const full = `${form.firstName} ${form.lastName1} ${form.lastName2} `.toLowerCase();
@@ -44,10 +88,11 @@ export function AdminMembersPage() {
       const matchProfile = profileFilter === 'all' || row.member_profile === profileFilter;
       const matchOrg = organizationFilter === 'all' || row.organization === organizationFilter;
       const matchCat = categoryFilter === 'all' || row.professional_category === categoryFilter;
+      const matchValidity = validityFilter === 'all' || getMemberValidityStatus(row, today) === validityFilter;
 
-      return matchSearch && matchStatus && matchProfile && matchOrg && matchCat;
+      return matchSearch && matchStatus && matchProfile && matchOrg && matchCat && matchValidity;
     });
-  }, [rows, search, statusFilter, profileFilter, organizationFilter, categoryFilter]);
+  }, [rows, search, statusFilter, profileFilter, organizationFilter, categoryFilter, validityFilter]);
 
   if (loading) {
     return (
@@ -91,7 +136,7 @@ export function AdminMembersPage() {
           <Filter size={16} className="text-teal-700" />
           Filtros
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <label htmlFor="member-search" className="block text-xs font-medium text-slate-500">Buscar</label>
             <div className="relative mt-1">
@@ -166,6 +211,22 @@ export function AdminMembersPage() {
               ))}
             </select>
           </div>
+
+          <div>
+            <label htmlFor="member-validity" className="block text-xs font-medium text-slate-500">Vigencia de cuota</label>
+            <select
+              id="member-validity"
+              value={validityFilter}
+              onChange={(e) => setValidityFilter(e.target.value as ValidityFilter)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+            >
+              <option value="all">Todos</option>
+              <option value="vigente">Cuota vigente</option>
+              <option value="proximo_vencer">Próximo a vencer</option>
+              <option value="vencido">Cuota vencida</option>
+              <option value="inactivo">Inactivo / no renovable</option>
+            </select>
+          </div>
         </div>
       </section>
 
@@ -190,13 +251,17 @@ export function AdminMembersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((row) => {
-                  const statusBadge =
-                    row.status === 'active' ? 'bg-emerald-100 text-emerald-800' :
-                    row.status === 'pending_review' ? 'bg-amber-100 text-amber-700' :
-                    row.status === 'expired' ? 'bg-red-100 text-red-700' :
-                    'bg-slate-100 text-slate-600';
-                  return (
+                {(() => {
+                  const today = todayIso();
+                  return filtered.map((row) => {
+                    const statusBadge =
+                      row.status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                      row.status === 'pending_review' ? 'bg-amber-100 text-amber-700' :
+                      row.status === 'expired' ? 'bg-red-100 text-red-700' :
+                      'bg-slate-100 text-slate-600';
+                    const validity = getMemberValidityStatus(row, today);
+                    const validityDetail = formatValidityDetail(row, today);
+                    return (
                     <tr key={row.id} className="hover:bg-slate-50/60">
                       <td className="py-3 font-mono text-xs text-slate-500">{row.member_number || '—'}</td>
                       <td className="py-3 font-medium text-slate-900">
@@ -212,8 +277,13 @@ export function AdminMembersPage() {
                           {statusLabelMap[row.status] || row.status}
                         </span>
                       </td>
-                      <td className="py-3 text-slate-600 text-xs">
-                        {row.paid_until || '—'}
+                      <td className="py-3 text-xs">
+                        <div className="flex flex-col gap-0.5">
+                          <span className={`inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${validityBadgeClass[validity]}`}>
+                            {validityLabelMap[validity]}
+                          </span>
+                          <span className="text-slate-500">{validityDetail}</span>
+                        </div>
                       </td>
                       <td className="py-3 text-right">
                         <Link
@@ -226,7 +296,8 @@ export function AdminMembersPage() {
                       </td>
                     </tr>
                   );
-                })}
+                  });
+                })()}
               </tbody>
             </table>
           </div>
