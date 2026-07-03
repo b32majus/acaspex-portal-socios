@@ -27,6 +27,13 @@ export interface RegisterValidatedPaymentInput {
   notes?: string | null;
 }
 
+export interface RegisterValidatedRenewalPaymentInput {
+  memberId: string;
+  amount?: number | null;
+  receiptFilePath?: string | null;
+  notes?: string | null;
+}
+
 export interface RegisterValidatedPaymentResult {
   ok: boolean;
   payment?: PaymentRow;
