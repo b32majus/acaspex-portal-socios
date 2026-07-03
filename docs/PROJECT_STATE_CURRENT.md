@@ -1,7 +1,7 @@
 # ACASPEX Portal Socios — Estado actual vigente
 
 Última actualización: 2026-07-03  
-Estado de referencia: H0.9F — acceso al portal desde socio aprobado / pagado  
+Estado de referencia: H0.9G — renovaciones, vencimientos y control de cuotas  
 Repo VPS: `/srv/kairos-lab/projects/acaspex/portal-socios/repo-main`  
 Rama operativa: `main`  
 Último commit funcional: `66f1462` — feat: add admin signup approval button
@@ -750,9 +750,40 @@ Commits del bloque:
 - `ec9ef9e` — feat: add member access action to approved signup detail
 - `f08486c` — feat: show validated payment status on member detail
 
+### H0.9G — Renovaciones, vencimientos y control de cuotas ✅ validated_with_observations
+
+**Estado: cierre documental H0.9G — 2026-07-03.**
+
+H0.9G implementa el ciclo de renovación de cuota y el control de vigencia en admin. Validado en staging con observaciones documentadas.
+
+Implementado:
+- Helper `getMemberValidityStatus()` y `fetchMembersByValidityStatus()` en `memberQueries.ts` (H0.9G-B).
+- Filtro y columna de vigencia en `AdminMembersPage.tsx` (H0.9G-C).
+- Helper `registerValidatedPaymentForRenewal()` en `paymentActions.ts` (H0.9G-D).
+- Sección "Renovación de cuota" en `AdminMemberDetailPage.tsx` (H0.9G-E + FIX1).
+- Validación staging con 5 casos (A: active, B: expired→active, C: cancelled, D: duplicado, E: refresh).
+
+Decisiones cerradas:
+- No cambiar `status` automáticamente por fecha.
+- Próximo a vencer = 30 días.
+- Renovación = acción explícita de admin con `window.confirm()`.
+- Renovación crea nuevo `payment validated` con `period_start = old_paid_until + 1 día`, `period_end = old_paid_until + 12 meses`.
+- Renovación actualiza `members.paid_until`. Si `status` era `expired`, pasa a `active`.
+
+Ver: `docs/h09g-renewals-flow-20260703.md`.
+
+Commits del bloque:
+- `fc85bb6` — feat: add member validity status query
+- `75c156c` — feat: show member validity status in admin list
+- `49dcc0f` — feat: add validated renewal payment helper
+- `be7a296` — feat: add member renewal action
+- `b00c3c6` — fix: clarify renewal period copy
+
 **Pendientes diferidos:**
-- H0.9E-HARD1 — unique index/constraint para payments validated por member + periodo.
-- H0.9G — Renovaciones, vencimientos y control de cuotas.
+- D-H09G-001 — Trigger 033 y `membership_start` NULL en reactivaciones.
+- D-H09G-002 — Operación no transaccional (`registerValidatedPaymentForRenewal`).
+- D-H09G-003 — Renovaciones sucesivas explícitas (copy/control).
+- D-H09G-004 — Sintéticos staging (ACX-0010, ACX-0011) sin limpiar.
 - B4 (reenvío/reset password): diferido hasta SMTP-final (D033).
 - SMTP-final: correo corporativo, templates, redirect URLs — con Ana T.
 

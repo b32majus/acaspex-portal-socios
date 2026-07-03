@@ -177,7 +177,9 @@ Incluye:
 - filtros/admin;
 - posible generación manual de aviso.
 
-Estado: candidato MVP v0.1 como vista admin simple; emails en v0.2.
+Estado: implementado — H0.9G. ✓
+
+Vista admin con filtro y columna de vigencia. Renovación manual como acción explícita. Emails siguen diferidos a SMTP-final (D033). Validación staging documentada con observaciones. Deudas: D-H09G-001 a D-H09G-004 (ver PROJECT_STATE_CURRENT.md).
 
 ### M09 — Stripe Checkout
 
@@ -302,7 +304,7 @@ Módulos pendientes:
 - M01 (formulario propio) — parcial: formulario público mock existe, falta conectar a Supabase.
 - M03 (validación de pago manual) — completado H0.9E. ✓
 - M05 (portal privado socios) — parcial: estructura y navegación existen, falta enriquecer.
-- M08 (renovaciones) — pendiente.
+- M08 (renovaciones) — completado H0.9G. ✓
 - M09 (Stripe) — fase posterior.
 - M10 (emails) — fase posterior, depende de SMTP-final.
 - M11 (importación Excel) — fase posterior, requiere datos reales.
