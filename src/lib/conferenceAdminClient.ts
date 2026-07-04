@@ -462,3 +462,43 @@ export function calculateMetrics(rows: ConferenceSubmissionRow[]): SubmissionMet
     without_file: rows.filter((r) => !r.file_path).length,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// B12: SIGNED URL FOR FILE DOWNLOAD (admin-only)
+// ═══════════════════════════════════════════════════════════════════
+
+const STORAGE_BUCKET = 'acaspex-conference-submissions';
+const SIGNED_URL_TTL_SECONDS = 60;
+
+/**
+ * Generate a short-lived signed URL for downloading a submission file.
+ * Uses the authenticated Supabase client — storage policy enforces admin-only.
+ * No service_role. No Edge Function. No migration required.
+ *
+ * @param filePath - path inside the bucket (e.g. "{event_id}/{code}/abstract.pdf")
+ * @returns signed URL valid for 60 seconds
+ * @throws if not configured, file_path is empty, or storage rejects
+ */
+export async function getSubmissionFileSignedUrl(filePath: string): Promise<string> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('supabase_not_configured');
+  }
+
+  if (!filePath) {
+    throw new Error('file_path_required');
+  }
+
+  const { data, error } = await supabase!.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(filePath, SIGNED_URL_TTL_SECONDS);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data?.signedUrl) {
+    throw new Error('signed_url_not_generated');
+  }
+
+  return data.signedUrl;
+}

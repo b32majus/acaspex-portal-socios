@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { Search, Filter, Eye, ArrowLeft, FileText, AlertCircle, Loader2, Save, CheckCircle, UserPlus, Users, X } from 'lucide-react';
+import { Search, Filter, Eye, ArrowLeft, FileText, AlertCircle, Loader2, Save, CheckCircle, UserPlus, Users, X, Download } from 'lucide-react';
 import {
   fetchConferenceSubmissions,
   calculateMetrics,
@@ -12,6 +12,7 @@ import {
   fetchAssignmentsForSubmission,
   assignReviewer,
   removeAssignment,
+  getSubmissionFileSignedUrl,
   assignmentStatusLabels,
   MAX_ASSIGNMENTS_PER_SUBMISSION,
   type ConferenceSubmissionRow,
@@ -49,6 +50,10 @@ export function AdminComunicacionesPage() {
   const [assignLoading, setAssignLoading] = useState(false);
   const [removeLoadingId, setRemoveLoadingId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
+
+  // B12 — file download state
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const assetBase = import.meta.env.BASE_URL;
 
@@ -184,6 +189,33 @@ export function AdminComunicacionesPage() {
     }
   }, [selected]);
 
+  // B12 — download file handler (admin-only, signed URL 60s)
+  const handleDownloadFile = useCallback(async () => {
+    if (!selected?.file_path) return;
+    setDownloadLoading(true);
+    setDownloadError(null);
+    try {
+      const signedUrl = await getSubmissionFileSignedUrl(selected.file_path);
+      const a = document.createElement('a');
+      a.href = signedUrl;
+      a.download = selected.file_original_name ?? 'abstract';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'download_failed';
+      if (msg === 'supabase_not_configured') {
+        setDownloadError('Supabase no está configurado.');
+      } else if (msg === 'file_path_required') {
+        setDownloadError('Esta comunicación no tiene archivo adjunto.');
+      } else {
+        setDownloadError('No se pudo generar el enlace de descarga. Inténtalo de nuevo.');
+      }
+    } finally {
+      setDownloadLoading(false);
+    }
+  }, [selected]);
+
   // ── Loading ─────────────────────────────────────────────────
   if (loading) {
     return (
@@ -261,6 +293,9 @@ export function AdminComunicacionesPage() {
             setEditSaving(false);
           }
         }}
+        onDownloadFile={handleDownloadFile}
+        downloadLoading={downloadLoading}
+        downloadError={downloadError}
       />
     );
   }
@@ -448,6 +483,9 @@ function DetailEditView({
   onRemove,
   onBack,
   onSave,
+  onDownloadFile,
+  downloadLoading,
+  downloadError,
 }: {
   selected: ConferenceSubmissionRow;
   editStatus: SubmissionStatus;
@@ -471,6 +509,9 @@ function DetailEditView({
   onRemove: (assignment: AssignmentRow) => void;
   onBack: () => void;
   onSave: () => void;
+  onDownloadFile: () => void;
+  downloadLoading: boolean;
+  downloadError: string | null;
 }) {
   const assetBase = import.meta.env.BASE_URL;
   const hasChanges =
@@ -538,7 +579,7 @@ function DetailEditView({
             <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{selected.abstract_text}</p>
           </div>
 
-          {/* File info */}
+          {/* File info — B12: admin download */}
           <div className="border-t border-slate-200 pt-4 mb-4">
             <h3 className="text-sm font-semibold text-slate-700 mb-2">Archivo adjunto</h3>
             {selected.file_original_name ? (
@@ -547,9 +588,20 @@ function DetailEditView({
                 <span>{selected.file_original_name}</span>
                 <span className="text-slate-400">({formatFileSize(selected.file_size)})</span>
                 <span className="text-slate-400">{selected.file_mime_type}</span>
+                <button
+                  onClick={() => { void onDownloadFile(); }}
+                  disabled={downloadLoading}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60 ml-auto"
+                >
+                  {downloadLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                  Descargar
+                </button>
               </div>
             ) : (
               <p className="text-sm text-slate-400 italic">Sin archivo adjunto</p>
+            )}
+            {downloadError && (
+              <p className="text-xs text-red-600 mt-2">{downloadError}</p>
             )}
             {selected.poster_status && (
               <p className="text-sm text-slate-500 mt-2">
