@@ -4,12 +4,12 @@ Fecha: 2026-07-04
 Status: `pending_review`  
 Rama: `work/jornadas-integration-clean-20260704`  
 Base: `main` (`ccb0a9c`)  
-HEAD: `ac60b12`  
-Commit: `ac60b12 feat: integrate conference submissions workflow`
+HEAD: `950a4ba`  
+Commits: `ac60b12` (jornadas integration) + `950a4ba` (B12 admin download)
 
 ## 1. Resumen ejecutivo
 
-La funcionalidad de comunicaciones de jornadas ACASPEX B02–B14 se ha integrado en una rama limpia creada desde `main` actual.
+La funcionalidad de comunicaciones de jornadas ACASPEX B02–B14 se ha integrado en una rama limpia creada desde `main` actual, más B12 (descarga admin-only).
 
 La integración evita el merge directo de la rama antigua `work/acaspex-jornadas-pending-review-20260626`, porque esa rama presentaba divergencias fuera de scope frente a `main` en miembros, pagos, recursos, signup flows y documentación.
 
@@ -24,29 +24,31 @@ La rama limpia integra únicamente el scope de jornadas:
 - vista evaluador anonimizada;
 - RPCs read-only de evaluador;
 - RPC atómica de envío de evaluación;
-- formulario visual de evaluación.
+- formulario visual de evaluación;
+- descarga admin-only de archivos via signed URL (B12).
 
-B12, signed URLs y descarga de archivos por evaluadores quedan expresamente fuera de esta integración.
+Evaluadores NO descargan archivos. B12 es admin-only.
 
 ## 2. Branch state
 
 ```text
 Branch: work/jornadas-integration-clean-20260704
 Base: main (ccb0a9c)
-HEAD: ac60b12
-Commit: ac60b12 — feat: integrate conference submissions workflow
+HEAD: 950a4ba
+Commits:
+  ac60b12 — feat: integrate conference submissions workflow
+  950a4ba — feat: add admin file download via signed URL (B12)
 ```
 
-Estado esperado tras integración:
+Estado esperado tras integración + B12:
 
 ```text
-Tracked changes in HEAD: 21 files
+Tracked changes in HEAD: 23 files
 Untracked: 4 legacy docs/*.bak files only
 No push
 No remote Supabase
 No remote migrations
-No B12
-No signed URLs
+No evaluator file access
 ```
 
 ## 3. Archivos integrados
@@ -204,14 +206,37 @@ La RPC:
 - no usa p_assignment_id.
 ```
 
+### 6.6 Descarga admin-only de archivos (B12)
+
+```text
+AdminComunicacionesPage (DetailEditView)
+  -> onDownloadFile handler
+    -> getSubmissionFileSignedUrl(filePath) [conferenceAdminClient]
+      -> supabase.storage.from('acaspex-conference-submissions').createSignedUrl(filePath, 60)
+      -> storage policy SELECT admin-only enforced
+      -> retorna signed URL -> <a> download trigger
+```
+
+Detalles:
+
+```text
+- admin-only: storage policy SELECT usa is_admin()
+- TTL: 60 segundos
+- sin service_role en frontend
+- sin Edge Function nueva
+- sin migration nueva
+- sin storage policy nueva
+- evaluadores no acceden: conferenceReviewerClient intacto, EvaluadorComunicacionesPage intacto
+- UX: botón visible solo si file_original_name existe; handler valida file_path; no bloqueante
+```
+
 ## 7. Seguridad y exclusiones
 
 Confirmaciones de scope:
 
 ```text
 No service_role en frontend
-No signed URLs
-No createSignedUrl
+createSignedUrl admin-only con TTL 60s (B12)
 No descarga de archivos por evaluador
 No storage en cliente evaluador
 No reviewer_id en input frontend
@@ -219,7 +244,6 @@ No author/authors_text en evaluador
 No email/phone/center/service_unit/province en evaluador
 No file_path/file_original_name en evaluador
 No admin_notes/review_notes en evaluador
-No B12
 ```
 
 Paths que NO deben aparecer en esta integración:
@@ -250,7 +274,7 @@ supabase/migrations/*touch_last_seen*
 
 ```text
 git status --short: only 4 legacy docs/*.bak untracked
-git diff --name-status main..HEAD: 21 files, zero D
+git diff --name-status main..HEAD: 23 files, zero D
 No deletions vs main
 No src/lib/payment*
 No src/lib/signup*
@@ -265,30 +289,27 @@ completed_at in jornadas migrations: 0
 p_assignment_id in jornadas migrations: 0
 signedUrl/createSignedUrl in evaluator: 0
 storage in evaluator/client: 0
+service_role in admin code: 0 (comments only)
 ```
 
 ## 9. Pendientes
 
 ```text
-B12 — Signed URLs para descarga de archivos por evaluadores: pendiente, no autorizado.
+B12 — Descarga admin-only de archivos: IMPLEMENTADO (commit 950a4ba).
+  - getSubmissionFileSignedUrl() en conferenceAdminClient
+  - botón Descargar en AdminComunicacionesPage
+  - signed URL TTL 60s
+  - admin-only via storage policy
+  - evaluadores no acceden
 B15 — Event detail en admin panel: pendiente, baja prioridad.
-```
-
-Antes de B12:
-
-```text
-1. Sil/Cora review de ac60b12.
-2. Confirmar que la rama limpia no introduce deletes ni paths fuera de scope.
-3. Confirmar que migrations 047–056 son correctas.
-4. Confirmar estrategia de archivos: PDF original vs versión anonimizada.
-5. Diseñar B12-PRECHECK antes de implementar signed URLs.
 ```
 
 ## 10. Veredicto documental
 
 ```text
 B14-CLEAN-INTEGRATION = pending_review
+B12-ADMIN-DOWNLOAD = implemented (950a4ba)
 El commit ac60b12 integra jornadas en rama limpia.
-No está autorizado B12.
+El commit 950a4ba añade descarga admin-only via signed URL.
 No está autorizado push/merge sin revisión final.
 ```
