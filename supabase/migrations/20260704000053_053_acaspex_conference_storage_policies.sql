@@ -6,6 +6,8 @@
 -- No crea policies de tablas (ya creadas en B05).
 -- Ejecutar solo tras revisión explícita.
 -- No contiene datos reales ni secretos.
+-- FIX053: eliminados COMMENT ON POLICY (requiere ownership de storage.objects).
+-- FIX053: añadidos DROP POLICY IF EXISTS para idempotencia.
 
 -- ═══════════════════════════════════════════════════════════════════
 -- MATRIZ DE PERMISOS STORAGE (resumen ejecutivo)
@@ -35,6 +37,8 @@
 -- B08 debe cerrar la asociación real submission↔file_path;
 -- B08 debe generar/controlar la ruta y no confiar ciegamente en input del cliente.
 
+drop policy if exists "conference_submissions_public_upload" on storage.objects;
+
 create policy "conference_submissions_public_upload"
   on storage.objects
   for insert
@@ -43,14 +47,13 @@ create policy "conference_submissions_public_upload"
     and lower(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/p[0-9]{3}/abstract\.(pdf|docx)$'
   );
 
-comment on policy "conference_submissions_public_upload" on storage.objects is
-  'Upload público controlado: solo abstracts en ruta {event_id}/{submission_code}/abstract.{ext}. Regex valida p minúscula (lower(name)). B08 cierra asociación real.';
-
 -- ═══════════════════════════════════════════════════════════════════
 -- 2. INSERT — admin upload (carga administrativa)
 -- ═══════════════════════════════════════════════════════════════════
 -- Admin puede subir archivos sin restricción de prefijo.
 -- Útil para carga administrativa de abstracts o pósters.
+
+drop policy if exists "conference_submissions_admin_upload" on storage.objects;
 
 create policy "conference_submissions_admin_upload"
   on storage.objects
@@ -60,9 +63,6 @@ create policy "conference_submissions_admin_upload"
     and public.is_admin()
   );
 
-comment on policy "conference_submissions_admin_upload" on storage.objects is
-  'Admin puede subir archivos sin restricción de ruta (carga administrativa).';
-
 -- ═══════════════════════════════════════════════════════════════════
 -- 3. SELECT — solo admin (secretaría/comité descarga)
 -- ═══════════════════════════════════════════════════════════════════
@@ -70,6 +70,8 @@ comment on policy "conference_submissions_admin_upload" on storage.objects is
 -- Evaluadores NO descargan archivos (decisión Sil/Cora).
 -- Autores NO pueden descargar desde el cliente (no hay policy de SELECT
 -- para anon; el archivo se entrega post-insert via RPC en B08).
+
+drop policy if exists "conference_submissions_select_admin" on storage.objects;
 
 create policy "conference_submissions_select_admin"
   on storage.objects
@@ -79,13 +81,12 @@ create policy "conference_submissions_select_admin"
     and public.is_admin()
   );
 
-comment on policy "conference_submissions_select_admin" on storage.objects is
-  'Solo admin descarga archivos. Evaluadores y autores no tienen acceso de lectura.';
-
 -- ═══════════════════════════════════════════════════════════════════
 -- 4. UPDATE — solo admin
 -- ═══════════════════════════════════════════════════════════════════
 -- Admin puede renombrar o mover archivos si es necesario.
+
+drop policy if exists "conference_submissions_update_admin" on storage.objects;
 
 create policy "conference_submissions_update_admin"
   on storage.objects
@@ -99,13 +100,12 @@ create policy "conference_submissions_update_admin"
     and public.is_admin()
   );
 
-comment on policy "conference_submissions_update_admin" on storage.objects is
-  'Admin puede actualizar metadatos de archivos.';
-
 -- ═══════════════════════════════════════════════════════════════════
 -- 5. DELETE — solo admin
 -- ═══════════════════════════════════════════════════════════════════
 -- Admin puede eliminar archivos si es necesario.
+
+drop policy if exists "conference_submissions_delete_admin" on storage.objects;
 
 create policy "conference_submissions_delete_admin"
   on storage.objects
@@ -114,9 +114,6 @@ create policy "conference_submissions_delete_admin"
     bucket_id = 'acaspex-conference-submissions'
     and public.is_admin()
   );
-
-comment on policy "conference_submissions_delete_admin" on storage.objects is
-  'Admin puede eliminar archivos del bucket.';
 
 -- ═══════════════════════════════════════════════════════════════════
 -- NO creado en B06
