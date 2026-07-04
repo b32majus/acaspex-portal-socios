@@ -1,11 +1,12 @@
 # B14 — Clean Integration Handoff
 
-Fecha: 2026-07-04  
-Status: `pending_review`  
-Rama: `work/jornadas-integration-clean-20260704`  
-Base: `main` (`ccb0a9c`)  
-HEAD: `950a4ba`  
-Commits: `ac60b12` (jornadas integration) + `950a4ba` (B12 admin download)
+Fecha: 2026-07-04
+Status: `pending_review`
+Rama: `work/jornadas-integration-clean-20260704`
+Base: `main` (`ccb0a9c`)
+Functional commit: `950a4ba` (B12 admin download)
+Documentation commit: `935352b` (B12 docs handoff)
+Base integration commit: `ac60b12` (jornadas integration)
 
 ## 1. Resumen ejecutivo
 
@@ -34,16 +35,19 @@ Evaluadores NO descargan archivos. B12 es admin-only.
 ```text
 Branch: work/jornadas-integration-clean-20260704
 Base: main (ccb0a9c)
-HEAD: 950a4ba
+Functional commit: 950a4ba
+Documentation commit: 935352b
 Commits:
   ac60b12 — feat: integrate conference submissions workflow
+  458b10e — docs: record conference workflow integration handoff
   950a4ba — feat: add admin file download via signed URL (B12)
+  935352b — docs: record admin-only conference file download
 ```
 
 Estado esperado tras integración + B12:
 
 ```text
-Tracked changes in HEAD: 23 files
+Tracked paths vs main: 22 files (21 A, 1 M)
 Untracked: 4 legacy docs/*.bak files only
 No push
 No remote Supabase
@@ -309,7 +313,9 @@ B15 — Event detail en admin panel: pendiente, baja prioridad.
 ```text
 B14-CLEAN-INTEGRATION = pending_review
 B12-ADMIN-DOWNLOAD = implemented (950a4ba)
+B12-DOCS-HANDOFF = documented (935352b)
 El commit ac60b12 integra jornadas en rama limpia.
 El commit 950a4ba añade descarga admin-only via signed URL.
+El commit 935352b documenta B12 admin-only en este handoff.
 No está autorizado push/merge sin revisión final.
 ```
