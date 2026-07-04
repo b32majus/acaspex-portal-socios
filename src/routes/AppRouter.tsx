@@ -1,6 +1,7 @@
 import { Navigate, Route, HashRouter as Router, Routes } from 'react-router-dom';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { MemberLayout } from '../components/layout/MemberLayout';
+import { RequireAuth } from '../components/RequireAuth';
 import { RequireMember } from '../components/RequireMember';
 import { RequireAdmin } from '../components/RequireAdmin';
 import { RequireBoardOrAdmin } from '../components/RequireBoardOrAdmin';
@@ -26,6 +27,11 @@ import { MemberResourceDetailPage } from '../components/resources/MemberResource
 import { AdminMembersPage } from '../components/members/AdminMembersPage';
 import { AdminMemberDetailPage } from '../components/members/AdminMemberDetailPage';
 import { AdminMemberNewPage } from '../components/members/AdminMemberNewPage';
+import { MockPublicSubmissionPage } from '../components/jornadas/mock/MockPublicSubmissionPage';
+import { MockAdminComunicacionesPage } from '../components/jornadas/mock/MockAdminComunicacionesPage';
+import { MockEvaluadorPage } from '../components/jornadas/mock/MockEvaluadorPage';
+import { AdminComunicacionesPage } from '../components/jornadas/AdminComunicacionesPage';
+import { EvaluadorComunicacionesPage } from '../components/jornadas/EvaluadorComunicacionesPage';
 
 export function AppRouter() {
   return (
@@ -75,7 +81,22 @@ export function AppRouter() {
           <Route path="/admin/recursos/subsecciones" element={<AdminResourceCategoriesPage />} />
           <Route path="/admin/recursos/:resourceId" element={<AdminResourceEditorPage />} />
           <Route path="/admin/renovaciones" element={<AdminRenewalsPage />} />
+          <Route path="/admin/jornadas/comunicaciones" element={<AdminComunicacionesPage />} />
         </Route>
+        {/* Real evaluator route — authenticated, read-only */}
+        <Route
+          element={
+            <RequireAuth>
+              <MemberLayout />
+            </RequireAuth>
+          }
+        >
+          <Route path="/jornadas/evaluacion" element={<EvaluadorComunicacionesPage />} />
+        </Route>
+        {/* Mock routes — Jornadas ACASPEX (sin auth, datos simulados) */}
+        <Route path="/jornadas/iii-jornada/comunicaciones" element={<MockPublicSubmissionPage />} />
+        <Route path="/admin/jornadas/mock-comunicaciones" element={<MockAdminComunicacionesPage />} />
+        <Route path="/jornadas/evaluacion/mock" element={<MockEvaluadorPage />} />
       </Routes>
     </Router>
   );
