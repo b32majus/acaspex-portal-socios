@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { FileText, Users } from 'lucide-react';
+import { CalendarDays, Users } from 'lucide-react';
 import { useAuth } from '../../lib/authContext';
 import { useIdentity } from '../../lib/identityContext';
 
@@ -10,7 +10,7 @@ const adminLinks = [
   { label: 'Recursos', to: '/admin/recursos' },
   { label: 'Subsecciones', to: '/admin/recursos/subsecciones' },
   { label: 'Renovaciones', to: '/admin/renovaciones' },
-  { label: 'Comunicaciones III Jornada', to: '/admin/jornadas/comunicaciones', icon: FileText },
+  { label: 'Jornadas', to: '/admin/jornadas', icon: CalendarDays },
 ];
 
 export function AdminLayout() {

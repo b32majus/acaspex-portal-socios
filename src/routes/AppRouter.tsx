@@ -31,6 +31,7 @@ import { MockPublicSubmissionPage } from '../components/jornadas/mock/MockPublic
 import { MockAdminComunicacionesPage } from '../components/jornadas/mock/MockAdminComunicacionesPage';
 import { MockEvaluadorPage } from '../components/jornadas/mock/MockEvaluadorPage';
 import { AdminComunicacionesPage } from '../components/jornadas/AdminComunicacionesPage';
+import { AdminJornadasHubPage } from '../components/jornadas/AdminJornadasHubPage';
 import { EvaluadorComunicacionesPage } from '../components/jornadas/EvaluadorComunicacionesPage';
 
 export function AppRouter() {
@@ -81,6 +82,7 @@ export function AppRouter() {
           <Route path="/admin/recursos/subsecciones" element={<AdminResourceCategoriesPage />} />
           <Route path="/admin/recursos/:resourceId" element={<AdminResourceEditorPage />} />
           <Route path="/admin/renovaciones" element={<AdminRenewalsPage />} />
+          <Route path="/admin/jornadas" element={<AdminJornadasHubPage />} />
           <Route path="/admin/jornadas/comunicaciones" element={<AdminComunicacionesPage />} />
         </Route>
         {/* Real evaluator route — authenticated, read-only */}
