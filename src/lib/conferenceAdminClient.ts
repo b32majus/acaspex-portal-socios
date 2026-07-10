@@ -52,6 +52,131 @@ export interface SubmissionMetrics {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// STRUCTURED LOAD ERROR (B18 — admin diagnostics)
+// ═══════════════════════════════════════════════════════════════════
+
+const MAX_DIAGNOSTIC_MESSAGE_LENGTH = 200;
+
+// SQL fragment detection for B18 — never render raw SQL in diagnostics.
+const SQL_FRAGMENT_KEYWORDS =
+  /\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|CREATE|ALTER|DROP|SET|INTO|TABLE)\b/gi;
+const SEMICOLON_DELIMITED_SQL =
+  /(?:\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|CREATE|ALTER|DROP)\b\s*;|;\s*\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|CREATE|ALTER|DROP)\b)/i;
+const SQL_FRAGMENT_WINDOW = 160;
+
+function containsSqlFragment(value: string): boolean {
+  const matches = [...value.matchAll(SQL_FRAGMENT_KEYWORDS)];
+  if (matches.length === 0) return false;
+
+  // Multiple SQL keywords close together strongly suggest a query fragment.
+  if (matches.length >= 2) {
+    for (let i = 0; i < matches.length - 1; i++) {
+      if (matches[i + 1].index! - matches[i].index! <= SQL_FRAGMENT_WINDOW) {
+        return true;
+      }
+    }
+  }
+
+  // Semicolon-delimited SQL (e.g. injected statements separated by ';').
+  return SEMICOLON_DELIMITED_SQL.test(value);
+}
+
+/**
+ * Redacts token/key-like substrings and raw SQL from server messages before
+ * displaying them in the UI. This is a defense-in-depth measure: the frontend
+ * should never expose JWTs, API keys, bearer tokens, or database queries even
+ * if a server error happens to include them.
+ *
+ * Heuristic:
+ * - SQL syntax/query fragments are replaced by a safe Spanish placeholder.
+ * - key/token/secret/auth/bearer labels followed by a value are redacted.
+ * - JWT-like strings (three base64url segments separated by dots) are redacted.
+ */
+export function sanitizeDiagnosticMessage(raw: string | undefined | null): string {
+  if (!raw) return '';
+
+  // B18: never surface raw SQL in admin diagnostics.
+  if (containsSqlFragment(raw)) {
+    return 'Detalle de consulta oculto por seguridad.';
+  }
+
+  // Redact Authorization/Bearer clauses BEFORE generic label patterns.
+  // Otherwise the label sanitizer can consume "Authorization: Bearer" and
+  // leave the following opaque token exposed.
+  const bearerClause = /\bbearer\s+\S+/gi;
+  const labeledCredential =
+    /([a-zA-Z0-9_-]*(key|token|secret|auth)[a-zA-Z0-9_-]*)[:=]\s*[a-zA-Z0-9_.-]+/gi;
+  const jwtLike = /[a-zA-Z0-9_-]{10,}(?:\.[a-zA-Z0-9_-]{10,}){1,2}/g;
+
+  return raw
+    .replace(bearerClause, '[REDACTED]')
+    .replace(labeledCredential, '[REDACTED]')
+    .replace(jwtLike, '[REDACTED]')
+    .slice(0, MAX_DIAGNOSTIC_MESSAGE_LENGTH)
+    .trim();
+}
+
+export interface ConferenceSubmissionsLoadErrorOptions {
+  message: string;
+  code?: string | null;
+  resource?: string;
+  suggestion?: string;
+  diagnosticMessage?: string;
+  cause?: unknown;
+}
+
+/**
+ * Structured error for failures loading the admin communications list.
+ * Carries a friendly user-facing message plus bounded, redacted diagnostic
+ * fields that help admins understand why Supabase/PostgREST rejected the
+ * query without exposing secrets, stack traces, or raw SQL.
+ */
+export class ConferenceSubmissionsLoadError extends Error {
+  public readonly code: string | null;
+  public readonly resource: string;
+  public readonly suggestion: string;
+  public readonly diagnosticMessage: string;
+  public readonly hasDiagnostics: boolean;
+
+  constructor(options: ConferenceSubmissionsLoadErrorOptions) {
+    super(options.message, { cause: options.cause });
+    this.name = 'ConferenceSubmissionsLoadError';
+    this.code = options.code ?? null;
+    this.resource = options.resource ?? 'conference_submissions';
+    this.suggestion =
+      options.suggestion ??
+      'Revisa la configuración de Supabase, las políticas RLS y el schema.';
+    this.diagnosticMessage = options.diagnosticMessage ?? '';
+    this.hasDiagnostics = Boolean(this.code) || this.diagnosticMessage.length > 0;
+  }
+}
+
+export interface CreateConferenceSubmissionsLoadErrorOptions {
+  resource?: string;
+  suggestion?: string;
+}
+
+/**
+ * Factory that converts a raw Supabase/PostgREST error into a safe, structured
+ * load error. The original message is sanitized and truncated before being
+ * surfaced in the UI.
+ */
+export function createConferenceSubmissionsLoadError(
+  rawError: { message?: string; code?: string | null } | null | undefined,
+  options?: CreateConferenceSubmissionsLoadErrorOptions,
+): ConferenceSubmissionsLoadError {
+  return new ConferenceSubmissionsLoadError({
+    message: 'No se pudieron cargar las comunicaciones.',
+    code: rawError?.code ?? null,
+    resource: options?.resource ?? 'conference_submissions',
+    suggestion:
+      options?.suggestion ??
+      'Revisa la configuración de Supabase, las políticas RLS y el schema de la tabla conference_submissions.',
+    diagnosticMessage: sanitizeDiagnosticMessage(rawError?.message),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // LABELS
 // ═══════════════════════════════════════════════════════════════════
 
@@ -431,7 +556,13 @@ const SUBMISSION_SELECT = `
  */
 export async function fetchConferenceSubmissions(): Promise<ConferenceSubmissionRow[]> {
   if (!isSupabaseConfigured()) {
-    throw new Error('supabase_not_configured');
+    throw new ConferenceSubmissionsLoadError({
+      message: 'No se pudieron cargar las comunicaciones.',
+      code: 'supabase_not_configured',
+      resource: 'conference_submissions',
+      suggestion:
+        'Revisa las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+    });
   }
 
   const { data, error } = await supabase!
@@ -440,7 +571,11 @@ export async function fetchConferenceSubmissions(): Promise<ConferenceSubmission
     .order('created_at', { ascending: false });
 
   if (error) {
-    throw new Error(error.message);
+    throw createConferenceSubmissionsLoadError(error, {
+      resource: 'conference_submissions',
+      suggestion:
+        'Revisa la configuración de Supabase, las políticas RLS y el schema de la tabla conference_submissions.',
+    });
   }
 
   return (data ?? []) as unknown as ConferenceSubmissionRow[];

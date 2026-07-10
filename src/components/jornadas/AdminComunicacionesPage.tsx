@@ -15,6 +15,7 @@ import {
   getSubmissionFileSignedUrl,
   assignmentStatusLabels,
   MAX_ASSIGNMENTS_PER_SUBMISSION,
+  ConferenceSubmissionsLoadError,
   type ConferenceSubmissionRow,
   type SubmissionStatus,
   type ReviewerRow,
@@ -28,7 +29,7 @@ type TopicFilter = 'all' | string;
 export function AdminComunicacionesPage() {
   const [rows, setRows] = useState<ConferenceSubmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ConferenceSubmissionsLoadError | null>(null);
   const [selected, setSelected] = useState<ConferenceSubmissionRow | null>(null);
 
   const [search, setSearch] = useState('');
@@ -60,7 +61,15 @@ export function AdminComunicacionesPage() {
   useEffect(() => {
     fetchConferenceSubmissions()
       .then(setRows)
-      .catch(() => setError('No se pudieron cargar las comunicaciones.'))
+      .catch((err) =>
+        setError(
+          err instanceof ConferenceSubmissionsLoadError
+            ? err
+            : new ConferenceSubmissionsLoadError({
+                message: 'No se pudieron cargar las comunicaciones.',
+              }),
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 
@@ -234,9 +243,47 @@ export function AdminComunicacionesPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="max-w-md text-center">
           <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-sm text-red-700 mb-4">{error}</p>
+          <p className="text-sm text-red-700 mb-4">{error.message}</p>
+
+          {error.hasDiagnostics && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-left text-xs text-red-800 mb-4">
+              <p className="font-semibold mb-2">Detalles técnicos para administradores</p>
+              {error.code && (
+                <p>
+                  <span className="font-medium">Código:</span> {error.code}
+                </p>
+              )}
+              <p>
+                <span className="font-medium">Recurso:</span> {error.resource}
+              </p>
+              {error.diagnosticMessage && (
+                <p className="break-words">
+                  <span className="font-medium">Mensaje:</span> {error.diagnosticMessage}
+                </p>
+              )}
+              <p>
+                <span className="font-medium">Sugerencia:</span> {error.suggestion}
+              </p>
+            </div>
+          )}
+
           <button
-            onClick={() => { setError(null); setLoading(true); fetchConferenceSubmissions().then(setRows).catch(() => setError('No se pudieron cargar las comunicaciones.')).finally(() => setLoading(false)); }}
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              fetchConferenceSubmissions()
+                .then(setRows)
+                .catch((err) =>
+                  setError(
+                    err instanceof ConferenceSubmissionsLoadError
+                      ? err
+                      : new ConferenceSubmissionsLoadError({
+                          message: 'No se pudieron cargar las comunicaciones.',
+                        }),
+                  ),
+                )
+                .finally(() => setLoading(false));
+            }}
             className="text-sm text-teal-700 hover:text-teal-900 underline"
           >
             Reintentar
