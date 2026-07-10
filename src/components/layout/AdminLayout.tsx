@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { FileText, Users } from 'lucide-react';
 import { useAuth } from '../../lib/authContext';
 import { useIdentity } from '../../lib/identityContext';
 
@@ -10,6 +10,7 @@ const adminLinks = [
   { label: 'Recursos', to: '/admin/recursos' },
   { label: 'Subsecciones', to: '/admin/recursos/subsecciones' },
   { label: 'Renovaciones', to: '/admin/renovaciones' },
+  { label: 'Comunicaciones III Jornada', to: '/admin/jornadas/comunicaciones', icon: FileText },
 ];
 
 export function AdminLayout() {
@@ -50,13 +51,14 @@ export function AdminLayout() {
               return (
                 <Link
                   key={link.to}
-                  className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
                     active
                       ? 'bg-teal-50 text-teal-700'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                   }`}
                   to={link.to}
                 >
+                  {link.icon && <link.icon size={14} />}
                   {link.label}
                 </Link>
               );
