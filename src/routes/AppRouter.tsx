@@ -28,8 +28,6 @@ import { AdminMembersPage } from '../components/members/AdminMembersPage';
 import { AdminMemberDetailPage } from '../components/members/AdminMemberDetailPage';
 import { AdminMemberNewPage } from '../components/members/AdminMemberNewPage';
 import { MockPublicSubmissionPage } from '../components/jornadas/mock/MockPublicSubmissionPage';
-import { MockAdminComunicacionesPage } from '../components/jornadas/mock/MockAdminComunicacionesPage';
-import { MockEvaluadorPage } from '../components/jornadas/mock/MockEvaluadorPage';
 import { AdminComunicacionesPage } from '../components/jornadas/AdminComunicacionesPage';
 import { AdminJornadasHubPage } from '../components/jornadas/AdminJornadasHubPage';
 import { EvaluadorComunicacionesPage } from '../components/jornadas/EvaluadorComunicacionesPage';
@@ -95,10 +93,13 @@ export function AppRouter() {
         >
           <Route path="/jornadas/evaluacion" element={<EvaluadorComunicacionesPage />} />
         </Route>
-        {/* Mock routes — Jornadas ACASPEX (sin auth, datos simulados) */}
+        {/* Preview routes — Jornadas ACASPEX (sin auth, datos simulados, sin persistencia) */}
         <Route path="/jornadas/iii-jornada/comunicaciones" element={<MockPublicSubmissionPage />} />
-        <Route path="/admin/jornadas/mock-comunicaciones" element={<MockAdminComunicacionesPage />} />
-        <Route path="/jornadas/evaluacion/mock" element={<MockEvaluadorPage />} />
+        <Route path="/jornadas/iii-jornada/comite-preview" element={<AdminComunicacionesPage />} />
+        <Route path="/jornadas/iii-jornada/evaluacion-preview" element={<EvaluadorComunicacionesPage />} />
+        {/* Aliases conservados para no romper los enlaces de la primera vista previa. */}
+        <Route path="/admin/jornadas/mock-comunicaciones" element={<AdminComunicacionesPage />} />
+        <Route path="/jornadas/evaluacion/mock" element={<EvaluadorComunicacionesPage />} />
       </Routes>
     </Router>
   );
