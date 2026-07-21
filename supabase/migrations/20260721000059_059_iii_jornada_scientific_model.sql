@@ -22,7 +22,8 @@ end $$;
 
 do $$ begin
   create type public.conference_event_role as enum (
-    'president', 'vice_president', 'scientific_secretary', 'reviewer'
+    'president', 'vice_president', 'scientific_secretary', 'reviewer',
+    'jury_member'
   );
 exception when duplicate_object then null;
 end $$;
@@ -150,6 +151,9 @@ create unique index conference_one_active_president_per_event
 create unique index conference_one_active_vice_president_per_event
   on public.conference_event_committee_members(event_id)
   where committee_role = 'vice_president' and is_active;
+create unique index conference_one_active_jury_member_per_event
+  on public.conference_event_committee_members(event_id)
+  where committee_role = 'jury_member' and is_active;
 create index conference_committee_reviewer_idx
   on public.conference_event_committee_members(reviewer_id, event_id);
 
@@ -183,6 +187,60 @@ revoke all on function public.has_conference_event_role(
   uuid, public.conference_event_role[]
 ) from public, anon, authenticated;
 grant execute on function public.has_conference_event_role(
+  uuid, public.conference_event_role[]
+) to authenticated;
+
+create or replace function public.is_current_conference_reviewer(
+  p_reviewer_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select (select auth.uid()) is not null and exists (
+    select 1
+    from public.conference_reviewers r
+    where r.id = p_reviewer_id
+      and r.is_active
+      and r.profile_id = (select auth.uid())
+  );
+$$;
+
+revoke all on function public.is_current_conference_reviewer(uuid)
+  from public, anon, authenticated;
+grant execute on function public.is_current_conference_reviewer(uuid)
+  to authenticated;
+
+create or replace function public.has_conference_submission_role(
+  p_submission_id uuid,
+  p_roles public.conference_event_role[]
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select (select auth.uid()) is not null and exists (
+    select 1
+    from public.conference_submissions s
+    join public.conference_event_committee_members m
+      on m.event_id = s.event_id
+    join public.conference_reviewers r on r.id = m.reviewer_id
+    where s.id = p_submission_id
+      and m.committee_role = any(p_roles)
+      and m.is_active
+      and r.is_active
+      and r.profile_id = (select auth.uid())
+  );
+$$;
+
+revoke all on function public.has_conference_submission_role(
+  uuid, public.conference_event_role[]
+) from public, anon, authenticated;
+grant execute on function public.has_conference_submission_role(
   uuid, public.conference_event_role[]
 ) to authenticated;
 
@@ -254,55 +312,224 @@ alter table public.conference_submission_reviews
      nullif(btrim(confidential_committee_comment), '') is not null)
   );
 
+-- Compatibilidad con el circuito v1: si el cliente todavía no envía la
+-- ronda, la base asigna la primera disponible. La tercera solo puede abrirse
+-- cuando las dos primeras evaluaciones están completas y difieren al menos
+-- el umbral configurado para el evento.
+create or replace function public.set_conference_assignment_round()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_first_total numeric(5,2);
+  v_second_total numeric(5,2);
+  v_threshold numeric(5,2);
+begin
+  perform 1
+  from public.conference_submissions s
+  where s.id = new.submission_id
+  for update;
+
+  if new.evaluation_round is null then
+    select candidate.evaluation_round
+      into new.evaluation_round
+    from (
+      values
+        ('first'::public.conference_assignment_round, 1),
+        ('second'::public.conference_assignment_round, 2),
+        ('third'::public.conference_assignment_round, 3)
+    ) as candidate(evaluation_round, ordinal)
+    where not exists (
+      select 1
+      from public.conference_submission_assignments a
+      where a.submission_id = new.submission_id
+        and a.evaluation_round = candidate.evaluation_round
+    )
+    order by candidate.ordinal
+    limit 1;
+  end if;
+
+  if new.evaluation_round is null then
+    raise exception 'all_evaluation_rounds_assigned';
+  end if;
+
+  if new.evaluation_round = 'second'
+     and not exists (
+       select 1
+       from public.conference_submission_assignments a
+       where a.submission_id = new.submission_id
+         and a.evaluation_round = 'first'
+     ) then
+    raise exception 'first_evaluation_round_required';
+  end if;
+
+  if new.evaluation_round = 'third' then
+    select
+      max(r.weighted_total) filter (where r.evaluation_round = 'first'),
+      max(r.weighted_total) filter (where r.evaluation_round = 'second'),
+      e.discrepancy_threshold
+      into v_first_total, v_second_total, v_threshold
+    from public.conference_submissions s
+    join public.conference_events e on e.id = s.event_id
+    left join public.conference_submission_reviews r
+      on r.submission_id = s.id
+    where s.id = new.submission_id
+    group by e.discrepancy_threshold;
+
+    if v_first_total is null or v_second_total is null then
+      raise exception 'two_completed_reviews_required';
+    end if;
+
+    if abs(v_first_total - v_second_total) < v_threshold then
+      raise exception 'third_review_not_required';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger set_conference_assignment_round_before_insert
+before insert on public.conference_submission_assignments
+for each row execute function public.set_conference_assignment_round();
+
+revoke all on function public.set_conference_assignment_round()
+  from public, anon, authenticated;
+
+create or replace function public.set_conference_review_round()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_assignment_round public.conference_assignment_round;
+begin
+  select a.evaluation_round
+    into v_assignment_round
+  from public.conference_submission_assignments a
+  where a.submission_id = new.submission_id
+    and a.reviewer_id = new.reviewer_id;
+
+  if v_assignment_round is null then
+    raise exception 'review_assignment_not_found';
+  end if;
+
+  if new.evaluation_round is not null
+     and new.evaluation_round <> v_assignment_round then
+    raise exception 'review_round_mismatch';
+  end if;
+
+  new.evaluation_round := v_assignment_round;
+  return new;
+end;
+$$;
+
+create trigger set_conference_review_round_before_insert
+before insert on public.conference_submission_reviews
+for each row execute function public.set_conference_review_round();
+
+revoke all on function public.set_conference_review_round()
+  from public, anon, authenticated;
+
 -- Presidencia puede consultar las evaluaciones del evento, pero la autoría
 -- continúa en tablas separadas sin ninguna policy para evaluadores.
 create policy conference_reviews_presidency_select
   on public.conference_submission_reviews for select to authenticated
-  using (exists (
-    select 1
-    from public.conference_submissions s
-    where s.id = submission_id
-      and public.has_conference_event_role(
-        s.event_id,
-        array['president','vice_president']::public.conference_event_role[]
-      )
+  using (public.has_conference_submission_role(
+    submission_id,
+    array['president','vice_president']::public.conference_event_role[]
   ));
 
-create view public.conference_submission_evaluation_summary
-with (security_invoker = true)
-as
-select
-  s.id as submission_id,
-  s.event_id,
-  count(r.id) filter (where r.weighted_total is not null) as completed_reviews,
-  min(r.weighted_total) filter (where r.weighted_total is not null) as minimum_total,
-  max(r.weighted_total) filter (where r.weighted_total is not null) as maximum_total,
-  case
-    when count(r.id) filter (where r.weighted_total is not null) = 2
-      then max(r.weighted_total) - min(r.weighted_total)
-    else null
-  end as first_two_difference,
-  case
-    when count(r.id) filter (where r.weighted_total is not null) = 2
-      then max(r.weighted_total) - min(r.weighted_total) >= e.discrepancy_threshold
-    else false
-  end as third_review_required,
-  case
-    when count(r.id) filter (where r.weighted_total is not null) in (2, 3)
-      then percentile_cont(0.5) within group (order by r.weighted_total)
-        filter (where r.weighted_total is not null)
-    else null
-  end::numeric(5,2) as final_median_total
-from public.conference_submissions s
-join public.conference_events e on e.id = s.event_id
-left join public.conference_submission_reviews r on r.submission_id = s.id
-group by s.id, s.event_id, e.discrepancy_threshold;
+-- El resumen se expone mediante una RPC restringida, no mediante una vista
+-- sobre conference_submissions, para no conceder a presidencia acceso a las
+-- columnas identificativas de autoría.
+create or replace function public.get_conference_evaluation_summary(
+  p_event_id uuid
+)
+returns table (
+  submission_id uuid,
+  completed_reviews bigint,
+  minimum_total numeric(5,2),
+  maximum_total numeric(5,2),
+  first_two_difference numeric(5,2),
+  third_review_required boolean,
+  final_median_total numeric(5,2)
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not (
+    public.is_admin()
+    or public.has_conference_event_role(
+      p_event_id,
+      array['president','vice_president']::public.conference_event_role[]
+    )
+  ) then
+    raise exception 'not_authorized';
+  end if;
 
-comment on view public.conference_submission_evaluation_summary is
-  'Resumen sin autoría: diferencia entre las dos primeras evaluaciones, activación de tercera revisión y mediana final de 2 o 3 totales ponderados.';
+  return query
+  with scores as (
+    select
+      s.id as submission_id,
+      e.discrepancy_threshold,
+      count(r.id) filter (where r.weighted_total is not null) as completed_reviews,
+      min(r.weighted_total) filter (where r.weighted_total is not null) as minimum_total,
+      max(r.weighted_total) filter (where r.weighted_total is not null) as maximum_total,
+      max(r.weighted_total) filter (where r.evaluation_round = 'first') as first_total,
+      max(r.weighted_total) filter (where r.evaluation_round = 'second') as second_total,
+      max(r.weighted_total) filter (where r.evaluation_round = 'third') as third_total
+    from public.conference_submissions s
+    join public.conference_events e on e.id = s.event_id
+    left join public.conference_submission_reviews r on r.submission_id = s.id
+    where s.event_id = p_event_id
+    group by s.id, e.discrepancy_threshold
+  )
+  select
+    scores.submission_id,
+    scores.completed_reviews,
+    scores.minimum_total,
+    scores.maximum_total,
+    case
+      when scores.first_total is not null and scores.second_total is not null
+        then abs(scores.first_total - scores.second_total)
+      else null
+    end::numeric(5,2),
+    case
+      when scores.first_total is not null and scores.second_total is not null
+        then abs(scores.first_total - scores.second_total) >= scores.discrepancy_threshold
+      else false
+    end,
+    case
+      when scores.first_total is not null
+       and scores.second_total is not null
+       and scores.third_total is not null
+        then round((
+          scores.first_total + scores.second_total + scores.third_total
+          - greatest(scores.first_total, scores.second_total, scores.third_total)
+          - least(scores.first_total, scores.second_total, scores.third_total)
+        )::numeric, 2)
+      when scores.first_total is not null
+       and scores.second_total is not null
+       and abs(scores.first_total - scores.second_total) < scores.discrepancy_threshold
+        then round(((scores.first_total + scores.second_total) / 2)::numeric, 2)
+      else null
+    end::numeric(5,2)
+  from scores;
+end;
+$$;
 
-grant select on public.conference_submission_evaluation_summary to authenticated;
-revoke all on public.conference_submission_evaluation_summary from anon;
+comment on function public.get_conference_evaluation_summary(uuid) is
+  'Resumen ciego por evento: diferencia de las dos primeras evaluaciones, necesidad de tercera y mediana final solo cuando el circuito está completo.';
+
+revoke all on function public.get_conference_evaluation_summary(uuid)
+  from public, anon, authenticated;
+grant execute on function public.get_conference_evaluation_summary(uuid)
+  to authenticated;
 
 -- ── Finalistas y premio (defensa 70 %, diseño 30 %) ──────────────
 
@@ -378,10 +605,7 @@ create policy conference_committee_admin_all
   using (public.is_admin()) with check (public.is_admin());
 create policy conference_committee_own_select
   on public.conference_event_committee_members for select to authenticated
-  using (exists (
-    select 1 from public.conference_reviewers r
-    where r.id = reviewer_id and r.profile_id = (select auth.uid())
-  ));
+  using (public.is_current_conference_reviewer(reviewer_id));
 
 create policy conference_finalists_presidency_all
   on public.conference_finalists for all to authenticated
@@ -390,6 +614,13 @@ create policy conference_finalists_presidency_all
   ))
   with check (public.is_admin() or public.has_conference_event_role(
     event_id, array['president','vice_president']::public.conference_event_role[]
+  ));
+
+create policy conference_finalists_jury_select
+  on public.conference_finalists for select to authenticated
+  using (public.has_conference_event_role(
+    event_id,
+    array['president','vice_president','jury_member']::public.conference_event_role[]
   ));
 
 create policy conference_final_scores_jury_select
@@ -401,47 +632,47 @@ create policy conference_final_scores_jury_select
       where f.id = finalist_id
         and public.has_conference_event_role(
           f.event_id,
-          array['president','vice_president','scientific_secretary','reviewer']::public.conference_event_role[]
+          array['president','vice_president','jury_member']::public.conference_event_role[]
         )
     )
   ));
 create policy conference_final_scores_jury_insert
   on public.conference_final_scores for insert to authenticated
-  with check (public.is_admin() or (
+  with check (
     juror_profile_id = (select auth.uid())
     and exists (
       select 1 from public.conference_finalists f
       where f.id = finalist_id
         and public.has_conference_event_role(
           f.event_id,
-          array['president','vice_president','scientific_secretary','reviewer']::public.conference_event_role[]
+          array['president','vice_president','jury_member']::public.conference_event_role[]
         )
     )
-  ));
+  );
 create policy conference_final_scores_jury_update
   on public.conference_final_scores for update to authenticated
-  using (public.is_admin() or (
+  using (
     juror_profile_id = (select auth.uid())
     and exists (
       select 1 from public.conference_finalists f
       where f.id = finalist_id
         and public.has_conference_event_role(
           f.event_id,
-          array['president','vice_president','scientific_secretary','reviewer']::public.conference_event_role[]
+          array['president','vice_president','jury_member']::public.conference_event_role[]
         )
     )
-  ))
-  with check (public.is_admin() or (
+  )
+  with check (
     juror_profile_id = (select auth.uid())
     and exists (
       select 1 from public.conference_finalists f
       where f.id = finalist_id
         and public.has_conference_event_role(
           f.event_id,
-          array['president','vice_president','scientific_secretary','reviewer']::public.conference_event_role[]
+          array['president','vice_president','jury_member']::public.conference_event_role[]
         )
     )
-  ));
+  );
 
 create policy conference_audit_admin_or_presidency_select
   on public.conference_audit_events for select to authenticated
