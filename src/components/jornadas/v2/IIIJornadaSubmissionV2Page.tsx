@@ -40,17 +40,6 @@ const healthAreas = [
 const countWords = (value: string) =>
   value.trim() ? value.trim().split(/\s+/).length : 0;
 
-const limitWords = (value: string, maximum: number) => {
-  const words = [...value.matchAll(/\S+/g)];
-
-  if (words.length <= maximum) return value;
-
-  const lastAllowedWord = words[maximum - 1];
-  if (!lastAllowedWord) return '';
-
-  return value.slice(0, (lastAllowedWord.index ?? 0) + lastAllowedWord[0].length);
-};
-
 export function IIIJornadaSubmissionV2Page() {
   const [type, setType] = useState<'scientific' | 'experience'>('scientific');
   const [title, setTitle] = useState('');
@@ -105,13 +94,9 @@ export function IIIJornadaSubmissionV2Page() {
   }, []);
 
   function updateSection(name: string, value: string) {
-    const otherWords = Object.entries(sections)
-      .filter(([key]) => key !== name)
-      .reduce((total, [, section]) => total + countWords(section), 0);
-
     setSections({
       ...sections,
-      [name]: limitWords(value, Math.max(0, 400 - otherWords)),
+      [name]: value,
     });
   }
 
@@ -126,6 +111,14 @@ export function IIIJornadaSubmissionV2Page() {
     setSubmitError('');
     if (!submissionsOpen) {
       setSubmitError('El periodo de envío todavía no está abierto.');
+      return;
+    }
+    if (countWords(title) > 15) {
+      setSubmitError('El título no puede superar las 15 palabras.');
+      return;
+    }
+    if (words > 400) {
+      setSubmitError('El resumen estructurado no puede superar las 400 palabras.');
       return;
     }
 
@@ -240,7 +233,7 @@ export function IIIJornadaSubmissionV2Page() {
                 <input
                   required
                   value={title}
-                  onChange={(event) => setTitle(limitWords(event.target.value, 15))}
+                  onChange={(event) => setTitle(event.target.value)}
                 />
                 <em>{countWords(title)} / 15</em>
               </label>
