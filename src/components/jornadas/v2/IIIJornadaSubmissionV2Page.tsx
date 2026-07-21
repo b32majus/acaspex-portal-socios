@@ -40,8 +40,16 @@ const healthAreas = [
 const countWords = (value: string) =>
   value.trim() ? value.trim().split(/\s+/).length : 0;
 
-const limitWords = (value: string, maximum: number) =>
-  value.trim() ? value.trim().split(/\s+/).slice(0, maximum).join(' ') : '';
+const limitWords = (value: string, maximum: number) => {
+  const words = [...value.matchAll(/\S+/g)];
+
+  if (words.length <= maximum) return value;
+
+  const lastAllowedWord = words[maximum - 1];
+  if (!lastAllowedWord) return '';
+
+  return value.slice(0, (lastAllowedWord.index ?? 0) + lastAllowedWord[0].length);
+};
 
 export function IIIJornadaSubmissionV2Page() {
   const [type, setType] = useState<'scientific' | 'experience'>('scientific');
