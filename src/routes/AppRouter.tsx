@@ -99,12 +99,13 @@ export function AppRouter() {
         >
           <Route path="/jornadas/evaluacion" element={<EvaluadorComunicacionesPage />} />
           <Route path="/jornadas/evaluacion-v2" element={<IIIJornadaEvaluationV2Page />} />
+          <Route path="/jornadas/comite-v2" element={<IIIJornadaCommitteeV2Page />} />
         </Route>
         {/* Mock routes — Jornadas ACASPEX (sin auth, datos simulados) */}
         <Route path="/jornadas/iii-jornada/comunicaciones" element={<MockPublicSubmissionPage />} />
         <Route path="/admin/jornadas/mock-comunicaciones" element={<MockAdminComunicacionesPage />} />
         <Route path="/jornadas/evaluacion/mock" element={<MockEvaluadorPage />} />
-        {/* V2 preview routes — parallel, no persistence, no replacement of v1. */}
+        {/* V2 routes remain parallel and do not replace the v1 paths. */}
         <Route
           path="/jornadas/iii-jornada/comunicaciones-v2"
           element={<IIIJornadaSubmissionV2Page />}
