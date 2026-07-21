@@ -53,6 +53,30 @@ const hubLinks: HubLink[] = [
     mode: 'mock',
     badge: 'Mock / revisión visual',
   },
+  {
+    to: '/jornadas/iii-jornada/comunicaciones-v2',
+    title: 'Formulario científico v2',
+    description: 'Nueva experiencia de envío estructurado, todavía sin persistencia.',
+    icon: Send,
+    mode: 'mock',
+    badge: 'V2 · revisión visual',
+  },
+  {
+    to: '/jornadas/iii-jornada/evaluacion-v2-preview',
+    title: 'Evaluación ciega v2',
+    description: 'Rúbrica ponderada de seis criterios y doble comentario obligatorio.',
+    icon: Eye,
+    mode: 'mock',
+    badge: 'V2 · revisión visual',
+  },
+  {
+    to: '/jornadas/iii-jornada/comite-v2-preview',
+    title: 'Comité científico v2',
+    description: 'Seguimiento, discrepancias, finalistas y datos de clausura simulados.',
+    icon: FileText,
+    mode: 'mock',
+    badge: 'V2 · revisión visual',
+  },
 ];
 
 export function AdminJornadasHubPage() {
