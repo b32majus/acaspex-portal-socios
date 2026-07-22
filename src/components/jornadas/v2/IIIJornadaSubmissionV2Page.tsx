@@ -40,6 +40,22 @@ const healthAreas = [
 const countWords = (value: string) =>
   value.trim() ? value.trim().split(/\s+/).length : 0;
 
+type CoauthorForm = {
+  full_name: string;
+  email: string;
+  institution: string;
+  province: string;
+  service_unit: string;
+};
+
+const emptyCoauthor = (): CoauthorForm => ({
+  full_name: '',
+  email: '',
+  institution: '',
+  province: '',
+  service_unit: '',
+});
+
 export function IIIJornadaSubmissionV2Page() {
   const [type, setType] = useState<'scientific' | 'experience'>('scientific');
   const [title, setTitle] = useState('');
@@ -58,7 +74,7 @@ export function IIIJornadaSubmissionV2Page() {
   const [noIdentifyingData, setNoIdentifyingData] = useState(false);
   const [definitiveConfirmed, setDefinitiveConfirmed] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [coauthors, setCoauthors] = useState<string[]>([]);
+  const [coauthors, setCoauthors] = useState<CoauthorForm[]>([]);
   const [references, setReferences] = useState<string[]>(['']);
   const [eventState, setEventState] = useState<ConferenceEventAvailabilityV2 | null>(null);
   const [eventError, setEventError] = useState('');
@@ -137,7 +153,7 @@ export function IIIJornadaSubmissionV2Page() {
             service_unit: serviceUnit,
             province,
           },
-          ...coauthors.map((fullName) => ({ full_name: fullName })),
+          ...coauthors,
         ],
         references: references.filter((reference) => reference.trim()),
         center_type: centerType,
@@ -423,36 +439,43 @@ export function IIIJornadaSubmissionV2Page() {
                 Resto de autores <small>Opcional: hasta 5 coautores</small>
               </h3>
               {coauthors.map((author, index) => (
-                <div className="science-author" key={`coauthor-${index}`}>
-                  <span>{index + 2}</span>
-                  <input
-                    aria-label={`Coautor ${index + 2}`}
-                    required
-                    value={author}
-                    onChange={(event) =>
-                      setCoauthors(
-                        coauthors.map((item, itemIndex) =>
-                          itemIndex === index ? event.target.value : item,
-                        ),
-                      )
-                    }
-                  />
-                  <button
-                    aria-label={`Eliminar coautor ${index + 2}`}
-                    type="button"
-                    onClick={() =>
-                      setCoauthors(coauthors.filter((_, itemIndex) => itemIndex !== index))
-                    }
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                <div className="science-coauthor" key={`coauthor-${index}`}>
+                  <div className="science-coauthor-head">
+                    <strong><span>{index + 2}</span> Coautor/a {index + 1}</strong>
+                    <button
+                      aria-label={`Eliminar coautor ${index + 2}`}
+                      type="button"
+                      onClick={() => setCoauthors(coauthors.filter((_, itemIndex) => itemIndex !== index))}
+                    >
+                      <Trash2 size={16} /> Eliminar
+                    </button>
+                  </div>
+                  <div className="science-two">
+                    <label>Nombre y apellidos
+                      <input required value={author.full_name} onChange={(event) => setCoauthors(coauthors.map((item, itemIndex) => itemIndex === index ? { ...item, full_name: event.target.value } : item))} />
+                    </label>
+                    <label>Correo electrónico
+                      <input type="email" required value={author.email} onChange={(event) => setCoauthors(coauthors.map((item, itemIndex) => itemIndex === index ? { ...item, email: event.target.value } : item))} />
+                    </label>
+                  </div>
+                  <div className="science-three">
+                    <label>Centro / institución
+                      <input required value={author.institution} onChange={(event) => setCoauthors(coauthors.map((item, itemIndex) => itemIndex === index ? { ...item, institution: event.target.value } : item))} />
+                    </label>
+                    <label>Provincia
+                      <input required value={author.province} onChange={(event) => setCoauthors(coauthors.map((item, itemIndex) => itemIndex === index ? { ...item, province: event.target.value } : item))} />
+                    </label>
+                    <label>Servicio / unidad
+                      <input required value={author.service_unit} onChange={(event) => setCoauthors(coauthors.map((item, itemIndex) => itemIndex === index ? { ...item, service_unit: event.target.value } : item))} />
+                    </label>
+                  </div>
                 </div>
               ))}
               {coauthors.length < 5 && (
                 <button
                   type="button"
                   className="science-secondary"
-                  onClick={() => setCoauthors([...coauthors, ''])}
+                  onClick={() => setCoauthors([...coauthors, emptyCoauthor()])}
                 >
                   <Plus size={16} /> Añadir coautor
                 </button>
@@ -467,7 +490,7 @@ export function IIIJornadaSubmissionV2Page() {
                 </div>
               </div>
               <div className="science-checks vertical">
-                <label>
+                <label className="science-privacy-consent">
                   <input
                     type="checkbox"
                     required
@@ -489,9 +512,21 @@ export function IIIJornadaSubmissionV2Page() {
                     required
                     checked={privacyAccepted}
                     onChange={(event) => setPrivacyAccepted(event.target.checked)}
-                  /> Acepto la política de privacidad.
+                  /> He leído y acepto la{' '}
+                  <a href="#privacy-information">política de privacidad</a>.
                 </label>
               </div>
+              <details className="science-privacy" id="privacy-information">
+                <summary>Consultar la política de privacidad</summary>
+                <div>
+                  <p><strong>Responsable:</strong> Asociación Extremeña de Calidad Asistencial y Seguridad del Paciente (ACASPEX).</p>
+                  <p><strong>Finalidad:</strong> gestionar la recepción, evaluación ciega, comunicación de resultados y, en su caso, presentación de los trabajos de la III Jornada ACASPEX.</p>
+                  <p><strong>Legitimación:</strong> consentimiento de la persona que realiza el envío. Al incluir coautores, declara que les ha informado y que cuenta con su autorización para comunicar sus datos.</p>
+                  <p><strong>Destinatarios:</strong> los datos identificativos se reservan para la gestión científica y administrativa. El equipo evaluador accederá únicamente al contenido anonimizado. No se comunicarán datos a terceros salvo obligación legal.</p>
+                  <p><strong>Conservación:</strong> durante el tiempo necesario para gestionar la jornada y atender las responsabilidades legales aplicables.</p>
+                  <p><strong>Derechos:</strong> puede solicitar el acceso, rectificación, supresión, limitación u oposición escribiendo a <a href="mailto:acaspex@outlook.es">acaspex@outlook.es</a>.</p>
+                </div>
+              </details>
               {submitError && <div className="science-error">{submitError}</div>}
               <button className="science-primary" disabled={!submissionsOpen || submitting}>
                 <Send size={17} /> {submitting ? 'Enviando…' : 'Enviar resumen definitivo'}
