@@ -112,6 +112,9 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
     authorFeedback.trim().length > 0 &&
     confidentialFeedback.trim().length > 0 &&
     !submitting;
+  const missingCriteria = scores.filter((score) => score < 1 || score > 5).length;
+  const authorFeedbackMissing = authorFeedback.trim().length === 0;
+  const confidentialFeedbackMissing = confidentialFeedback.trim().length === 0;
 
   async function loadAssignments(preferredId?: string) {
     if (preview) return;
@@ -142,6 +145,11 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
   useEffect(() => {
     if (preview) {
       setDetail(previewDetails[selectedId] ?? null);
+      setScores(criteria.map(() => 0));
+      setAuthorFeedback('');
+      setConfidentialFeedback('');
+      setError('');
+      setSuccess(false);
       return;
     }
     if (!selectedId) {
@@ -169,10 +177,40 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
     () => assignments.find((item) => item.id === selectedId) ?? null,
     [assignments, selectedId],
   );
+  const selectedAssignmentCompleted = selectedAssignment?.assignment_status === 'completed';
 
   async function handleSubmit() {
-    if (!detail || !selectedAssignment || !canSubmit) return;
+    setError('');
+    setSuccess(false);
+
+    if (!detail || !selectedAssignment) {
+      setError('Selecciona un trabajo pendiente antes de enviar la evaluación.');
+      return;
+    }
+    if (selectedAssignment.assignment_status === 'completed') {
+      setError('Este trabajo ya figura como evaluado y no puede volver a enviarse.');
+      return;
+    }
+    if (!canSubmit) {
+      const missing: string[] = [];
+      if (missingCriteria > 0) {
+        missing.push(
+          `${missingCriteria} ${missingCriteria === 1 ? 'criterio sin puntuar' : 'criterios sin puntuar'}`,
+        );
+      }
+      if (authorFeedbackMissing) missing.push('las recomendaciones para los autores');
+      if (confidentialFeedbackMissing) missing.push('el comentario confidencial al comité');
+      setError(`Antes de enviar, completa: ${missing.join(', ')}.`);
+      return;
+    }
     if (preview) {
+      setAssignments((current) =>
+        current.map((item) =>
+          item.id === selectedAssignment.id
+            ? { ...item, assignment_status: 'completed' }
+            : item,
+        ),
+      );
       setSuccess(true);
       return;
     }
@@ -240,7 +278,14 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
         {success && (
           <section className="science-success compact">
             <CheckCircle2 size={28} />
-            <div><strong>Evaluación registrada correctamente.</strong></div>
+            <div>
+              <strong>
+                {preview
+                  ? 'Evaluación de prueba completada correctamente.'
+                  : 'Evaluación registrada correctamente.'}
+              </strong>
+              {preview && <p>No se ha guardado ningún dato real.</p>}
+            </div>
           </section>
         )}
 
@@ -331,7 +376,7 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
                         <button
                           type="button"
                           className={scores[index] === value ? 'chosen' : ''}
-                          disabled={selectedAssignment?.assignment_status === 'completed'}
+                          disabled={selectedAssignmentCompleted}
                           onClick={() =>
                             setScores(scores.map((score, scoreIndex) =>
                               scoreIndex === index ? value : score,
@@ -350,7 +395,7 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
                   Recomendaciones para los autores <small>Obligatorio</small>
                   <textarea
                     required
-                    disabled={selectedAssignment?.assignment_status === 'completed'}
+                    disabled={selectedAssignmentCompleted}
                     value={authorFeedback}
                     onChange={(event) => setAuthorFeedback(event.target.value)}
                   />
@@ -359,14 +404,33 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
                   Comentario confidencial al comité <small>Obligatorio</small>
                   <textarea
                     required
-                    disabled={selectedAssignment?.assignment_status === 'completed'}
+                    disabled={selectedAssignmentCompleted}
                     value={confidentialFeedback}
                     onChange={(event) => setConfidentialFeedback(event.target.value)}
                   />
                 </label>
+                {selectedAssignmentCompleted ? (
+                  <div className="science-notice" role="status">
+                    Este trabajo ya figura como evaluado. Selecciona un trabajo pendiente para
+                    continuar.
+                  </div>
+                ) : (
+                  <div className="science-hint" aria-live="polite">
+                    <strong>Requisitos para enviar:</strong>{' '}
+                    {missingCriteria > 0
+                      ? `faltan ${missingCriteria} de los 6 criterios por puntuar`
+                      : 'los 6 criterios están puntuados'}
+                    ; las recomendaciones para los autores y el comentario confidencial al comité
+                    son obligatorios.
+                  </div>
+                )}
                 <button
                   className="science-primary"
-                  disabled={!canSubmit || selectedAssignment?.assignment_status === 'completed'}
+                  disabled={
+                    submitting ||
+                    selectedAssignmentCompleted ||
+                    (!preview && !canSubmit)
+                  }
                   onClick={handleSubmit}
                 >
                   <Send size={17} /> {submitting ? 'Enviando…' : 'Enviar evaluación'}
