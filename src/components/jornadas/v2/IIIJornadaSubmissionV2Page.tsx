@@ -87,6 +87,8 @@ export function IIIJornadaSubmissionV2Page() {
     () => Object.values(sections).reduce((total, value) => total + countWords(value), 0),
     [sections],
   );
+  const titleWords = countWords(title);
+  const titleLimitExceeded = titleWords > 15;
   const submissionsOpen = eventState?.status === 'open';
 
   useEffect(() => {
@@ -229,8 +231,8 @@ export function IIIJornadaSubmissionV2Page() {
         ) : (
           <form onSubmit={handleSubmit}>
             <section className="science-notice">
-              <strong>Fechas previstas:</strong> resúmenes hasta el 26 de septiembre, con posible
-              prórroga hasta el 2 de octubre · pósteres hasta el 16 de octubre.
+              <strong>Fechas previstas:</strong> resúmenes hasta el 26 de septiembre · pósteres
+              finalistas hasta el 16 de octubre.
             </section>
 
             <section className="science-card">
@@ -244,14 +246,22 @@ export function IIIJornadaSubmissionV2Page() {
                 </span>
               </div>
 
-              <label>
+              <label className={titleLimitExceeded ? 'science-field-error' : undefined}>
                 Título <small>Máximo 15 palabras</small>
                 <input
                   required
                   value={title}
+                  aria-invalid={titleLimitExceeded}
+                  aria-describedby={titleLimitExceeded ? 'title-word-limit-error' : undefined}
                   onChange={(event) => setTitle(event.target.value)}
                 />
-                <em>{countWords(title)} / 15</em>
+                <em>{titleWords} / 15 palabras</em>
+                {titleLimitExceeded && (
+                  <span className="science-inline-error" id="title-word-limit-error" role="alert">
+                    El título supera el máximo de 15 palabras. Reduce {titleWords - 15}{' '}
+                    {titleWords - 15 === 1 ? 'palabra' : 'palabras'} para poder enviarlo.
+                  </span>
+                )}
               </label>
 
               <div className="science-two">
@@ -528,7 +538,10 @@ export function IIIJornadaSubmissionV2Page() {
                 </div>
               </details>
               {submitError && <div className="science-error">{submitError}</div>}
-              <button className="science-primary" disabled={!submissionsOpen || submitting}>
+              <button
+                className="science-primary"
+                disabled={!submissionsOpen || submitting || titleLimitExceeded || words > 400}
+              >
                 <Send size={17} /> {submitting ? 'Enviando…' : 'Enviar resumen definitivo'}
               </button>
             </section>

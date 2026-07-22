@@ -29,13 +29,68 @@ function reviewState(item: CommitteeSubmissionV2): string {
   return statusLabels[item.status] ?? item.status;
 }
 
-export function IIIJornadaCommitteeV2Page() {
-  const [dashboard, setDashboard] = useState<CommitteeDashboardV2 | null>(null);
-  const [submissions, setSubmissions] = useState<CommitteeSubmissionV2[]>([]);
-  const [loading, setLoading] = useState(true);
+const previewDashboard: CommitteeDashboardV2 = {
+  event_id: 'preview-event',
+  event_status: 'open',
+  total_submissions: 6,
+  scientific_count: 4,
+  experience_count: 2,
+  member_count: 3,
+  completed_assignments: 7,
+  total_assignments: 12,
+};
+
+const previewSubmissions: CommitteeSubmissionV2[] = [
+  {
+    submission_id: 'preview-submission-1',
+    submission_code: 'PRUEBA-001',
+    title: 'Impacto de una intervención multidisciplinar en la continuidad asistencial',
+    submission_type: 'scientific_work',
+    status: 'under_review',
+    first_total: 82,
+    second_total: 78,
+    third_total: null,
+    third_review_required: false,
+    final_median_total: 80,
+  },
+  {
+    submission_id: 'preview-submission-2',
+    submission_code: 'PRUEBA-002',
+    title: 'Experiencia de mejora del circuito de información al alta',
+    submission_type: 'improvement_experience',
+    status: 'under_review',
+    first_total: 88,
+    second_total: 54,
+    third_total: null,
+    third_review_required: true,
+    final_median_total: null,
+  },
+  {
+    submission_id: 'preview-submission-3',
+    submission_code: 'PRUEBA-003',
+    title: 'Resultados de un programa de mejora de la experiencia del paciente',
+    submission_type: 'scientific_work',
+    status: 'received',
+    first_total: null,
+    second_total: null,
+    third_total: null,
+    third_review_required: false,
+    final_median_total: null,
+  },
+];
+
+type IIIJornadaCommitteeV2PageProps = {
+  preview?: boolean;
+};
+
+export function IIIJornadaCommitteeV2Page({ preview = false }: IIIJornadaCommitteeV2PageProps) {
+  const [dashboard, setDashboard] = useState<CommitteeDashboardV2 | null>(preview ? previewDashboard : null);
+  const [submissions, setSubmissions] = useState<CommitteeSubmissionV2[]>(preview ? previewSubmissions : []);
+  const [loading, setLoading] = useState(!preview);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (preview) return;
     let cancelled = false;
     fetchCommitteeDashboardV2()
       .then((result) => {
@@ -57,15 +112,17 @@ export function IIIJornadaCommitteeV2Page() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [preview]);
 
   const completionPercent = dashboard?.total_assignments
     ? Math.round((dashboard.completed_assignments / dashboard.total_assignments) * 100)
     : 0;
   return (
     <div className="science-app">
-      <div className="science-demo connected">
-        VERSIÓN V2 CONECTADA A STAGING · EVENTO {dashboard?.event_status?.toUpperCase() ?? '—'}
+      <div className={`science-demo ${preview ? '' : 'connected'}`}>
+        {preview
+          ? 'VISTA DE PRUEBA · DATOS SIMULADOS · SIN ACCESO A INFORMACIÓN REAL'
+          : `VERSIÓN V2 CONECTADA A STAGING · EVENTO ${dashboard?.event_status?.toUpperCase() ?? '—'}`}
       </div>
       <header className="science-header">
         <div>
@@ -81,6 +138,12 @@ export function IIIJornadaCommitteeV2Page() {
       </nav>
 
       <main className="science-shell">
+        {preview && (
+          <section className="science-notice">
+            Vista visual previa para presidencia y vicepresidencia. Todos los códigos, títulos,
+            cifras y resultados que aparecen aquí son simulados.
+          </section>
+        )}
         <section className="science-hero row">
           <div>
             <p>Acceso restringido</p>

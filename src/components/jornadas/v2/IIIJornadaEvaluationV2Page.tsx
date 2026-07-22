@@ -28,14 +28,72 @@ const sectionLabels: Record<string, string> = {
   ethical_considerations: 'Aspectos éticos',
 };
 
-export function IIIJornadaEvaluationV2Page() {
-  const [assignments, setAssignments] = useState<ReviewerAssignmentV2[]>([]);
-  const [selectedId, setSelectedId] = useState('');
-  const [detail, setDetail] = useState<ReviewerSubmissionDetailV2 | null>(null);
+const previewAssignments: ReviewerAssignmentV2[] = [
+  {
+    id: 'preview-assignment-1',
+    submission_code: 'PRUEBA-001',
+    title: 'Impacto de una intervención multidisciplinar en la continuidad asistencial',
+    submission_type: 'scientific_work',
+    assignment_status: 'assigned',
+    evaluation_round: 'first',
+    assigned_at: '2026-07-22T08:00:00Z',
+  },
+  {
+    id: 'preview-assignment-2',
+    submission_code: 'PRUEBA-002',
+    title: 'Experiencia de mejora del circuito de información al alta',
+    submission_type: 'improvement_experience',
+    assignment_status: 'completed',
+    evaluation_round: 'first',
+    assigned_at: '2026-07-22T08:00:00Z',
+  },
+];
+
+const previewDetails: Record<string, ReviewerSubmissionDetailV2> = {
+  'preview-assignment-1': {
+    submission_code: 'PRUEBA-001',
+    title: 'Impacto de una intervención multidisciplinar en la continuidad asistencial',
+    submission_type: 'scientific_work',
+    evaluation_round: 'first',
+    sections: {
+      introduction: 'La continuidad asistencial requiere una comunicación estructurada entre niveles y profesionales.',
+      objectives: 'Evaluar el efecto de una intervención multidisciplinar sobre la calidad de la información al alta.',
+      methodology_or_intervention: 'Estudio antes-después con indicadores definidos previamente y seguimiento durante seis meses.',
+      results: 'Mejoró la cumplimentación de la información esencial y disminuyeron las incidencias comunicadas.',
+      conclusions: 'La intervención fue factible y muestra potencial para su extensión a otras unidades.',
+    },
+    reference_list: ['Referencia bibliográfica simulada para la revisión visual.'],
+  },
+  'preview-assignment-2': {
+    submission_code: 'PRUEBA-002',
+    title: 'Experiencia de mejora del circuito de información al alta',
+    submission_type: 'improvement_experience',
+    evaluation_round: 'first',
+    sections: {
+      introduction: 'Se detectó variabilidad en la información entregada a pacientes y familias en el momento del alta.',
+      objectives: 'Estandarizar la información esencial y facilitar la continuidad de los cuidados.',
+      methodology_or_intervention: 'Se diseñó una lista de verificación consensuada y se pilotó en dos unidades.',
+      results: 'Aumentó la cumplimentación de recomendaciones y disminuyeron las consultas posteriores por dudas.',
+      conclusions: 'La experiencia permitió integrar una herramienta sencilla en la práctica habitual.',
+    },
+    reference_list: [],
+  },
+};
+
+type IIIJornadaEvaluationV2PageProps = {
+  preview?: boolean;
+};
+
+export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvaluationV2PageProps) {
+  const [assignments, setAssignments] = useState<ReviewerAssignmentV2[]>(preview ? previewAssignments : []);
+  const [selectedId, setSelectedId] = useState(preview ? previewAssignments[0].id : '');
+  const [detail, setDetail] = useState<ReviewerSubmissionDetailV2 | null>(
+    preview ? previewDetails[previewAssignments[0].id] : null,
+  );
   const [scores, setScores] = useState(criteria.map(() => 0));
   const [authorFeedback, setAuthorFeedback] = useState('');
   const [confidentialFeedback, setConfidentialFeedback] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preview);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -56,6 +114,7 @@ export function IIIJornadaEvaluationV2Page() {
     !submitting;
 
   async function loadAssignments(preferredId?: string) {
+    if (preview) return;
     setLoading(true);
     setError('');
     try {
@@ -76,10 +135,15 @@ export function IIIJornadaEvaluationV2Page() {
   }
 
   useEffect(() => {
+    if (preview) return;
     void loadAssignments();
-  }, []);
+  }, [preview]);
 
   useEffect(() => {
+    if (preview) {
+      setDetail(previewDetails[selectedId] ?? null);
+      return;
+    }
     if (!selectedId) {
       setDetail(null);
       return;
@@ -99,7 +163,7 @@ export function IIIJornadaEvaluationV2Page() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId]);
+  }, [preview, selectedId]);
 
   const selectedAssignment = useMemo(
     () => assignments.find((item) => item.id === selectedId) ?? null,
@@ -108,6 +172,10 @@ export function IIIJornadaEvaluationV2Page() {
 
   async function handleSubmit() {
     if (!detail || !selectedAssignment || !canSubmit) return;
+    if (preview) {
+      setSuccess(true);
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -133,7 +201,11 @@ export function IIIJornadaEvaluationV2Page() {
 
   return (
     <div className="science-app">
-      <div className="science-demo connected">VERSIÓN V2 CONECTADA A STAGING · EVALUACIÓN REAL</div>
+      <div className={`science-demo ${preview ? '' : 'connected'}`}>
+        {preview
+          ? 'VISTA DE PRUEBA · DATOS SIMULADOS · NO GUARDA EVALUACIONES'
+          : 'VERSIÓN V2 CONECTADA A STAGING · EVALUACIÓN REAL'}
+      </div>
       <header className="science-header">
         <div>
           <span className="science-brand">ACASPEX</span>
@@ -156,6 +228,13 @@ export function IIIJornadaEvaluationV2Page() {
             permanecen ocultos.
           </p>
         </section>
+
+        {preview && (
+          <section className="science-notice">
+            Esta vista permite revisar el circuito antes de activar las cuentas del comité. Los
+            textos, códigos y puntuaciones son simulados y no se guardan.
+          </section>
+        )}
 
         {error && <section className="science-error">{error}</section>}
         {success && (

@@ -112,11 +112,11 @@ export function AppRouter() {
         />
         <Route
           path="/jornadas/iii-jornada/comite-v2-preview"
-          element={<IIIJornadaCommitteeV2Page />}
+          element={<IIIJornadaCommitteeV2Page preview />}
         />
         <Route
           path="/jornadas/iii-jornada/evaluacion-v2-preview"
-          element={<IIIJornadaEvaluationV2Page />}
+          element={<IIIJornadaEvaluationV2Page preview />}
         />
       </Routes>
     </Router>
