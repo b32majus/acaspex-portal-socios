@@ -3,7 +3,9 @@ import { CheckCircle2, Eye, Send } from 'lucide-react';
 import {
   fetchReviewerAssignmentsV2,
   fetchReviewerSubmissionV2,
+  fetchOwnConferenceReviewV2,
   submitConferenceReviewV2,
+  type OwnConferenceReviewV2,
   type ReviewerAssignmentV2,
   type ReviewerSubmissionDetailV2,
 } from '../../../lib/conferenceV2Client';
@@ -80,6 +82,20 @@ const previewDetails: Record<string, ReviewerSubmissionDetailV2> = {
   },
 };
 
+const previewCompletedReview: OwnConferenceReviewV2 = {
+  score_relevance: 4,
+  score_intro_objectives: 4,
+  score_methodology: 5,
+  score_results: 4,
+  score_conclusions_applicability: 4,
+  score_clarity: 5,
+  author_recommendations: 'Se recomienda concretar el periodo de seguimiento de la experiencia.',
+  confidential_committee_comment: 'Trabajo pertinente y bien estructurado para la jornada.',
+  weighted_total: 87,
+  evaluation_round: 'first',
+  submitted_at: '2026-07-22T10:30:00Z',
+};
+
 type IIIJornadaEvaluationV2PageProps = {
   preview?: boolean;
 };
@@ -93,6 +109,10 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
   const [scores, setScores] = useState(criteria.map(() => 0));
   const [authorFeedback, setAuthorFeedback] = useState('');
   const [confidentialFeedback, setConfidentialFeedback] = useState('');
+  const [savedReview, setSavedReview] = useState<OwnConferenceReviewV2 | null>(null);
+  const [previewReviews, setPreviewReviews] = useState<Record<string, OwnConferenceReviewV2>>({
+    'preview-assignment-2': previewCompletedReview,
+  });
   const [loading, setLoading] = useState(!preview);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -124,7 +144,7 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
       const rows = await fetchReviewerAssignmentsV2();
       setAssignments(rows);
       const candidate =
-        rows.find((item) => item.id === preferredId && item.assignment_status !== 'completed') ??
+        rows.find((item) => item.id === preferredId) ??
         rows.find((item) => item.assignment_status !== 'completed') ??
         rows[0];
       setSelectedId(candidate?.id ?? '');
@@ -145,9 +165,20 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
   useEffect(() => {
     if (preview) {
       setDetail(previewDetails[selectedId] ?? null);
-      setScores(criteria.map(() => 0));
-      setAuthorFeedback('');
-      setConfidentialFeedback('');
+      const storedReview = previewReviews[selectedId] ?? null;
+      setSavedReview(storedReview);
+      setScores(storedReview
+        ? [
+          storedReview.score_relevance,
+          storedReview.score_intro_objectives,
+          storedReview.score_methodology,
+          storedReview.score_results,
+          storedReview.score_conclusions_applicability,
+          storedReview.score_clarity,
+        ]
+        : criteria.map(() => 0));
+      setAuthorFeedback(storedReview?.author_recommendations ?? '');
+      setConfidentialFeedback(storedReview?.confidential_committee_comment ?? '');
       setError('');
       setSuccess(false);
       return;
@@ -158,20 +189,41 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
     }
     let cancelled = false;
     setError('');
-    fetchReviewerSubmissionV2(selectedId)
-      .then((row) => {
-        if (!cancelled) setDetail(row);
+    const assignment = assignments.find((item) => item.id === selectedId);
+    Promise.all([
+      fetchReviewerSubmissionV2(selectedId),
+      assignment?.assignment_status === 'completed'
+        ? fetchOwnConferenceReviewV2(selectedId)
+        : Promise.resolve(null),
+    ])
+      .then(([row, ownReview]) => {
+        if (cancelled) return;
+        setDetail(row);
+        setSavedReview(ownReview);
+        setScores(ownReview
+          ? [
+            ownReview.score_relevance,
+            ownReview.score_intro_objectives,
+            ownReview.score_methodology,
+            ownReview.score_results,
+            ownReview.score_conclusions_applicability,
+            ownReview.score_clarity,
+          ]
+          : criteria.map(() => 0));
+        setAuthorFeedback(ownReview?.author_recommendations ?? '');
+        setConfidentialFeedback(ownReview?.confidential_committee_comment ?? '');
       })
       .catch(() => {
         if (!cancelled) {
           setDetail(null);
-          setError('No se pudo cargar el contenido ciego del trabajo seleccionado.');
+          setSavedReview(null);
+          setError('No se pudo cargar el trabajo o la evaluación registrada.');
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [preview, selectedId]);
+  }, [assignments, preview, previewReviews, selectedId]);
 
   const selectedAssignment = useMemo(
     () => assignments.find((item) => item.id === selectedId) ?? null,
@@ -204,6 +256,19 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
       return;
     }
     if (preview) {
+      const simulatedReview: OwnConferenceReviewV2 = {
+        score_relevance: scores[0],
+        score_intro_objectives: scores[1],
+        score_methodology: scores[2],
+        score_results: scores[3],
+        score_conclusions_applicability: scores[4],
+        score_clarity: scores[5],
+        author_recommendations: authorFeedback.trim(),
+        confidential_committee_comment: confidentialFeedback.trim(),
+        weighted_total: total,
+        evaluation_round: selectedAssignment.evaluation_round,
+        submitted_at: new Date().toISOString(),
+      };
       setAssignments((current) =>
         current.map((item) =>
           item.id === selectedAssignment.id
@@ -211,6 +276,11 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
             : item,
         ),
       );
+      setPreviewReviews((current) => ({
+        ...current,
+        [selectedAssignment.id]: simulatedReview,
+      }));
+      setSavedReview(simulatedReview);
       setSuccess(true);
       return;
     }
@@ -224,9 +294,6 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
         confidentialCommitteeComment: confidentialFeedback,
       });
       setSuccess(true);
-      setScores(criteria.map(() => 0));
-      setAuthorFeedback('');
-      setConfidentialFeedback('');
       await loadAssignments(selectedAssignment.id);
     } catch {
       setError(
@@ -411,8 +478,19 @@ export function IIIJornadaEvaluationV2Page({ preview = false }: IIIJornadaEvalua
                 </label>
                 {selectedAssignmentCompleted ? (
                   <div className="science-notice" role="status">
-                    Este trabajo ya figura como evaluado. Selecciona un trabajo pendiente para
-                    continuar.
+                    {savedReview ? (
+                      <>
+                        Evaluación enviada el{' '}
+                        {new Intl.DateTimeFormat('es-ES', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }).format(new Date(savedReview.submitted_at))}
+                        {' · '}Puntuación ponderada: {Number(savedReview.weighted_total).toFixed(0)} / 100.
+                        Tus puntuaciones y comentarios se muestran en modo lectura.
+                      </>
+                    ) : (
+                      'Este trabajo figura como evaluado. Cargando la evaluación registrada…'
+                    )}
                   </div>
                 ) : (
                   <div className="science-hint" aria-live="polite">

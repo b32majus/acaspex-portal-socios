@@ -208,6 +208,31 @@ export interface ReviewPayloadV2 {
   confidentialCommitteeComment: string;
 }
 
+export interface OwnConferenceReviewV2 {
+  score_relevance: number;
+  score_intro_objectives: number;
+  score_methodology: number;
+  score_results: number;
+  score_conclusions_applicability: number;
+  score_clarity: number;
+  author_recommendations: string;
+  confidential_committee_comment: string;
+  weighted_total: number;
+  evaluation_round: EvaluationRoundV2;
+  submitted_at: string;
+}
+
+export async function fetchOwnConferenceReviewV2(
+  submissionId: string,
+): Promise<OwnConferenceReviewV2 | null> {
+  const { data, error } = await configuredClient().rpc('get_own_conference_review_v2', {
+    p_submission_id: submissionId,
+  });
+  if (error) throw new ConferenceV2Error(error.code || 'review_load_failed', error.message);
+  const rows = (data ?? []) as OwnConferenceReviewV2[];
+  return rows[0] ?? null;
+}
+
 export async function submitConferenceReviewV2(payload: ReviewPayloadV2): Promise<string> {
   const { data, error } = await configuredClient().rpc('submit_conference_review_v2', {
     p_submission_id: payload.submissionId,
