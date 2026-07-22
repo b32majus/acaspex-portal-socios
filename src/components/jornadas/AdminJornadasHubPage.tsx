@@ -53,6 +53,30 @@ const hubLinks: HubLink[] = [
     mode: 'mock',
     badge: 'Mock / revisión visual',
   },
+  {
+    to: '/jornadas/iii-jornada/comunicaciones-v2',
+    title: 'Formulario científico v2',
+    description: 'Envío estructurado conectado a staging y cerrado mientras el evento esté en borrador.',
+    icon: Send,
+    mode: 'real',
+    badge: 'V2 · staging',
+  },
+  {
+    to: '/jornadas/evaluacion-v2',
+    title: 'Evaluación ciega v2',
+    description: 'Asignaciones reales y rúbrica ponderada con doble comentario obligatorio.',
+    icon: Eye,
+    mode: 'real',
+    badge: 'V2 · staging',
+  },
+  {
+    to: '/jornadas/comite-v2',
+    title: 'Comité científico v2',
+    description: 'Seguimiento real, discrepancias y datos agregados de la III Jornada.',
+    icon: FileText,
+    mode: 'real',
+    badge: 'V2 · staging',
+  },
 ];
 
 export function AdminJornadasHubPage() {

@@ -33,6 +33,9 @@ import { MockEvaluadorPage } from '../components/jornadas/mock/MockEvaluadorPage
 import { AdminComunicacionesPage } from '../components/jornadas/AdminComunicacionesPage';
 import { AdminJornadasHubPage } from '../components/jornadas/AdminJornadasHubPage';
 import { EvaluadorComunicacionesPage } from '../components/jornadas/EvaluadorComunicacionesPage';
+import { IIIJornadaSubmissionV2Page } from '../components/jornadas/v2/IIIJornadaSubmissionV2Page';
+import { IIIJornadaCommitteeV2Page } from '../components/jornadas/v2/IIIJornadaCommitteeV2Page';
+import { IIIJornadaEvaluationV2Page } from '../components/jornadas/v2/IIIJornadaEvaluationV2Page';
 
 export function AppRouter() {
   return (
@@ -84,6 +87,7 @@ export function AppRouter() {
           <Route path="/admin/renovaciones" element={<AdminRenewalsPage />} />
           <Route path="/admin/jornadas" element={<AdminJornadasHubPage />} />
           <Route path="/admin/jornadas/comunicaciones" element={<AdminComunicacionesPage />} />
+          <Route path="/admin/jornadas/revision-v2" element={<IIIJornadaCommitteeV2Page />} />
         </Route>
         {/* Real evaluator route — authenticated, read-only */}
         <Route
@@ -94,11 +98,26 @@ export function AppRouter() {
           }
         >
           <Route path="/jornadas/evaluacion" element={<EvaluadorComunicacionesPage />} />
+          <Route path="/jornadas/evaluacion-v2" element={<IIIJornadaEvaluationV2Page />} />
+          <Route path="/jornadas/comite-v2" element={<IIIJornadaCommitteeV2Page />} />
         </Route>
         {/* Mock routes — Jornadas ACASPEX (sin auth, datos simulados) */}
         <Route path="/jornadas/iii-jornada/comunicaciones" element={<MockPublicSubmissionPage />} />
         <Route path="/admin/jornadas/mock-comunicaciones" element={<MockAdminComunicacionesPage />} />
         <Route path="/jornadas/evaluacion/mock" element={<MockEvaluadorPage />} />
+        {/* V2 routes remain parallel and do not replace the v1 paths. */}
+        <Route
+          path="/jornadas/iii-jornada/comunicaciones-v2"
+          element={<IIIJornadaSubmissionV2Page />}
+        />
+        <Route
+          path="/jornadas/iii-jornada/comite-v2-preview"
+          element={<IIIJornadaCommitteeV2Page preview />}
+        />
+        <Route
+          path="/jornadas/iii-jornada/evaluacion-v2-preview"
+          element={<IIIJornadaEvaluationV2Page preview />}
+        />
       </Routes>
     </Router>
   );
